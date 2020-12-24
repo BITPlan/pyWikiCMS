@@ -12,7 +12,8 @@ port=8251
 host='0.0.0.0'
 scriptdir=os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__,template_folder=scriptdir+'/../templates')
-frontend=Frontend("cr")
+frontend=Frontend("or")
+frontend.open()
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:route>')
