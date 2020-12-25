@@ -5,16 +5,19 @@ Created on 2020-07-11
 '''
 import unittest
 from frontend.webserver import app
-
+from tests.test_WikiCMS import TestWikiCMS
 class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['DEBUG'] = False
-        self.app = app.test_client()
-        self.debug=True
+        wikiId='or'
+        wikiuser=TestWikiCMS.getSMW_WikiUser(wikiId)
+        if wikiuser is not None:
+            app.config['TESTING'] = True
+            app.config['WTF_CSRF_ENABLED'] = False
+            app.config['DEBUG'] = False
+            self.app = app.test_client()
+            self.debug=True
         pass
 
     def tearDown(self):

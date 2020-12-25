@@ -8,7 +8,7 @@ import getpass
 import os
 from wikibot.wikiclient import WikiClient
 from wikibot.wikiuser import WikiUser
-from wikibot.smw import SMWClient
+#from wikibot.smw import SMWClient
 
 
 class TestWikiCMS(unittest.TestCase):
