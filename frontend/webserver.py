@@ -9,17 +9,18 @@ from flask import render_template
 import os
 
 class AppWrap:
-    def __init__(self, host='0.0.0.0',port=8251,debug=False):
+    def __init__(self, host='0.0.0.0',port=8251,debug=False,wikiId='cr'):
         self.debug=debug
         self.port=port
         self.host=host    
+        self.wikiId=wikiId
         scriptdir=os.path.dirname(os.path.abspath(__file__))
         self.app = Flask(__name__,template_folder=scriptdir+'/../templates')
         self.frontend=None
         
     def wrap(self,route):
         if self.frontend is None:
-            raise Exception("frontend is not initialized")
+            self.frontend=self.initFrontend(self.wikiId)
         content,error=self.frontend.getContent(route);
         return render_template('index.html',content=content,error=error)
         
