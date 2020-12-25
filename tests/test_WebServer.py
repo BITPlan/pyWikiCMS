@@ -4,7 +4,8 @@ Created on 2020-07-11
 @author: wf
 '''
 import unittest
-from frontend.webserver import app
+import frontend.webserver 
+
 from tests.test_WikiCMS import TestWikiCMS
 class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
@@ -13,11 +14,14 @@ class TestWebServer(unittest.TestCase):
         wikiId='or'
         wikiuser=TestWikiCMS.getSMW_WikiUser(wikiId)
         if wikiuser is not None:
+            app=frontend.webserver.app
             app.config['TESTING'] = True
             app.config['WTF_CSRF_ENABLED'] = False
             app.config['DEBUG'] = False
             self.app = app.test_client()
             self.debug=True
+            frontend.webserver.appWrap.initFrontend(wikiId)
+ 
         pass
 
     def tearDown(self):
