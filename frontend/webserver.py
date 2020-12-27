@@ -9,7 +9,19 @@ from flask import render_template
 import os
 
 class AppWrap:
-    def __init__(self, host='0.0.0.0',port=8251,debug=False,wikiId='cr'):
+    ''' Wrapper for Flask Web Application 
+    '''
+    
+    def __init__(self, wikiId='cr',host='0.0.0.0',port=8251,debug=False):
+        '''
+        constructor
+        
+        Args:
+            wikiId(str): id of the wiki to use as a CMS backend
+            host(str): flask host
+            port(int): the port to use for http connections
+            debug(bool): True if debugging should be switched on
+        '''
         self.debug=debug
         self.port=port
         self.host=host    
@@ -19,25 +31,34 @@ class AppWrap:
         self.frontend=None
         
     def wrap(self,route):
+        '''
+        wrap the given route 
+        '''
         if self.frontend is None:
-            self.frontend=self.initFrontend(self.wikiId)
+            self.initFrontend(self.wikiId)
         content,error=self.frontend.getContent(route);
         return render_template('index.html',content=content,error=error)
-        
-    def run(self):
-        self.app.run(debug=self.debug,port=self.port,host=self.host)   
-        pass
 
     def initFrontend(self,wikiId):
+        '''
+        initialize the frontend for the given wikiId
+        '''
         self.frontend=Frontend(wikiId)
         self.frontend.open()
+        
+    def run(self):
+        '''
+        start the flask webserver
+        '''
+        self.app.run(debug=self.debug,port=self.port,host=self.host)   
+        pass
     
 appWrap=AppWrap()
 app=appWrap.app    
 @app.route('/', defaults={'path': ''})
-@app.route('/<path:route>')
-def wrap(route):
-    return appWrap.wrap(route)
+@app.route('/<path:path>')
+def wrap(path):
+    return appWrap.wrap(path)
 
 if __name__ == '__main__':
     appWrap.run()
