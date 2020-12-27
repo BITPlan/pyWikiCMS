@@ -56,7 +56,6 @@ class TestWikiCMS(unittest.TestCase):
         wikiuser=TestWikiCMS.getSMW_WikiUser(wikiId)
         wikiclient=WikiClient.ofWikiUser(wikiuser)
         return wikiclient
-    
 
     def testWikiCMS(self):
         ''' test CMS access '''
