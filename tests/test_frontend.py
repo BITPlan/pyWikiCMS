@@ -23,10 +23,13 @@ class TestFrontend(unittest.TestCase):
         '''
         frontend=Frontend('cr')
         routes=['/index.php/File:Link.png']
-        for route in routes:
+        expectedList=['File:Link.png']
+        for i,route in enumerate(routes):
             pageTitle=frontend.wikiPage(route)
             if self.debug:
                 print (pageTitle)
+            expected=expectedList[i]
+            self.assertEqual(expected,pageTitle)
             
         pass
 
