@@ -31,6 +31,14 @@ class Frontend(object):
             msg=repr(ex)
         return msg
     
+    def wikiPage(self,pagePath):
+        if "/index.php/" in pagePath:
+            wikipage=pagePath.replace("/index.php/","")
+        else:
+            wikipage=pagePath
+        return wikipage
+        
+    
     def checkPath(self,pagePath):
         error=None
         if self.debug:
@@ -48,8 +56,10 @@ class Frontend(object):
         if error is None:
             try:
                 if pagePath=="":
-                    pagePath=self.defaultPage
-                content=self.wikiclient.getHtml(pagePath)
+                    pageTitle=self.defaultPage
+                else:
+                    pageTitle=self.wikiPage(pagePath)
+                content=self.wikiclient.getHtml(pageTitle)
             except Exception as e:
                 error=self.errMsg(e)
         return content,error
