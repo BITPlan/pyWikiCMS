@@ -6,6 +6,7 @@ Created on 27.07.2020
 from flask import Flask
 from frontend.WikiCMS import Frontend
 from flask import render_template
+import argparse
 import os
 
 class AppWrap:
@@ -54,12 +55,17 @@ class AppWrap:
         pass
     
 appWrap=AppWrap()
-app=appWrap.app    
+app=appWrap.app   
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def wrap(path):
     return appWrap.wrap(path)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Wiki Content Management webservice")
+    parser.add_argument('--debug',
+                                 action='store_true',
+                                 help="run in debug mode")
+    appWrap.debug=parser.debug
     appWrap.run()
     
