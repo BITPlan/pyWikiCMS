@@ -66,6 +66,13 @@ if __name__ == '__main__':
     parser.add_argument('--debug',
                                  action='store_true',
                                  help="run in debug mode")
+    parser.add_argument('--debugServer',
+                                 help="remote debug Server")
+    parser.add_argument('--debugPort',type='int',
+                                 help="remote debug Port",default=5678)
+    if parser.debugServer:
+        import pydevd
+        pydevd.settrace(parser.debugServer, port=parser.debugPort,stdoutToServer=True, stderrToServer=True)
     appWrap.debug=parser.debug
     appWrap.run()
     
