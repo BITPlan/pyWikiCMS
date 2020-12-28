@@ -68,7 +68,7 @@ if __name__ == '__main__':
                                  help="run in debug mode")
     parser.add_argument('--debugServer',
                                  help="remote debug Server")
-    parser.add_argument('--debugPort',type='int',
+    parser.add_argument('--debugPort',type=int,
                                  help="remote debug Port",default=5678)
     if parser.debugServer:
         import pydevd
