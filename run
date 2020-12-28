@@ -136,7 +136,7 @@ do
       shift
       ;;
     -s)
-      startServer "$debugServer" "$debugPort"s
+      startServer "$debugServer" "$debugPort"
       exit 0
       ;;
     *)
