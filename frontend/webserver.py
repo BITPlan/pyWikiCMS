@@ -70,9 +70,10 @@ if __name__ == '__main__':
                                  help="remote debug Server")
     parser.add_argument('--debugPort',type=int,
                                  help="remote debug Port",default=5678)
-    if parser.debugServer:
+    args=parser.parse_args()
+    if args.debugServer:
         import pydevd
-        pydevd.settrace(parser.debugServer, port=parser.debugPort,stdoutToServer=True, stderrToServer=True)
-    appWrap.debug=parser.debug
+        pydevd.settrace(args.debugServer, port=args.debugPort,stdoutToServer=True, stderrToServer=True)
+    appWrap.debug=args.debug
     appWrap.run()
     
