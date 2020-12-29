@@ -28,8 +28,9 @@ class TestWebServer(unittest.TestCase):
 
     def testWebServer(self):
         ''' test the WebServer '''
-        queries='/or/test','/or/{Illegal}'
+        queries=['/','/or/test','/or/{Illegal}']
         expected=[
+            "admin",
             "Frontend",
             "invalid char"
         ]

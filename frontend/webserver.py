@@ -30,7 +30,7 @@ class AppWrap:
         scriptdir=os.path.dirname(os.path.abspath(__file__))
         self.app = Flask(__name__,template_folder=scriptdir+'/../templates')
         self.frontends={}
-        self.enabledSites=[]
+        self.enabledSites=['admin']
     
     def enableSites(self,sites):
         '''
@@ -51,12 +51,16 @@ class AppWrap:
         if not site in self.enabledSites:
             error="access to site %s is not enabled you might want to add it via the --sites command line option" % site
         else:
-            if not site in self.frontends:
-                self.frontends[site]=Frontend(site)
-            
-            frontend=self.frontends[site]     
-            frontend.open()     
-            content,error=frontend.getContent(path);
+            if site=="admin":
+                error=None
+                content="admin site"
+            else:
+                if not site in self.frontends:
+                    self.frontends[site]=Frontend(site)
+                
+                frontend=self.frontends[site]     
+                frontend.open()     
+                content,error=frontend.getContent(path);
         return render_template('index.html',content=content,error=error)
        
     def run(self):
@@ -68,7 +72,7 @@ class AppWrap:
     
 appWrap=AppWrap()
 app=appWrap.app   
-@app.route('/', defaults={'path': ''})
+@app.route('/', defaults={'site':'admin','path': ''})
 @app.route('/<path:site>/<path:path>')
 def wrap(site,path):
     return appWrap.wrap(site,path)
