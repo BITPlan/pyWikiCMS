@@ -68,11 +68,17 @@ if __name__ == '__main__':
                                  help="run in debug mode")
     parser.add_argument('--debugServer',
                                  help="remote debug Server")
+    parser.add_argument('--debugPathMapping',nargs='+',help="remote debug Server path mapping - needs two arguments 1st: remotePath 2nd: local Path")
     parser.add_argument('--debugPort',type=int,
                                  help="remote debug Port",default=5678)
     args=parser.parse_args()
     if args.debugServer:
         import pydevd
+        if args.debugPathMapping:
+            if len(args.debugPathMapping)==2:
+                remotePath=args.debugPathMapping[0]
+                localPath=args.debugPathMapping[1]
+                os.environ["PATHS_FROM_ECLIPSE_TO_PYTHON"]='[["%s", "%s"]]' % (remotePath,localPath)
         pydevd.settrace(args.debugServer, port=args.debugPort,stdoutToServer=True, stderrToServer=True)
     appWrap.debug=args.debug
     appWrap.run()
