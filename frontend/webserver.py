@@ -79,6 +79,8 @@ if __name__ == '__main__':
                 remotePath=args.debugPathMapping[0]
                 localPath=args.debugPathMapping[1]
                 os.environ["PATHS_FROM_ECLIPSE_TO_PYTHON"]='[["%s", "%s"]]' % (remotePath,localPath)
+                print("trying to debug with PATHS_FROM_ECLIPSE_TO_PYTHON=%s" % os.environ["PATHS_FROM_ECLIPSE_TO_PYTHON"]);
+     
         pydevd.settrace(args.debugServer, port=args.debugPort,stdoutToServer=True, stderrToServer=True)
     appWrap.debug=args.debug
     appWrap.run()
