@@ -18,6 +18,16 @@ class Frontend(object):
         self.debug=debug
         self.defaultPage=defaultPage
         
+    def log(self,msg):
+        '''
+        log the given message if debugging is true
+        
+        Args:
+            msg(str): the message to log
+        '''
+        if self.debug:
+            print(msg,flush=True)
+        
     def open(self):
         '''
         open the frontend
@@ -50,8 +60,7 @@ class Frontend(object):
             str: None or an error message with the illegal chars being used
         '''
         error=None
-        if self.debug:
-            print (pagePath)
+        self.log(pagePath)
         illegalChars=['{','}','<','>','[',']','|']
         for illegalChar in illegalChars:
             if illegalChar in pagePath:
