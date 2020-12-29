@@ -153,7 +153,6 @@ do
       remotePath="$1"
       shift
       localPath="$1"
-      shift
       ;;
     -s)
       startServer "$debugServer" "$debugPort" "$remotePath" "$localPath"
