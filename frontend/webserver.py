@@ -74,7 +74,7 @@ if __name__ == '__main__':
     args=parser.parse_args()
     if args.debugServer:
         import pydevd
-        print (args.debugPathMapping)
+        print (args.debugPathMapping,flush=True)
         if args.debugPathMapping:
             if len(args.debugPathMapping)==2:
                 remotePath=args.debugPathMapping[0]
