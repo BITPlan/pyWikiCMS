@@ -6,6 +6,7 @@ Created on 27.07.2020
 from flask import Flask
 from frontend.WikiCMS import Frontend
 from flask import render_template
+from pydevd_file_utils import setup_client_server_paths
 import argparse
 import os
 
@@ -77,10 +78,14 @@ if __name__ == '__main__':
         print (args.debugPathMapping,flush=True)
         if args.debugPathMapping:
             if len(args.debugPathMapping)==2:
-                remotePath=args.debugPathMapping[0]
-                localPath=args.debugPathMapping[1]
-                os.environ["PATHS_FROM_ECLIPSE_TO_PYTHON"]='[["%s", "%s"]]' % (remotePath,localPath)
-                print("trying to debug with PATHS_FROM_ECLIPSE_TO_PYTHON=%s" % os.environ["PATHS_FROM_ECLIPSE_TO_PYTHON"]);
+                remotePath=args.debugPathMapping[0] # path on the remote debugger side
+                localPath=args.debugPathMapping[1]  # path on the local machine where the code runs
+                MY_PATHS_FROM_ECLIPSE_TO_PYTHON = [
+                    (remotePath, localPath),
+                ]
+                setup_client_server_paths(MY_PATHS_FROM_ECLIPSE_TO_PYTHON)
+                #os.environ["PATHS_FROM_ECLIPSE_TO_PYTHON"]='[["%s", "%s"]]' % (remotePath,localPath)
+                #print("trying to debug with PATHS_FROM_ECLIPSE_TO_PYTHON=%s" % os.environ["PATHS_FROM_ECLIPSE_TO_PYTHON"]);
      
         pydevd.settrace(args.debugServer, port=args.debugPort,stdoutToServer=True, stderrToServer=True)
     appWrap.debug=args.debug
