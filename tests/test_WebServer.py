@@ -16,9 +16,11 @@ class TestWebServer(unittest.TestCase):
         app.config['DEBUG'] = False
         self.app = app.test_client()
         #self.debug=True
-        
-        TestWikiCMS.getSMW_WikiUser('or')
- 
+        # make sure tests run in travis
+        sites=['or']
+        frontend.webserver.appWrap.enableSites(sites)
+        for wikiId in sites:
+            TestWikiCMS.getSMW_WikiUser(wikiId)
         pass
 
     def tearDown(self):

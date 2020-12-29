@@ -30,6 +30,15 @@ class AppWrap:
         scriptdir=os.path.dirname(os.path.abspath(__file__))
         self.app = Flask(__name__,template_folder=scriptdir+'/../templates')
         self.frontends={}
+        self.enabledSites=[]
+    
+    def enableSites(self,sites):
+        '''
+        enable the sites given in the sites list
+        Args:
+            sites(list): a list of strings with wikiIds to be enabled
+        '''
+        self.enabledSites.extend(sites)
         
     def wrap(self,site,path):
         '''
@@ -38,12 +47,16 @@ class AppWrap:
             site(str): the site to wrap
             path(path): the path to wrap
         '''
-        if not site in self.frontends:
-            self.frontends[site]=Frontend(site)
+        content=None
+        if not site in self.enabledSites:
+            error="access to site %s is not enabled you might want to add it via the --sites command line option" % site
+        else:
+            if not site in self.frontends:
+                self.frontends[site]=Frontend(site)
             
-        frontend=self.frontends[site]     
-        frontend.open()     
-        content,error=frontend.getContent(path);
+            frontend=self.frontends[site]     
+            frontend.open()     
+            content,error=frontend.getContent(path);
         return render_template('index.html',content=content,error=error)
        
     def run(self):
@@ -70,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('--debugPort',type=int,
                                  help="remote debug Port",default=5678)
     parser.add_argument('--debugPathMapping',nargs='+',help="remote debug Server path mapping - needs two arguments 1st: remotePath 2nd: local Path")
+    parser.add_argument('--sites',nargs='+',required=True,help="the sites to enable")
     args=parser.parse_args()
     if args.debugServer:
         import pydevd
@@ -87,5 +101,6 @@ if __name__ == '__main__':
      
         pydevd.settrace(args.debugServer, port=args.debugPort,stdoutToServer=True, stderrToServer=True)
     appWrap.debug=args.debug
+    appWrap.enableSites(args.sites)
     appWrap.run()
     
