@@ -40,6 +40,15 @@ class Frontend(object):
         
     
     def checkPath(self,pagePath):
+        '''
+        check the given pathPath
+        
+        Args:
+            pagePath(str): the page Path to check
+            
+        Returns:
+            str: None or an error message with the illegal chars being used
+        '''
         error=None
         if self.debug:
             print (pagePath)
