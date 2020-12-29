@@ -152,7 +152,7 @@ do
       fi
       remotePath="$1"
       shift
-      localPath="$2"
+      localPath="$1"
       shift
       ;;
     -s)
