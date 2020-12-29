@@ -14,7 +14,7 @@ class AppWrap:
     ''' Wrapper for Flask Web Application 
     '''
     
-    def __init__(self, wikiId='cr',host='0.0.0.0',port=8251,debug=False):
+    def __init__(self, host='0.0.0.0',port=8251,debug=False):
         '''
         constructor
         
@@ -27,27 +27,25 @@ class AppWrap:
         self.debug=debug
         self.port=port
         self.host=host    
-        self.wikiId=wikiId
         scriptdir=os.path.dirname(os.path.abspath(__file__))
         self.app = Flask(__name__,template_folder=scriptdir+'/../templates')
-        self.frontend=None
+        self.frontends={}
         
-    def wrap(self,route):
+    def wrap(self,site,path):
         '''
-        wrap the given route 
+        wrap the given path for the given site
+        Args:
+            site(str): the site to wrap
+            path(path): the path to wrap
         '''
-        if self.frontend is None:
-            self.initFrontend(self.wikiId)
-        content,error=self.frontend.getContent(route);
+        if not site in self.frontends:
+            self.frontends[site]=Frontend(site)
+            
+        frontend=self.frontends[site]     
+        frontend.open()     
+        content,error=frontend.getContent(path);
         return render_template('index.html',content=content,error=error)
-
-    def initFrontend(self,wikiId):
-        '''
-        initialize the frontend for the given wikiId
-        '''
-        self.frontend=Frontend(wikiId)
-        self.frontend.open()
-        
+       
     def run(self):
         '''
         start the flask webserver
@@ -58,9 +56,9 @@ class AppWrap:
 appWrap=AppWrap()
 app=appWrap.app   
 @app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def wrap(path):
-    return appWrap.wrap(path)
+@app.route('/<path:site>/<path:path>')
+def wrap(site,path):
+    return appWrap.wrap(site,path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Wiki Content Management webservice")

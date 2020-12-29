@@ -17,6 +17,7 @@ class Frontend(object):
         self.wikiId=wikiId
         self.debug=debug
         self.defaultPage=defaultPage
+        self.wikiclient=None
         
     def log(self,msg):
         '''
@@ -32,7 +33,8 @@ class Frontend(object):
         '''
         open the frontend
         '''
-        self.wikiclient=WikiClient.ofWikiId(self.wikiId)
+        if self.wikiclient is None:
+            self.wikiclient=WikiClient.ofWikiId(self.wikiId)
         
     def errMsg(self,ex):
         if self.debug:
