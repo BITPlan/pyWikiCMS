@@ -4,7 +4,7 @@ Created on 2020-12-30
 @author: wf
 '''
 from flask import Flask
-from frontend.wikicms import Frontend
+from frontend.wikicms import Frontend, Frontends
 from flask import render_template
 import os
 
@@ -28,7 +28,8 @@ class AppWrap:
         self.host=host    
         scriptdir=os.path.dirname(os.path.abspath(__file__))
         self.app = Flask(__name__,template_folder=scriptdir+'/../templates')
-        self.frontends={}
+        self.frontends=Frontends()
+        self.frontends.load()
         self.enabledSites=['admin']
         
     @staticmethod
@@ -60,7 +61,7 @@ class AppWrap:
         for site in sites:
             frontend=Frontend(site)
             frontend.open()
-            self.frontends[site]=frontend
+            self.frontends.enable(frontend)
             self.enabledSites.append(site)
         
     def wrap(self,site,path):
@@ -78,7 +79,7 @@ class AppWrap:
                 error=None
                 content="admin site"
             else:
-                frontend=self.frontends[site]     
+                frontend=self.frontends.get(site) 
                 content,error=frontend.getContent(path);
         return render_template('index.html',content=content,error=error)
        

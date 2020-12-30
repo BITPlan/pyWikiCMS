@@ -11,3 +11,5 @@ pywikibot>=5.3.0
 pycrypto
 #https://pypi.org/project/pydevd/
 pydevd
+# https://pypi.org/project/pylodstorage/
+pylodstorage

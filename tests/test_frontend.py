@@ -15,10 +15,9 @@ class TestFrontend(unittest.TestCase):
         self.debug=False
         pass
 
-
     def tearDown(self):
         pass
-
+    
 
     def testWikiPage(self):
         '''

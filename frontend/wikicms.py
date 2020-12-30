@@ -4,7 +4,60 @@ Created on 27.07.2020
 @author: wf
 '''
 from wikibot.wikiclient import WikiClient
+from lodstorage.jsonable import JSONAble
 import traceback
+from pathlib import Path
+from os.path import isdir
+from os import makedirs
+
+class Frontends(JSONAble):
+    homePath=None
+    '''
+    manager for the available frontends
+    '''
+    def __init__(self):
+        self.frontendConfigs=None
+        self.frontends={}
+        if Frontends.homePath is None:
+            self.homePath = str(Path.home())
+        else:
+            self.homePath=Frontends.homePath
+            
+    def enable(self,frontend):
+        if self.frontendConfigs is None:
+            raise Exception('Not frontend configurations loaded yet')
+        wikiId=frontend.wikiId
+        if wikiId not in self.frontendConfigLookup:
+            raise Exception('frontend for %s not configured yet' % wikiId)
+        self.frontends[wikiId]=frontend
+        config=self.frontendConfigLookup[wikiId]
+        frontend.defaultPage=config['defaultPage']
+        frontend.template=config['template']
+        
+    def get(self,wikiId):
+        return self.frontends[wikiId]
+        
+            
+    def load(self):
+        storePath=self.getStorePath()
+        self.restoreFromJsonFile(storePath)
+        self.frontendConfigLookup={}
+        for config in self.frontendConfigs:
+            wikiId=config["wikiId"]
+            self.frontendConfigLookup[wikiId]=config
+        pass
+        
+    def getStorePath(self,prefix="frontendConfigs"):
+        iniPath=self.homePath+"/.wikicms"
+        if not isdir(iniPath):
+            makedirs(iniPath)
+        storePath="%s/%s" % (iniPath,prefix)
+        return storePath
+         
+    def store(self):
+        if self.frontends is not None:
+            storePath=self.getStorePath()
+            self.storeToJsonFile(storePath,"frontendConfigs")
 
 class Frontend(object):
     '''

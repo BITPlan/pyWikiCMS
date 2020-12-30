@@ -4,29 +4,51 @@ Created on 2020-07-11
 @author: wf
 '''
 import unittest
-import frontend.webserver 
+from frontend.wikicms import Frontends
 from frontend.app import AppWrap
 from tests.test_wikicms import TestWikiCMS
+
 class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
+        Frontends.homePath="/tmp"
+        self.initFrontends()
+        # make sure tests run in travis
+        sites=['or','cr']
+        # make sure ini file is available
+        for wikiId in sites:
+            TestWikiCMS.getSMW_WikiUser(wikiId)
+            
+        import frontend.webserver 
         app=frontend.webserver.app
         app.config['TESTING'] = True
         app.config['WTF_CSRF_ENABLED'] = False
         app.config['DEBUG'] = False
         self.app = app.test_client()
         self.debug=False
-        # make sure tests run in travis
-        sites=['or']
-        # make sure ini file is available
-        for wikiId in sites:
-            TestWikiCMS.getSMW_WikiUser(wikiId)
         frontend.webserver.appWrap.enableSites(sites)
         pass
 
     def tearDown(self):
         pass
+    
+    def initFrontends(self):
+        frontends=Frontends()
+        frontends.frontendConfigs=[
+            {
+             'wikiId':'or', 
+             'template':'bootstrap.html',
+             'defaultPage':'Frontend'
+            },
+            {
+             'wikiId':'cr', 
+             'template':'bootstrap.html',
+             'defaultPage':'Main Page'
+            }
+        ]
+        frontends.store()
+        frontends.load()
     
     def testSplit(self):
         '''
