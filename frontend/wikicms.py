@@ -51,7 +51,6 @@ class Frontends(JSONAble):
             Frontend: the frontend for this wikiId
         '''
         return self.frontends[wikiId]
-        
             
     def load(self):
         '''
