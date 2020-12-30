@@ -81,7 +81,7 @@ class AppWrap:
             else:
                 frontend=self.frontends.get(site) 
                 content,error=frontend.getContent(path);
-        return render_template('index.html',content=content,error=error)
+        return render_template(frontend.template,content=content,error=error)
        
     def run(self):
         '''
