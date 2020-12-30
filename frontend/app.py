@@ -63,6 +63,16 @@ class AppWrap:
             frontend.open()
             self.frontends.enable(frontend)
             self.enabledSites.append(site)
+            
+    def admin(self):
+        '''
+        render the admin view
+        
+        Returns:
+            str: the html for the admin view
+        '''
+        html=render_template("tableview.html",dictList=self.frontends.frontendConfigs)
+        return html
         
     def wrap(self,site,path):
         '''
@@ -75,15 +85,10 @@ class AppWrap:
         if not site in self.enabledSites:
             error="access to site '%s' is not enabled you might want to add it via the --sites command line option" % site
         else:
-            if site=="admin":
-                error=None
-                content="admin site"
-                template="bootstrap.html"
-            else:
-                frontend=self.frontends.get(site) 
-                content,error=frontend.getContent(path);
-                template=frontend.template
-        return render_template(template,content=content,error=error)
+            frontend=self.frontends.get(site) 
+            title,content,error=frontend.getContent(path);
+            template=frontend.template
+        return render_template(template,title=title,content=content,error=error)
        
     def run(self):
         '''

@@ -167,6 +167,7 @@ class Frontend(object):
         '''
         content=None
         error=None
+        pageTitle="?"
         try:
             if pagePath=="/":
                 pageTitle=self.defaultPage
@@ -177,5 +178,5 @@ class Frontend(object):
                 content=self.wikiclient.getHtml(pageTitle)
         except Exception as e:
             error=self.errMsg(e)
-        return content,error
+        return pageTitle,content,error
         

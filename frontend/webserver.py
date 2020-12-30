@@ -10,7 +10,10 @@ from frontend.app import AppWrap
     
 appWrap=AppWrap()
 app=appWrap.app   
-@app.route('/', defaults={'path': 'admin/'})
+@app.route('/')
+def admin():
+    return appWrap.admin()
+    
 @app.route('/<path:path>')
 def wrap(path):
     '''

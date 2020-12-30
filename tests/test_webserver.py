@@ -81,7 +81,8 @@ class TestWebServer(unittest.TestCase):
             html=response.data.decode()
             if self.debug:
                 print(html)
-            self.assertTrue(expected[i] in html)
+            ehtml=expected[i]
+            self.assertTrue(ehtml,ehtml in html)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
