@@ -93,7 +93,7 @@ class Frontend(object):
         content=None
         error=None
         try:
-            if pagePath=="":
+            if pagePath=="/":
                 pageTitle=self.defaultPage
             else:
                 error=self.checkPath(pagePath)
