@@ -82,6 +82,7 @@ class AppWrap:
             path(path): the path to wrap
         '''
         content=None
+        template="index.html"
         if not site in self.enabledSites:
             error="access to site '%s' is not enabled you might want to add it via the --sites command line option" % site
         else:
