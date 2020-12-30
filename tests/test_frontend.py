@@ -4,12 +4,15 @@ Created on 2020-12-27
 @author: wf
 '''
 import unittest
-from frontend.WikiCMS import Frontend
+from frontend.wikicms import Frontend
 
 class TestFrontend(unittest.TestCase):
-
+    '''
+    test the frontend
+    '''
 
     def setUp(self):
+        self.debug=False
         pass
 
 

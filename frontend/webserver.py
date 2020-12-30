@@ -3,78 +3,23 @@ Created on 27.07.2020
 
 @author: wf
 '''
-from flask import Flask
-from frontend.WikiCMS import Frontend
-from flask import render_template
+
 from pydevd_file_utils import setup_client_server_paths
 import argparse
-import os
-
-class AppWrap:
-    ''' Wrapper for Flask Web Application 
-    '''
-    
-    def __init__(self, host='0.0.0.0',port=8251,debug=False):
-        '''
-        constructor
-        
-        Args:
-            wikiId(str): id of the wiki to use as a CMS backend
-            host(str): flask host
-            port(int): the port to use for http connections
-            debug(bool): True if debugging should be switched on
-        '''
-        self.debug=debug
-        self.port=port
-        self.host=host    
-        scriptdir=os.path.dirname(os.path.abspath(__file__))
-        self.app = Flask(__name__,template_folder=scriptdir+'/../templates')
-        self.frontends={}
-        self.enabledSites=['admin']
-    
-    def enableSites(self,sites):
-        '''
-        enable the sites given in the sites list
-        Args:
-            sites(list): a list of strings with wikiIds to be enabled
-        '''
-        self.enabledSites.extend(sites)
-        
-    def wrap(self,site,path):
-        '''
-        wrap the given path for the given site
-        Args:
-            site(str): the site to wrap
-            path(path): the path to wrap
-        '''
-        content=None
-        if not site in self.enabledSites:
-            error="access to site %s is not enabled you might want to add it via the --sites command line option" % site
-        else:
-            if site=="admin":
-                error=None
-                content="admin site"
-            else:
-                if not site in self.frontends:
-                    self.frontends[site]=Frontend(site)
-                
-                frontend=self.frontends[site]     
-                frontend.open()     
-                content,error=frontend.getContent(path);
-        return render_template('index.html',content=content,error=error)
-       
-    def run(self):
-        '''
-        start the flask webserver
-        '''
-        self.app.run(debug=self.debug,port=self.port,host=self.host)   
-        pass
+from frontend.app import AppWrap
     
 appWrap=AppWrap()
 app=appWrap.app   
-@app.route('/', defaults={'site':'admin','path': ''})
-@app.route('/<path:site>/<path:path>')
-def wrap(site,path):
+@app.route('/', defaults={'path': 'admin/'})
+@app.route('/<path:path>')
+def wrap(path):
+    '''
+    wrap the url request for the given path
+    
+    Args:
+        path(str): the path to wrap - the path should start with /<wikiId>/ followed by the actual path in the wiki
+    '''
+    site,path=AppWrap.splitPath(path)
     return appWrap.wrap(site,path)
 
 if __name__ == '__main__':

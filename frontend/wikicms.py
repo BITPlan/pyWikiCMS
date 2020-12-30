@@ -13,6 +13,9 @@ class Frontend(object):
     def __init__(self, wikiId,defaultPage="Main Page", debug=False):
         '''
         Constructor
+        Args:
+            wikiId(str): the id of the wiki this frontend is for
+            defaultPage(str): the default page of this frontend
         '''
         self.wikiId=wikiId
         self.debug=debug
@@ -44,6 +47,14 @@ class Frontend(object):
         return msg
     
     def wikiPage(self,pagePath):
+        '''
+        get the wikiPage for the given pagePath
+        
+        Args:
+            pagePath(str): the page path
+        Returns:
+            str: the pageTitle
+        '''
         if "/index.php/" in pagePath:
             wikipage=pagePath.replace("/index.php/","")
         else:
@@ -70,17 +81,23 @@ class Frontend(object):
         return error;
             
     def getContent(self,pagePath):
-        ''' get the content for the given pagePath '''
+        ''' get the content for the given pagePath 
+        Args:
+            pagePath(str): the page Pageh
+        Returns:
+            str: the HTML content for the given path
+        '''
         content=None
-        error=self.checkPath(pagePath)
-        if error is None:
-            try:
-                if pagePath=="":
-                    pageTitle=self.defaultPage
-                else:
-                    pageTitle=self.wikiPage(pagePath)
+        error=None
+        try:
+            if pagePath=="":
+                pageTitle=self.defaultPage
+            else:
+                error=self.checkPath(pagePath)
+            if error is None:
+                pageTitle=self.wikiPage(pagePath)
                 content=self.wikiclient.getHtml(pageTitle)
-            except Exception as e:
-                error=self.errMsg(e)
+        except Exception as e:
+            error=self.errMsg(e)
         return content,error
         
