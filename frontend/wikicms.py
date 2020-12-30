@@ -95,8 +95,8 @@ class Frontend(object):
                 pageTitle=self.defaultPage
             else:
                 error=self.checkPath(pagePath)
-            if error is None:
                 pageTitle=self.wikiPage(pagePath)
+            if error is None:
                 content=self.wikiclient.getHtml(pageTitle)
         except Exception as e:
             error=self.errMsg(e)
