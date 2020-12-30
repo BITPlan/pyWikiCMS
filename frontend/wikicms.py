@@ -43,6 +43,7 @@ class Frontends(JSONAble):
         config=self.frontendConfigLookup[wikiId]
         frontend.defaultPage=config['defaultPage']
         frontend.template=config['template']
+        pass
         
     def get(self,wikiId):
         '''
