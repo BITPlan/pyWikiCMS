@@ -38,6 +38,7 @@ class Frontend(object):
         '''
         if self.wikiclient is None:
             self.wikiclient=WikiClient.ofWikiId(self.wikiId)
+            self.wikiclient.login()
         
     def errMsg(self,ex):
         if self.debug:
