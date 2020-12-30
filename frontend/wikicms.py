@@ -24,6 +24,12 @@ class Frontends(JSONAble):
             self.homePath=Frontends.homePath
             
     def enable(self,frontend):
+        '''
+        enable the given frontend
+        
+        Args:
+            frontend(Frontend): the frontend to enable
+        '''
         if self.frontendConfigs is None:
             raise Exception('Not frontend configurations loaded yet')
         wikiId=frontend.wikiId
@@ -35,10 +41,22 @@ class Frontends(JSONAble):
         frontend.template=config['template']
         
     def get(self,wikiId):
+        '''
+        get the frontend for the given wikiid
+        
+        Args:
+            wikiId(str): the wikiId to get the frontend for
+        
+        Returns:
+            Frontend: the frontend for this wikiId
+        '''
         return self.frontends[wikiId]
         
             
     def load(self):
+        '''
+        load my front end configurations
+        '''
         storePath=self.getStorePath()
         self.restoreFromJsonFile(storePath)
         self.frontendConfigLookup={}
