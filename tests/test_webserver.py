@@ -19,9 +19,10 @@ class TestWebServer(unittest.TestCase):
         self.debug=False
         # make sure tests run in travis
         sites=['or']
-        frontend.webserver.appWrap.enableSites(sites)
+        # make sure ini file is available
         for wikiId in sites:
             TestWikiCMS.getSMW_WikiUser(wikiId)
+        frontend.webserver.appWrap.enableSites(sites)
         pass
 
     def tearDown(self):
