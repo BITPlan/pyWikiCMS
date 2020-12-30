@@ -59,7 +59,11 @@ class AppWrap:
         Args:
             sites(list): a list of strings with wikiIds to be enabled
         '''
-        self.enabledSites.extend(sites)
+        for site in sites:
+            frontend=Frontend(site)
+            frontend.open()
+            self.frontends[site]=frontend
+            self.enabledSites.append(site)
         
     def wrap(self,site,path):
         '''
@@ -76,11 +80,7 @@ class AppWrap:
                 error=None
                 content="admin site"
             else:
-                if not site in self.frontends:
-                    self.frontends[site]=Frontend(site)
-                
                 frontend=self.frontends[site]     
-                frontend.open()     
                 content,error=frontend.getContent(path);
         return render_template('index.html',content=content,error=error)
        
