@@ -36,13 +36,15 @@ class Frontends(JSONAble):
         '''
         if self.frontendConfigs is None:
             raise Exception('Not frontend configurations loaded yet')
-        wikiId=frontend.wikiId
-        if wikiId not in self.frontendConfigLookup:
-            raise Exception('frontend for %s not configured yet' % wikiId)
-        self.frontends[wikiId]=frontend
-        config=self.frontendConfigLookup[wikiId]
+        site=frontend.site
+        if site not in self.frontendConfigLookup:
+            raise Exception('frontend for site %s not configured yet' % site)
+        self.frontends[site]=frontend
+        config=self.frontendConfigLookup[site]
+        frontend.wikiId=config['wikiId']
         frontend.defaultPage=config['defaultPage']
         frontend.template=config['template']
+        frontend.open()
         pass
         
     def get(self,wikiId):
@@ -65,8 +67,8 @@ class Frontends(JSONAble):
         self.restoreFromJsonFile(storePath)
         self.reinit()
         for config in self.frontendConfigs:
-            wikiId=config["wikiId"]
-            self.frontendConfigLookup[wikiId]=config
+            site=config["site"]
+            self.frontendConfigLookup[site]=config
         pass
         
     def getStorePath(self,prefix="frontendConfigs"):
@@ -85,14 +87,14 @@ class Frontend(object):
     '''
     Wiki Content Management System Frontend
     '''
-    def __init__(self, wikiId,defaultPage="Main Page", debug=False):
+    def __init__(self, site,defaultPage="Main Page", debug=False):
         '''
         Constructor
         Args:
-            wikiId(str): the id of the wiki this frontend is for
+            site(str): the id of the site this frontend is for
             defaultPage(str): the default page of this frontend
         '''
-        self.wikiId=wikiId
+        self.site=site
         self.debug=debug
         self.defaultPage=defaultPage
         self.wikiclient=None

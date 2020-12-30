@@ -37,11 +37,13 @@ class TestWebServer(unittest.TestCase):
         frontends=Frontends()
         frontends.frontendConfigs=[
             {
+             'site':'or',
              'wikiId':'or', 
              'template':'bootstrap.html',
              'defaultPage':'Frontend'
             },
             {
+             'site': 'cr',
              'wikiId':'cr', 
              'template':'bootstrap.html',
              'defaultPage':'Main Page'

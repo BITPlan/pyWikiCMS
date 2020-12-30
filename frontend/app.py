@@ -60,7 +60,6 @@ class AppWrap:
         '''
         for site in sites:
             frontend=Frontend(site)
-            frontend.open()
             self.frontends.enable(frontend)
             self.enabledSites.append(site)
             
