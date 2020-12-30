@@ -47,10 +47,8 @@ class AppWrap:
             site=parts[0]
         path=""
         if len(parts)>1:
-            delim=""
             for part in parts[1:]:
-                path=path+"%s%s" % (delim,part)
-                delim="/"
+                path=path+"/%s" % (part)
         return site,path    
     
     def enableSites(self,sites):

@@ -32,7 +32,7 @@ class TestWebServer(unittest.TestCase):
         test splitting the path into site an path
         '''
         paths=['admin/','or/test']
-        expected=[('admin',''),('or','test')]
+        expected=[('admin','/'),('or','/test')]
         for i,testpath in enumerate(paths):
             site,path=AppWrap.splitPath(testpath)
             if self.debug:

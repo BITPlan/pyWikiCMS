@@ -58,6 +58,8 @@ class Frontend(object):
         '''
         if "/index.php/" in pagePath:
             wikipage=pagePath.replace("/index.php/","")
+        elif pagePath.startswith("/"):
+            wikipage=pagePath[1:]    
         else:
             wikipage=pagePath
         return wikipage
