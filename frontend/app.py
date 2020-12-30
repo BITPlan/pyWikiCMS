@@ -78,10 +78,12 @@ class AppWrap:
             if site=="admin":
                 error=None
                 content="admin site"
+                template="bootstrap.html"
             else:
                 frontend=self.frontends.get(site) 
                 content,error=frontend.getContent(path);
-        return render_template(frontend.template,content=content,error=error)
+                template=frontend.template
+        return render_template(template,content=content,error=error)
        
     def run(self):
         '''
