@@ -17,7 +17,11 @@ class Frontends(JSONAble):
     '''
     def __init__(self):
         self.frontendConfigs=None
+        self.reinit()
+        
+    def reinit(self):
         self.frontends={}
+        self.frontendConfigLookup={}
         if Frontends.homePath is None:
             self.homePath = str(Path.home())
         else:
@@ -58,7 +62,7 @@ class Frontends(JSONAble):
         '''
         storePath=self.getStorePath()
         self.restoreFromJsonFile(storePath)
-        self.frontendConfigLookup={}
+        self.reinit()
         for config in self.frontendConfigs:
             wikiId=config["wikiId"]
             self.frontendConfigLookup[wikiId]=config
