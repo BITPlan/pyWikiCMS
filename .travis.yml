@@ -23,5 +23,5 @@ install:
 # command to run tests
 script:
   # command to install dependencies
-  - ./install
-  - ./test
+  - scripts/install
+  - scripts/test
