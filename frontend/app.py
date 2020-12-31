@@ -7,6 +7,7 @@ from flask import Flask
 from frontend.wikicms import Frontend, Frontends
 from flask import render_template
 import os
+from wikibot.wikiuser import WikiUser
 
 class AppWrap:
     ''' 
@@ -63,7 +64,7 @@ class AppWrap:
             self.frontends.enable(frontend)
             self.enabledSites.append(site)
             
-    def admin(self):
+    def admin(self)->str:
         '''
         render the admin view
         
@@ -72,6 +73,25 @@ class AppWrap:
         '''
         html=render_template("tableview.html",title="Sites",dictList=self.frontends.frontendConfigs)
         return html
+    
+    def wikis(self)->str:
+        '''
+        render the wikis table
+        
+        Returns:
+            str: the html code for the table of wikis
+        '''
+        wikiUsers=WikiUser.getWikiUsers()
+        dictList=[]
+        for wikiUser in wikiUsers.values():
+            dictList.append({
+                'wikiId': wikiUser.wikiId,
+                'url':wikiUser.url,
+                'scriptPath':wikiUser.scriptPath,
+                'version':wikiUser.version
+            })
+        html=render_template("tableview.html",title="Wikis",dictList=dictList)
+        return html    
         
     def wrap(self,siteName,path):
         '''

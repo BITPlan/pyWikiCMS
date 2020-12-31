@@ -13,6 +13,10 @@ app=appWrap.app
 @app.route('/')
 def admin():
     return appWrap.admin()
+
+@app.route('/wikis')
+def wikis():
+    return appWrap.wikis()
     
 @app.route('/<path:path>')
 def wrap(path):

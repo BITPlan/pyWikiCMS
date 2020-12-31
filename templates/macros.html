@@ -32,10 +32,10 @@
 {%- endmacro %}    
 {# table for dict list #}
 {% macro table4DictList(dictList) -%}
-<table class="table table-bordered table-hover thead-light">
+<table class="table table-bordered table-hover">
   <!-- table header -->
   {% if dictList %}
-  <thead>
+  <thead class="thead-light">
   	<tr>
   		<th>#</th>
     	{% for key in dictList[0] %}
