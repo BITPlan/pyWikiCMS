@@ -44,7 +44,8 @@ class TestWikiCMS(unittest.TestCase):
                 wikiUser=WikiUser.ofDict(wikiDict, lenient=True)
                 user=getpass.getuser()
                 print("user is: %s" % user)
-                if user=="travis":
+                # check the continuous integration users
+                if user=="travis" or user=="runner":
                     wikiUser.save()
         else: 
             wikiUser=WikiUser.ofWikiId(wikiId,lenient=True)
