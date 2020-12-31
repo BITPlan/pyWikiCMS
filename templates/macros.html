@@ -45,9 +45,9 @@
   <thead>
   <tbody>	
     <!-- table rows -->
-    {% for i,dict_item in enumerate(dictList) %}
+    {% for dict_item in dictList %}
     <tr>
-       <td> {{i}} </td>
+       <td> {{loop.counter}} </td>
        {% for value in dict_item.values() %}
        <td> {{ value }} </td>
        {% endfor %}
