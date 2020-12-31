@@ -47,7 +47,7 @@
     <!-- table rows -->
     {% for dict_item in dictList %}
     <tr>
-       <td> {{loop.counter}} </td>
+       <td> {{loop.index}} </td>
        {% for value in dict_item.values() %}
        <td> {{ value }} </td>
        {% endfor %}
