@@ -4,6 +4,7 @@ Created on 27.07.2020
 @author: wf
 '''
 from wikibot.wikiclient import WikiClient
+from frontend.site import Site
 from lodstorage.jsonable import JSONAble
 import traceback
 from pathlib import Path
@@ -21,7 +22,7 @@ class Frontends(JSONAble):
         
     def reinit(self):
         self.frontends={}
-        self.frontendConfigLookup={}
+        self.siteLookup={}
         if Frontends.homePath is None:
             self.homePath = str(Path.home())
         else:
@@ -37,13 +38,11 @@ class Frontends(JSONAble):
         if self.frontendConfigs is None:
             raise Exception('Not frontend configurations loaded yet')
         site=frontend.site
-        if site not in self.frontendConfigLookup:
+        if site.name not in self.siteLookup:
             raise Exception('frontend for site %s not configured yet' % site)
-        self.frontends[site]=frontend
-        config=self.frontendConfigLookup[site]
-        frontend.wikiId=config['wikiId']
-        frontend.defaultPage=config['defaultPage']
-        frontend.template=config['template']
+        self.frontends[site.name]=frontend
+        config=self.siteLookup[site.name]
+        site.configure(config)
         frontend.open()
         pass
         
@@ -68,7 +67,7 @@ class Frontends(JSONAble):
         self.reinit()
         for config in self.frontendConfigs:
             site=config["site"]
-            self.frontendConfigLookup[site]=config
+            self.siteLookup[site]=config
         pass
         
     def getStorePath(self,prefix="frontendConfigs"):
@@ -87,16 +86,15 @@ class Frontend(object):
     '''
     Wiki Content Management System Frontend
     '''
-    def __init__(self, site,defaultPage="Main Page", debug=False):
+    def __init__(self, siteName,debug=False):
         '''
         Constructor
         Args:
-            site(str): the id of the site this frontend is for
+            siteName(str): the name of the site this frontend is for
             defaultPage(str): the default page of this frontend
         '''
-        self.site=site
+        self.site=Site(siteName)
         self.debug=debug
-        self.defaultPage=defaultPage
         self.wikiclient=None
         
     def log(self,msg):
@@ -114,7 +112,7 @@ class Frontend(object):
         open the frontend
         '''
         if self.wikiclient is None:
-            self.wikiclient=WikiClient.ofWikiId(self.wikiId)
+            self.wikiclient=WikiClient.ofWikiId(self.site.wikiId)
             #self.wikiclient.login()
         
     def errMsg(self,ex):

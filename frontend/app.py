@@ -73,22 +73,22 @@ class AppWrap:
         html=render_template("tableview.html",dictList=self.frontends.frontendConfigs)
         return html
         
-    def wrap(self,site,path):
+    def wrap(self,siteName,path):
         '''
         wrap the given path for the given site
         Args:
-            site(str): the site to wrap
+            siteName(str): the name of the site to wrap
             path(path): the path to wrap
         '''
         content=None
         template="index.html"
         title="Error"
-        if not site in self.enabledSites:
-            error="access to site '%s' is not enabled you might want to add it via the --sites command line option" % site
+        if not siteName in self.enabledSites:
+            error="access to site '%s' is not enabled you might want to add it via the --sites command line option" % siteName
         else:
-            frontend=self.frontends.get(site) 
+            frontend=self.frontends.get(siteName) 
             title,content,error=frontend.getContent(path);
-            template=frontend.template
+            template=frontend.site.template
         return render_template(template,title=title,content=content,error=error)
        
     def run(self):
