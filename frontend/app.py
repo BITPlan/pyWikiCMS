@@ -70,7 +70,7 @@ class AppWrap:
         Returns:
             str: the html for the admin view
         '''
-        html=render_template("tableview.html",dictList=self.frontends.frontendConfigs)
+        html=render_template("tableview.html",title="Sites",dictList=self.frontends.frontendConfigs)
         return html
         
     def wrap(self,siteName,path):
