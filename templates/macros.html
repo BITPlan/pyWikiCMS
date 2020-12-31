@@ -32,23 +32,28 @@
 {%- endmacro %}    
 {# table for dict list #}
 {% macro table4DictList(dictList) -%}
-<table style="width:100%" class="table table-bordered table-hover">
+<table class="table table-bordered table-hover thead-light">
   <!-- table header -->
   {% if dictList %}
-  <tr>
-     {% for key in dictList[0] %}
-     <th> {{ key }} </th>
-     {% endfor %}
-  </tr>
+  <thead>
+  	<tr>
+  		<th>#</th>
+    	{% for key in dictList[0] %}
+    	<th> {{ key }} </th>
+    	{% endfor %}
+ 	</tr>
+  <thead>
+  <tbody>	
+    <!-- table rows -->
+    {% for i,dict_item in enumerate(dictList) %}
+    <tr>
+       <td> {{i}} </td>
+       {% for value in dict_item.values() %}
+       <td> {{ value }} </td>
+       {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>  
   {% endif %}
-
-  <!-- table rows -->
-  {% for dict_item in dictList %}
-  <tr>
-     {% for value in dict_item.values() %}
-     <td> {{ value }} </td>
-     {% endfor %}
-  </tr>
-  {% endfor %}
 </table>
 {%- endmacro %}
