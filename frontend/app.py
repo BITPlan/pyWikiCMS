@@ -8,6 +8,7 @@ from frontend.wikicms import Frontend, Frontends
 from flask import render_template
 import os
 from wikibot.wikiuser import WikiUser
+from builtins import None
 
 class AppWrap:
     ''' 
@@ -59,6 +60,8 @@ class AppWrap:
         Args:
             sites(list): a list of strings with wikiIds to be enabled
         '''
+        if sites is None:
+            return
         for site in sites:
             frontend=Frontend(site)
             self.frontends.enable(frontend)
