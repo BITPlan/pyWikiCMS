@@ -8,7 +8,6 @@ from frontend.wikicms import Frontend, Frontends
 from flask import render_template
 import os
 from wikibot.wikiuser import WikiUser
-from builtins import None
 
 class AppWrap:
     ''' 
