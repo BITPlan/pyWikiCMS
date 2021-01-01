@@ -17,6 +17,10 @@ def admin():
 @app.route('/wikis')
 def wikis():
     return appWrap.wikis()
+
+@app.route('/family')
+def family():
+    return appWrap.family()
     
 @app.route('/<path:path>')
 def wrap(path):

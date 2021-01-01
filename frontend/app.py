@@ -5,6 +5,7 @@ Created on 2020-12-30
 '''
 from flask import Flask
 from frontend.wikicms import Frontend, Frontends
+from frontend.family import LocalWiki
 from flask import render_template
 import os
 from wikibot.wikiuser import WikiUser
@@ -94,6 +95,21 @@ class AppWrap:
             })
         html=render_template("tableview.html",title="Wikis",dictList=dictList)
         return html    
+    
+    def family(self)->str:
+        '''
+        show a html representation of the family of wikis on this server (if any)
+        '''
+        dictList=[]
+        family=LocalWiki.getFamily()
+        for siteName in family:
+            localWiki=family[siteName]
+            dictList.append({
+                'site': localWiki.siteName,
+                'logo': localWiki.logo
+            })
+        html=render_template("tableview.html",title="Wiki Family",dictList=dictList)
+        return html
         
     def wrap(self,siteName,path):
         '''
