@@ -38,7 +38,7 @@ class Frontends(JSONAble):
             frontend(Frontend): the frontend to enable
         '''
         if self.frontendConfigs is None:
-            raise Exception('Not frontend configurations loaded yet')
+            raise Exception('No frontend configurations loaded yet')
         site=frontend.site
         if site.name not in self.siteLookup:
             raise Exception('frontend for site %s not configured yet' % site)
@@ -65,7 +65,7 @@ class Frontends(JSONAble):
         load my front end configurations
         '''
         storePath=self.getStorePath()
-        if os.path.isfile(storePath):
+        if os.path.isfile(storePath+".json"):
             self.restoreFromJsonFile(storePath)
             self.reinit()
             for config in self.frontendConfigs:

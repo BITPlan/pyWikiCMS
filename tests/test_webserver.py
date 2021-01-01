@@ -34,6 +34,9 @@ class TestWebServer(unittest.TestCase):
         pass
     
     def initFrontends(self):
+        '''
+        initialize the given frontends
+        '''
         frontends=Frontends()
         frontends.frontendConfigs=[
             {
