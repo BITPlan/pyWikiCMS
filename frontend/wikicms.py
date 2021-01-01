@@ -1,5 +1,5 @@
 '''
-Created on 27.07.2020
+Created on 2020-07-27
 
 @author: wf
 '''
@@ -8,10 +8,12 @@ from frontend.site import Site
 from lodstorage.jsonable import JSONAble
 import traceback
 from pathlib import Path
-from os.path import isdir
-from os import makedirs
+import os
 
 class Frontends(JSONAble):
+    '''
+    manager for the wiki frontends
+    '''
     homePath=None
     '''
     manager for the available frontends
@@ -63,17 +65,18 @@ class Frontends(JSONAble):
         load my front end configurations
         '''
         storePath=self.getStorePath()
-        self.restoreFromJsonFile(storePath)
-        self.reinit()
-        for config in self.frontendConfigs:
-            site=config["site"]
-            self.siteLookup[site]=config
+        if os.path.isfile(storePath):
+            self.restoreFromJsonFile(storePath)
+            self.reinit()
+            for config in self.frontendConfigs:
+                site=config["site"]
+                self.siteLookup[site]=config
         pass
         
     def getStorePath(self,prefix="frontendConfigs"):
         iniPath=self.homePath+"/.wikicms"
-        if not isdir(iniPath):
-            makedirs(iniPath)
+        if not os.path.isdir(iniPath):
+            os.makedirs(iniPath)
         storePath="%s/%s" % (iniPath,prefix)
         return storePath
          
