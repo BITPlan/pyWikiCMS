@@ -39,7 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('--debugPort',type=int,
                                  help="remote debug Port",default=5678)
     parser.add_argument('--debugPathMapping',nargs='+',help="remote debug Server path mapping - needs two arguments 1st: remotePath 2nd: local Path")
-    parser.add_argument('--sites',nargs='+',required=True,help="the sites to enable")
+    parser.add_argument('--sites',nargs='+',required=False,help="the sites to enable")
     args=parser.parse_args()
     if args.debugServer:
         import pydevd
