@@ -39,7 +39,7 @@ class TestWikiCMS(unittest.TestCase):
             elif wikiId=="or":
                 wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.openresearch.org","scriptPath":"/mediawiki/","version":"MediaWiki 1.31.1"}  
             elif wikiId=='wiki':
-                wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.wiki.bitplan.com","scriptPath":"","version":"MediaWiki 1.27.3"}                       
+                wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://wiki.bitplan.com","scriptPath":"","version":"MediaWiki 1.27.3"}                       
             if wikiDict is None:
                 raise Exception("%s missing for wikiId %s" % (iniFile,wikiId))
             else:
