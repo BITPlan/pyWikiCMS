@@ -56,12 +56,12 @@ class TestWebServer(unittest.TestCase):
              'defaultPage':'Sharks'
             }
         ]
+        for frontendConfigs in frontends.frontendConfigs:
+            # make sure ini file is available
+            wikiId=frontendConfigs["wikiId"]
+            TestWikiCMS.getSMW_WikiUser(wikiId)
         frontends.store()
         frontends.load()
-        for frontendKey in frontends.frontends:
-            # make sure ini file is available
-            frontend=frontends.frontends[frontendKey]
-            TestWikiCMS.getSMW_WikiUser(frontend.wikiId)
         return frontends
     
     def testSplit(self):
