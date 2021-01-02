@@ -12,14 +12,8 @@ class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
-        Frontends.homePath="/tmp"
-        self.initFrontends()
-        # make sure tests run in travis
-        sites=['or','cr']
-        # make sure ini file is available
-        for wikiId in sites:
-            TestWikiCMS.getSMW_WikiUser(wikiId)
-            
+      
+        TestWebServer.initFrontends()
         import frontend.webserver 
         app=frontend.webserver.app
         app.config['TESTING'] = True
@@ -27,16 +21,20 @@ class TestWebServer(unittest.TestCase):
         app.config['DEBUG'] = False
         self.app = app.test_client()
         self.debug=False
+        # make sure tests run in travis
+        sites=['or','cr','sharks']
         frontend.webserver.appWrap.enableSites(sites)
         pass
 
     def tearDown(self):
         pass
     
-    def initFrontends(self):
+    @staticmethod
+    def initFrontends():
         '''
-        initialize the given frontends
+        initialize the frontends
         '''
+        Frontends.homePath="/tmp"
         frontends=Frontends()
         frontends.frontendConfigs=[
             {
@@ -50,10 +48,21 @@ class TestWebServer(unittest.TestCase):
              'wikiId':'cr', 
              'template':'bootstrap.html',
              'defaultPage':'Main Page'
+            },
+            {
+             'site': 'sharks',
+             'wikiId':'wiki', 
+             'template':'bootstrap.html',
+             'defaultPage':'Sharks'
             }
         ]
         frontends.store()
         frontends.load()
+        for frontendKey in frontends.frontends:
+            # make sure ini file is available
+            frontend=frontends.frontends[frontendKey]
+            TestWikiCMS.getSMW_WikiUser(frontend.wikiId)
+        return frontends
     
     def testSplit(self):
         '''

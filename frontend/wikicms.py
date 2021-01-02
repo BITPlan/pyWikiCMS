@@ -9,6 +9,8 @@ from lodstorage.jsonable import JSONAble
 import traceback
 from pathlib import Path
 import os
+import requests
+from flask import Response
 
 class Frontends(JSONAble):
     '''
@@ -98,7 +100,7 @@ class Frontend(object):
         '''
         self.site=Site(siteName)
         self.debug=debug
-        self.wikiclient=None
+        self.wiki=None
         
     def log(self,msg):
         '''
@@ -114,9 +116,9 @@ class Frontend(object):
         '''
         open the frontend
         '''
-        if self.wikiclient is None:
-            self.wikiclient=WikiClient.ofWikiId(self.site.wikiId)
-            #self.wikiclient.login()
+        if self.wiki is None:
+            self.wiki=WikiClient.ofWikiId(self.site.wikiId)
+            #self.wiki.login()
         
     def errMsg(self,ex):
         if self.debug:
@@ -160,8 +162,34 @@ class Frontend(object):
             if illegalChar in pagePath:
                 error="invalid char %s in given pagePath " % (illegalChar)
         return error;
+    
+    def needsProxy(self,path:str)->bool:
+        '''
+        Args:
+            path(str): the path to check
+        Returns:
+            True if this path needs to be proxied 
+        '''
+        result=path.startswith("/images")
+        return result
+    
+    def proxy(self,path:str)->str:
+        '''
+        proxy a request
+        see https://stackoverflow.com/a/50231825/1497139
+        
+        Args:
+            path(str): the path to proxy
+        Returns:
+            the proxied result Request
+        '''
+        wikiUser=self.wiki.wikiUser
+        url="%s%s%s" % (wikiUser.url,wikiUser.scriptPath,path)
+        r = requests.get(url)
+        return Response(r.content)
+        
             
-    def getContent(self,pagePath):
+    def getContent(self,pagePath:str):
         ''' get the content for the given pagePath 
         Args:
             pagePath(str): the page Pageh
@@ -178,7 +206,7 @@ class Frontend(object):
                 error=self.checkPath(pagePath)
                 pageTitle=self.wikiPage(pagePath)
             if error is None:
-                content=self.wikiclient.getHtml(pageTitle)
+                content=self.wiki.getHtml(pageTitle)
         except Exception as e:
             error=self.errMsg(e)
         return pageTitle,content,error

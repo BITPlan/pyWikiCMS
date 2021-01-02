@@ -125,8 +125,11 @@ class AppWrap:
             error="access to site '%s' is not enabled you might want to add it via the --sites command line option" % siteName
         else:
             frontend=self.frontends.get(siteName) 
-            title,content,error=frontend.getContent(path);
-            template=frontend.site.template
+            if frontend.needsProxy(path):
+                return frontend.proxy(path)
+            else:
+                title,content,error=frontend.getContent(path);
+                template=frontend.site.template
         return render_template(template,title=title,content=content,error=error)
        
     def run(self):
