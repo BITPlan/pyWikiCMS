@@ -173,7 +173,7 @@ class Frontend(object):
         pageTitle="?"
         try:
             if pagePath=="/":
-                pageTitle=self.defaultPage
+                pageTitle=self.site.defaultPage
             else:
                 error=self.checkPath(pagePath)
                 pageTitle=self.wikiPage(pagePath)
