@@ -6,6 +6,7 @@ Created on 2020-07-27
 
 from pydevd_file_utils import setup_client_server_paths
 import argparse
+import sys
 from frontend.app import AppWrap
     
 appWrap=AppWrap()
@@ -60,6 +61,7 @@ if __name__ == '__main__':
                 #print("trying to debug with PATHS_FROM_ECLIPSE_TO_PYTHON=%s" % os.environ["PATHS_FROM_ECLIPSE_TO_PYTHON"]);
      
         pydevd.settrace(args.debugServer, port=args.debugPort,stdoutToServer=True, stderrToServer=True)
+        print("command line args are: %s" % str(sys.argv))
     appWrap.debug=args.debug
     appWrap.enableSites(args.sites)
     appWrap.run()
