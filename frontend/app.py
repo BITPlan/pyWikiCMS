@@ -6,7 +6,7 @@ Created on 2020-12-30
 from flask import Flask, send_file
 from frontend.wikicms import Frontend, Frontends
 from frontend.family import WikiFamily
-from frontend.widgets import Link
+from frontend.widgets import Link, Image
 from flask import render_template
 import os
 from wikibot.wikiuser import WikiUser
