@@ -28,9 +28,19 @@ class Image(Widget):
     '''
     a HTML Image
     '''
-    def __init__(self,url):
+    def __init__(self,url,alt=None):
         self.url=url
+        if alt is not None:
+            self.alt=alt
+        else:
+            self.alt=url
         
     def render(self):
-        html="<img src='%s'/>" % (self.url)
+        '''
+        render me
+        
+        Returns:
+            str: html code for Image
+        '''
+        html="<img src='%s' alt='%s'/>" % (self.url,self.alt)
         return html
