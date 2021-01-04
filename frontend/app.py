@@ -6,6 +6,7 @@ Created on 2020-12-30
 from flask import Flask, send_file
 from frontend.wikicms import Frontend, Frontends
 from frontend.family import WikiFamily
+from frontend.widgets import Link
 from flask import render_template
 import os
 from wikibot.wikiuser import WikiUser
@@ -89,7 +90,7 @@ class AppWrap:
         for wikiUser in wikiUsers.values():
             dictList.append({
                 'wikiId': wikiUser.wikiId,
-                'url':wikiUser.url,
+                'url': Link(wikiUser.url,wikiUser.url),
                 'scriptPath':wikiUser.scriptPath,
                 'version':wikiUser.version
             })
@@ -144,7 +145,7 @@ class AppWrap:
             localWiki = wikiFamily.family[siteName]
             dictList.append({
                 'site': localWiki.siteName,
-                'logo': localWiki.logo
+                'logo': Image(localWiki.logo)
             })
         html = render_template("tableview.html", title="Wiki Family", dictList=dictList)
         return html
