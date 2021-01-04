@@ -112,7 +112,7 @@ class AppWrap:
         if logoFile is None:
             return "no logo for %s" %siteName
         else:
-            send_file(logoFile)
+            return send_file(logoFile)
     
     def error(self,title:str,error:str):
         '''
