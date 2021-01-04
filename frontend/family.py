@@ -50,7 +50,7 @@ class WikiFamily(object):
     the wiki family found in the given site dir
     '''
     
-    def init(self,sitedir:str="/var/www/mediawiki/sites"):    
+    def __init__(self,sitedir:str="/var/www/mediawiki/sites"):    
         '''
         constructor
         Args:
