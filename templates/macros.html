@@ -49,7 +49,7 @@
     <tr>
        <td> {{loop.index}} </td>
        {% for value in dict_item.values() %}
-       <td> {% if isinstance(value, Widget) %} {{ value|safe }} {% else %} {{ value }} {% endif %} </td>
+       <td>  {{ value|safe }} </td>
        {% endfor %}
     </tr>
     {% endfor %}
