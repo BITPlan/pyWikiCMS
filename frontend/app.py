@@ -3,7 +3,7 @@ Created on 2020-12-30
 
 @author: wf
 '''
-from flask import Flask
+from flask import Flask, send_file
 from frontend.wikicms import Frontend, Frontends
 from frontend.family import WikiFamily
 from flask import render_template
@@ -109,7 +109,10 @@ class AppWrap:
         if not siteName in wikiFamily.family:
             return self.error("Logo Error","invalid siteName %s" % siteName)
         logoFile=wikiFamily.getLogo(siteName)
-        if logoFile is not None:
+        if logoFile is None:
+            return "no logo for %s" %siteName
+        else:
+            send_file(logoFile)
     
     def error(self,title:str,error:str):
         '''
