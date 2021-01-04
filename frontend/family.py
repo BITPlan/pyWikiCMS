@@ -27,6 +27,8 @@ class LocalWiki(object):
             with open(localSettings) as f:
                 self.settingLines = f.readlines()
             self.logo=self.getSetting("wgLogo")
+            self.database=self.getSetting("wgDBname")
+            self.url=self.getSetting("wgServer")
         
     def getSetting(self,varName:str)->str:
         '''
