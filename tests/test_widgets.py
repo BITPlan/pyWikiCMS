@@ -10,7 +10,7 @@ class TestWidgets(unittest.TestCase):
 
 
     def setUp(self):
-        self.debug=True
+        self.debug=False
         pass
 
 
@@ -24,11 +24,11 @@ class TestWidgets(unittest.TestCase):
         '''
         widgets=[
             Link("http://www.bitplan.com","BITPlan webPage"),
-            Image("http://wiki.bitplan.com/images/wiki/thumb/3/38/BITPlanLogoFontLessTransparent.png/132px-BITPlanLogoFontLessTransparent.png")
+            Image("http://wiki.bitplan.com/images/wiki/thumb/3/38/BITPlanLogoFontLessTransparent.png/132px-BITPlanLogoFontLessTransparent.png",alt='BITPlan Logo')
         ]
         expectedHtml=[
             "<a href='http://www.bitplan.com'>BITPlan webPage</a>",
-            "<img src='http://wiki.bitplan.com/images/wiki/thumb/3/38/BITPlanLogoFontLessTransparent.png/132px-BITPlanLogoFontLessTransparent.png'/>"
+            "<img src='http://wiki.bitplan.com/images/wiki/thumb/3/38/BITPlanLogoFontLessTransparent.png/132px-BITPlanLogoFontLessTransparent.png' alt='BITPlan Logo'/>"
             ]
         for i,widget in enumerate(widgets):
             self.assertTrue(isinstance(widget,Widget))
