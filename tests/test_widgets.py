@@ -38,7 +38,24 @@ class TestWidgets(unittest.TestCase):
             self.assertEqual(expectedHtml[i],html)
             self.assertEqual(expectedHtml[i],str(widget))
         pass
-
+    
+    def testJinjaType(self):
+        '''
+        test Jinja template type check workaround according to
+        https://stackoverflow.com/a/38086633/1497139
+        '''
+        values=[
+            "text",
+            8,
+            Link("http://www.bitplan.com","BITPlan home page")
+            ]
+        expected=[
+            "str","int","Link"]
+        for i,value in enumerate(values):
+            valueType=value.__class__.__name__
+            if self.debug:
+                print(valueType)
+            self.assertEqual(expected[i],valueType)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

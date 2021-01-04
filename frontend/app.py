@@ -29,8 +29,11 @@ class AppWrap:
         self.debug = debug
         self.port = port
         self.host = host    
+   
         scriptdir = os.path.dirname(os.path.abspath(__file__))
         self.app = Flask(__name__, template_folder=scriptdir + '/../templates')
+        # pimp up jinja2
+        self.app.jinja_env.globals.update(isinstance=isinstance)
         self.frontends = Frontends()
         self.frontends.load()
         self.enabledSites = ['admin']
