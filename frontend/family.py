@@ -44,19 +44,42 @@ class LocalWiki(object):
                 value=m.group(1)
                 return value
         return None
-        
-        
-    @staticmethod
-    def getFamily(sitedir="/var/www/mediawiki/sites"):
+    
+class WikiFamily(object):
+    '''
+    the wiki family found in the given site dir
+    '''
+    
+    def init(self,sitedir:str="/var/www/mediawiki/sites"):    
         '''
-        get a dict of local wikis on this server
+        constructor
+        Args:
+            sitedir(str): the path to the site definitions
+            see http://wiki.bitplan.com/index.php/Wiki_Family
         '''
-        family={}
-        for folder in os.listdir(sitedir):
-            lsettings="%s/%s/LocalSettings.php" % (sitedir,folder)
+        self.family={}
+        self.sitedir=sitedir
+        for siteName in os.listdir(sitedir):
+            lsettings="%s/%s/LocalSettings.php" % (sitedir,siteName)
             if os.path.isfile(lsettings):
-                localWiki=LocalWiki(folder,lsettings)
-                family[folder]=localWiki
+                localWiki=LocalWiki(siteName,lsettings)
+                self.family[siteName]=localWiki
                 
-        return family
+    def getLogo(self,siteName:str):
+        '''
+        get the logo for the given siteName
+        
+        Args:
+            siteName(str): the siteName e.g. wiki.bitplan.com
+            
+        Returns:
+            str: the logo path if logo is defined as file else None
+        '''
+        localWiki = self.family[siteName]
+        if localWiki.logo.startswith("/"):
+            logoFile="%s/%s" % (self.sitedir,localWiki.logo)
+        else:
+            logoFile=None
+        return logoFile
+        
         

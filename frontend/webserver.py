@@ -19,6 +19,18 @@ def admin():
 def wikis():
     return appWrap.wikis()
 
+@app.route('/family/<string:siteName>/logo')
+def wikiLogo(siteName:str):
+    '''
+    render the Logo for the given siteName
+    
+    Args:
+        siteName(str): the name of the site e.g. wiki.bitplan.com
+    Returns:
+        the rendered Logo for the given Site
+    '''
+    return appWrap.logo(siteName)
+
 @app.route('/family')
 def family():
     return appWrap.family()
