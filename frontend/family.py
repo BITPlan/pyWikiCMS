@@ -77,7 +77,7 @@ class WikiFamily(object):
         '''
         localWiki = self.family[siteName]
         if localWiki.logo.startswith("/"):
-            logoFile="%s/%s/%s" % (self.sitedir,siteName,localWiki.logo)
+            logoFile="%s/%s%s" % (self.sitedir,siteName,localWiki.logo)
         else:
             logoFile=None
         return logoFile
