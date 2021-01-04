@@ -149,7 +149,8 @@ class AppWrap:
             logoAccess="/family/%s/logo" % siteName
             dictList.append({
                 'site': Link(localWiki.url,localWiki.siteName),
-                'logo': Image(logoAccess)
+                'logo': Image(logoAccess),
+                'database': localWiki.database
             })
         html = render_template("tableview.html", title="Wiki Family", dictList=dictList)
         return html
