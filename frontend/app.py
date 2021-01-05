@@ -173,7 +173,7 @@ class AppWrap:
         wikiFamily = WikiFamily()
         for siteName in wikiFamily.family:
             localWiki = wikiFamily.family[siteName]
-            logoAccess="/family/%s/logo" % siteName
+            logoAccess="%s/family/%s/logo" % (self.baseUrl,siteName)
             dictList.append({
                 'site': Link(localWiki.url,localWiki.siteName),
                 'logo': Image(logoAccess),
