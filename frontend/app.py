@@ -37,7 +37,7 @@ class AppWrap:
         self.app.jinja_env.globals.update(isinstance=isinstance)
         self.frontends = Frontends()
         self.frontends.load()
-        self.enabledFrontends = ['admin']
+        self.enabledSites = ['admin']
         self.auth= HTTPBasicAuth()
         self.baseUrl=""
         
@@ -61,18 +61,18 @@ class AppWrap:
                 path = path + "/%s" % (part)
         return site, path    
     
-    def enableFrontends(self, Frontends):
+    def enableSites(self, sites):
         '''
-        enable the Frontends given in the Frontends list
+        enable the sites given in the sites list
         Args:
-            Frontends(list): a list of strings with wikiIds to be enabled
+            sites(list): a list of strings with wikiIds to be enabled
         '''
-        if Frontends is None:
+        if sites is None:
             return
-        for site in Frontends:
+        for site in sites:
             frontend = Frontend(site)
             self.frontends.enable(frontend)
-            self.enabledFrontends.append(site)
+            self.enabledSites.append(site)
             
     def adminMenuList(self,activeItem:str=None):
         '''
@@ -194,7 +194,7 @@ class AppWrap:
         template = "index.html"
         title = "Error"
         if not siteName in self.enabledSites:
-            error = "access to site '%s' is not enabled you might want to add it via the --Frontends command line option" % siteName
+            error = "access to site '%s' is not enabled you might want to add it via the --sites command line option" % siteName
         else:
             frontend = self.frontends.get(siteName) 
             if frontend.needsProxy(path):
