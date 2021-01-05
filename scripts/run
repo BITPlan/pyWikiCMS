@@ -36,8 +36,9 @@ error() {
 # show the usage
 #
 usage() {
-  echo "usage: $0 [-d <debugServer>] [-dp <remotePath> <localPath>] [--sites <sites>] [-s] [-h] "
+  echo "usage: $0 [-b|--baseUrl <baseUrl>][-d <debugServer>] [-dp <remotePath> <localPath>] [--sites <sites>] [-s] [-h] "
   echo "  -h: show this usage"
+  echo "  -b: set a baseUrl for the WikiCMS server (in case relative URLs won't work ...)"
   echo "  -d: allow remote debugging with the given debugServer"
   echo "  -dp: allow remote debugging with the given debugPath mapping from remotePath to localPath"
   echo "  --sites: the sites to enable"
@@ -96,10 +97,11 @@ startServer() {
   local l_logdir=/var/log/wikicms
   local l_logfile=wikicms.log
   local l_sites="$1"
-  local l_debugServer="$2"
-  local l_debugPort="$3"
-  local l_remotePath="$4"
-  local l_localPath="$5"
+  local l_baseUrl="$2"
+  local l_debugServer="$3"
+  local l_debugPort="$4"
+  local l_remotePath="$5"
+  local l_localPath="$6"
   color_msg $blue "starting server only"
   if [ ! -d $l_logdir ]
   then
@@ -118,6 +120,10 @@ startServer() {
   then 
     poptions="$poptions --debugPath $l_remotePath $l_localPath"
   fi
+  if [ "$l_baseUrl" != "" ]
+  then 
+    poptions="$poptions --baseUrl $l_baseUrl"
+  fi
   if [ "$l_sites" != "" ]
   then 
     poptions="$poptions --sites $l_sites"
@@ -135,6 +141,7 @@ debugPort=5678
 remotePath=""
 localPath=""
 sites=""
+baseUrl=""
 #commandline option
 while [  "$1" != ""  ]
 do
@@ -144,6 +151,14 @@ do
     -h|--help)
       usage
       exit 0;;
+    -b|--baseUrl)
+      if [ $# -lt 1 ] 
+      then
+	 usage
+      fi
+      baseUrl="$1"
+      shift
+      ;;
     -d|--debug)
       if [ $# -lt 1 ] 
       then
@@ -170,7 +185,7 @@ do
       shift
       ;;
     -s)
-      startServer "$sites" "$debugServer" "$debugPort" "$remotePath" "$localPath"
+      startServer "$sites" "$baseUrl" "$debugServer" "$debugPort" "$remotePath" "$localPath"
       exit 0
       ;;
     *)
