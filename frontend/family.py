@@ -29,6 +29,10 @@ class LocalWiki(object):
             self.logo=self.getSetting("wgLogo")
             self.database=self.getSetting("wgDBname")
             self.url=self.getSetting("wgServer")
+            self.scriptPath=self.getSetting("wgScriptPath")
+            if self.scriptPath is None:
+                self.scriptPath=""
+            self.url="%s%s" % (self.url,self.scriptPath)
         
     def getSetting(self,varName:str)->str:
         '''
