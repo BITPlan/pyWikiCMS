@@ -61,11 +61,12 @@ class WikiFamily(object):
         '''
         self.family={}
         self.sitedir=sitedir
-        for siteName in os.listdir(sitedir):
-            lsettings="%s/%s/LocalSettings.php" % (sitedir,siteName)
-            if os.path.isfile(lsettings):
-                localWiki=LocalWiki(siteName,lsettings)
-                self.family[siteName]=localWiki
+        if os.path.isdir(sitedir):
+            for siteName in os.listdir(sitedir):
+                lsettings="%s/%s/LocalSettings.php" % (sitedir,siteName)
+                if os.path.isfile(lsettings):
+                    localWiki=LocalWiki(siteName,lsettings)
+                    self.family[siteName]=localWiki
                 
     def getLogo(self,siteName:str):
         '''

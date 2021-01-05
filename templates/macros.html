@@ -30,6 +30,20 @@
   </body>
 </html>
 {%- endmacro %}    
+{# menu see https://getbootstrap.com/docs/4.0/components/navbar/ #}
+{% macro menu(menuList) -%}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+ <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav">
+    {% if menuList %}
+    {% for menuItem in menuList %}
+    {{ menuItem|safe }}
+    {% endfor %}
+    {% endif %}
+    </ul>
+ </div>   
+</nav>
+{%- endmacro %}
 {# table for dict list #}
 {% macro table4DictList(dictList) -%}
 <table class="table table-bordered table-hover">

@@ -16,6 +16,14 @@ class Link(Widget):
     a HTML link
     '''
     def __init__(self,url,title,tooltip=None):
+        '''
+        constructor
+        
+        Args:
+            url(str):  the link 
+            title(str): the title
+            tooltip(str): the tooltip (if any)
+        '''
         self.url=url
         self.title=title
         self.tooltip=tooltip
@@ -29,6 +37,13 @@ class Image(Widget):
     a HTML Image
     '''
     def __init__(self,url,alt=None):
+        '''
+        constructor
+        
+        Args:
+            url(str):  the link 
+            alt(str):  alternative image representation (if any)
+        '''
         self.url=url
         if alt is not None:
             self.alt=alt
@@ -43,4 +58,35 @@ class Image(Widget):
             str: html code for Image
         '''
         html="<img src='%s' alt='%s'/>" % (self.url,self.alt)
+        return html
+    
+class MenuItem(Widget):
+    '''
+    a menu item
+    '''
+    
+    def __init__(self,url:str,title:str,active:bool=False):
+        '''
+        constructor
+        
+        Args:
+            url(str):  the link
+            title(str): the title of the menu item
+            active(bool): whether the link is initially active 
+        '''
+        self.url=url
+        self.title=title
+        self.active=active
+    
+    def render(self):
+        '''
+        render me
+        
+        Returns:
+            str: html code for MenuItem
+        '''
+        activeState='active' if self.active else ''
+        html='''<li class="nav-item %s">
+        <a class="nav-link" href="%s">%s</span></a>
+      </li>''' % (activeState,self.url,self.title)
         return html

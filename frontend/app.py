@@ -6,10 +6,11 @@ Created on 2020-12-30
 from flask import Flask, send_file
 from frontend.wikicms import Frontend, Frontends
 from frontend.family import WikiFamily
-from frontend.widgets import Link, Image
+from frontend.widgets import Link, Image, MenuItem
 from flask import render_template
 import os
 from wikibot.wikiuser import WikiUser
+from flask_httpauth import HTTPBasicAuth
 
 class AppWrap:
     ''' 
@@ -37,6 +38,7 @@ class AppWrap:
         self.frontends = Frontends()
         self.frontends.load()
         self.enabledSites = ['admin']
+        self.auth= HTTPBasicAuth()
         
     @staticmethod
     def splitPath(path):
@@ -71,6 +73,26 @@ class AppWrap:
             self.frontends.enable(frontend)
             self.enabledSites.append(site)
             
+    def adminMenuList(self,activeItem:str=None):
+        '''
+        get the list of menu items for the admin menu
+        Args:
+            activeItem(str): the active  menu item
+        Return:
+            list: the list of menu items
+        '''
+        menuList=[
+            MenuItem('/','Home'),
+            MenuItem('/wikis','Wikis'),
+            MenuItem('/family','Family'),
+            MenuItem('https://github.com/BITPlan/pyWikiCMS','github')
+            ]
+        if activeItem is not None:
+            for menuItem in menuList:
+                if menuItem.title==activeItem:
+                    menuItem.active=True
+        return menuList
+            
     def admin(self) -> str:
         '''
         render the admin view
@@ -78,7 +100,8 @@ class AppWrap:
         Returns:
             str: the html for the admin view
         '''
-        html = render_template("tableview.html", title="Sites", dictList=self.frontends.frontendConfigs)
+        menuList=self.adminMenuList("Home")
+        html = render_template("tableview.html", title="Sites", menuList=menuList,dictList=self.frontends.frontendConfigs)
         return html
     
     def wikis(self) -> str:
@@ -97,7 +120,8 @@ class AppWrap:
                 'scriptPath':wikiUser.scriptPath,
                 'version':wikiUser.version
             })
-        html = render_template("tableview.html", title="Wikis", dictList=dictList)
+        menuList=self.adminMenuList("Wikis")      
+        html = render_template("tableview.html", menuList=menuList,title="Wikis", dictList=dictList)
         return html    
     
     def logo(self, siteName:str) -> str:
@@ -152,7 +176,8 @@ class AppWrap:
                 'logo': Image(logoAccess),
                 'database': localWiki.database
             })
-        html = render_template("tableview.html", title="Wiki Family", dictList=dictList)
+        menuList=self.adminMenuList("Family")    
+        html = render_template("tableview.html", menuList=menuList,title="Wiki Family", dictList=dictList)
         return html
         
     def wrap(self, siteName, path):

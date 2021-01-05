@@ -1,5 +1,6 @@
 {% import 'macros.html' as macros %}
 {{ macros.header(title) }}
+{% if menuList %}{{ macros.menu(menuList) }}{%endif %}
 {% if title is not none %}<h2>{{ title }}</h2>{%endif %}
 {{ macros.table4DictList(dictList) }}
 {{ macros.footer() }} 
