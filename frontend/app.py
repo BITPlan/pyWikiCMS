@@ -39,6 +39,7 @@ class AppWrap:
         self.frontends.load()
         self.enabledSites = ['admin']
         self.auth= HTTPBasicAuth()
+        self.baseUrl=""
         
     @staticmethod
     def splitPath(path):
@@ -91,6 +92,7 @@ class AppWrap:
             for menuItem in menuList:
                 if menuItem.title==activeItem:
                     menuItem.active=True
+                menuItem.url="%s%s" % (self.baseUrl,menuItem.url)
         return menuList
             
     def admin(self) -> str:

@@ -48,6 +48,7 @@ def wrap(path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Wiki Content Management webservice")
+    parser.add_argument('--baseUrl',default='',help='base url to use for links to this site')
     parser.add_argument('--debug',
                                  action='store_true',
                                  help="run in debug mode")
@@ -75,6 +76,7 @@ if __name__ == '__main__':
         pydevd.settrace(args.debugServer, port=args.debugPort,stdoutToServer=True, stderrToServer=True)
         print("command line args are: %s" % str(sys.argv))
     appWrap.debug=args.debug
+    appWrap.baseUrl=args.baseUrl
     appWrap.enableSites(args.sites)
     appWrap.run()
     
