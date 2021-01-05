@@ -79,7 +79,10 @@ class WikiFamily(object):
             str: the logo path if logo is defined as file else None
         '''
         localWiki = self.family[siteName]
-        if localWiki.logo.startswith("/"):
+        logoPath=localWiki.logo
+        # work around wgResourceBasePath
+        logoPath=logoPath.replace("$wgResourceBasePath","")
+        if logoPath.startswith("/"):
             logoFile="%s/%s%s" % (self.sitedir,siteName,localWiki.logo)
         else:
             logoFile=None
