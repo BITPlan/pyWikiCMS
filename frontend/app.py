@@ -92,7 +92,8 @@ class AppWrap:
             for menuItem in menuList:
                 if menuItem.title==activeItem:
                     menuItem.active=True
-                menuItem.url="%s%s" % (self.baseUrl,menuItem.url)
+                if menuItem.url.startswith("/"):
+                    menuItem.url="%s%s" % (self.baseUrl,menuItem.url)
         return menuList
             
     def admin(self) -> str:
