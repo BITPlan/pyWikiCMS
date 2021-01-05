@@ -83,7 +83,7 @@ class WikiFamily(object):
         # work around wgResourceBasePath
         logoPath=logoPath.replace("$wgResourceBasePath","")
         if logoPath.startswith("/"):
-            logoFile="%s/%s%s" % (self.sitedir,siteName,localWiki.logo)
+            logoFile="%s/%s%s" % (self.sitedir,siteName,logoPath)
         else:
             logoFile=None
         return logoFile
