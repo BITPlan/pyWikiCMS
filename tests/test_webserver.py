@@ -12,14 +12,14 @@ class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
-        TestWebServer.initServer()
+        self.server=TestWebServer.initServer()
         import frontend.webserver 
         app=frontend.webserver.app
         app.config['TESTING'] = True
         app.config['WTF_CSRF_ENABLED'] = False
         app.config['DEBUG'] = False
         self.app = app.test_client()
-        self.debug=False
+        self.debug=True
         # make sure tests run in travis
         sites=['or','cr','sharks']
         frontend.webserver.appWrap.enableSites(sites)
@@ -35,6 +35,7 @@ class TestWebServer(unittest.TestCase):
         '''
         Server.homePath="/tmp"
         server=Server()
+        server.logo="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
         server.frontendConfigs=[
             {
              'site':'or',
@@ -62,6 +63,14 @@ class TestWebServer(unittest.TestCase):
         server.store()
         server.load()
         return server
+    
+    def testConfig(self):
+        '''
+        check config
+        '''
+        path=self.server.getStorePath()
+        if self.debug:
+            print(path)
     
     def testSplit(self):
         '''

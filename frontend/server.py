@@ -23,6 +23,7 @@ class Server(JSONAble):
             storePath(str): the path to load my configuration from (if any)
         '''
         self.frontendConfigs=None
+        self.logo=None
         self.reinit()
         
     def reinit(self):
@@ -79,7 +80,7 @@ class Server(JSONAble):
                 self.siteLookup[site]=config
         pass
         
-    def getStorePath(self,prefix:str="frontendConfigs")->str:
+    def getStorePath(self,prefix:str="serverConfig")->str:
         '''
         get the path where my store files are located
         Returns:
@@ -95,7 +96,6 @@ class Server(JSONAble):
         if self.frontends is not None:
             storePath=self.getStorePath()
             self.storeToJsonFile(storePath,"frontendConfigs")
-        
         
     def getPlatformLogo(self)->str:
         '''
