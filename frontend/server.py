@@ -24,6 +24,7 @@ class Server(JSONAble):
         '''
         self.frontendConfigs=None
         self.logo=None
+        self.purpose=""
         self.reinit()
         
     def reinit(self):
