@@ -23,12 +23,12 @@ class Server(JSONAble):
             storePath(str): the path to load my configuration from (if any)
         '''
         self.frontendConfigs=None
-        self.platform=platform
-        self.uname=os.uname()
-        self.name=self.uname[1]
         self.reinit()
         
     def reinit(self):
+        self.platform=platform
+        self.uname=os.uname()
+        self.name=self.uname[1]
         self.frontends={}
         self.siteLookup={}
         if Server.homePath is None:
