@@ -3,6 +3,7 @@ Created on 2021-01-04
 
 @author: wf
 '''
+from PIL.FontFile import WIDTH
 class Widget(object):
     def __init(self):
         pass
@@ -36,7 +37,7 @@ class Image(Widget):
     '''
     a HTML Image
     '''
-    def __init__(self,url,alt=None):
+    def __init__(self,url,alt=None,width=None,height=None):
         '''
         constructor
         
@@ -49,6 +50,8 @@ class Image(Widget):
             self.alt=alt
         else:
             self.alt=url
+        self.width=width
+        self.height=height
         
     def render(self):
         '''
@@ -57,7 +60,10 @@ class Image(Widget):
         Returns:
             str: html code for Image
         '''
-        html="<img src='%s' alt='%s'/>" % (self.url,self.alt)
+        width=" width='%d'" % self.width if self.width is not None else ""
+        height=" height='%d'" % self.height if self.height is not None else ""
+        
+        html="<img src='%s' alt='%s'%s%s/>" % (self.url,self.alt,width,height)
         return html
     
 class MenuItem(Widget):

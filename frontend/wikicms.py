@@ -5,87 +5,11 @@ Created on 2020-07-27
 '''
 from wikibot.wikiclient import WikiClient
 from frontend.site import Site
-from lodstorage.jsonable import JSONAble
+
 import traceback
-from pathlib import Path
-import os
+
 import requests
 from flask import Response
-
-class Frontends(JSONAble):
-    '''
-    manager for the wiki frontends
-    '''
-    homePath=None
-    '''
-    manager for the available frontends
-    '''
-    def __init__(self):
-        self.frontendConfigs=None
-        self.reinit()
-        
-    def reinit(self):
-        self.frontends={}
-        self.siteLookup={}
-        if Frontends.homePath is None:
-            self.homePath = str(Path.home())
-        else:
-            self.homePath=Frontends.homePath
-            
-    def enable(self,frontend):
-        '''
-        enable the given frontend
-        
-        Args:
-            frontend(Frontend): the frontend to enable
-        '''
-        if self.frontendConfigs is None:
-            raise Exception('No frontend configurations loaded yet')
-        site=frontend.site
-        if site.name not in self.siteLookup:
-            raise Exception('frontend for site %s not configured yet' % site)
-        self.frontends[site.name]=frontend
-        config=self.siteLookup[site.name]
-        site.configure(config)
-        frontend.open()
-        pass
-        
-    def get(self,wikiId):
-        '''
-        get the frontend for the given wikiid
-        
-        Args:
-            wikiId(str): the wikiId to get the frontend for
-        
-        Returns:
-            Frontend: the frontend for this wikiId
-        '''
-        return self.frontends[wikiId]
-            
-    def load(self):
-        '''
-        load my front end configurations
-        '''
-        storePath=self.getStorePath()
-        if os.path.isfile(storePath+".json"):
-            self.restoreFromJsonFile(storePath)
-            self.reinit()
-            for config in self.frontendConfigs:
-                site=config["site"]
-                self.siteLookup[site]=config
-        pass
-        
-    def getStorePath(self,prefix="frontendConfigs"):
-        iniPath=self.homePath+"/.wikicms"
-        if not os.path.isdir(iniPath):
-            os.makedirs(iniPath)
-        storePath="%s/%s" % (iniPath,prefix)
-        return storePath
-         
-    def store(self):
-        if self.frontends is not None:
-            storePath=self.getStorePath()
-            self.storeToJsonFile(storePath,"frontendConfigs")
 
 class Frontend(object):
     '''

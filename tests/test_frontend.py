@@ -14,7 +14,7 @@ class TestFrontend(unittest.TestCase):
 
     def setUp(self):
         self.debug=False
-        self.frontends=TestWebServer.initFrontends()
+        self.server=TestWebServer.initServer()
         pass
 
     def tearDown(self):
@@ -42,7 +42,7 @@ class TestFrontend(unittest.TestCase):
         test the proxy handling
         '''
         frontend=Frontend('sharks')
-        self.frontends.enable(frontend)
+        self.server.enable(frontend)
         frontend.open()
         url="/images/wiki/thumb/6/62/IMG_0736_Shark.png/400px-IMG_0736_Shark.png"
         self.assertTrue(frontend.needsProxy(url))
@@ -50,8 +50,6 @@ class TestFrontend(unittest.TestCase):
         self.assertFalse(imageResponse is None)
         self.assertEqual("200 OK",imageResponse.status)
         self.assertEqual(79499,len(imageResponse.data))
-        
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -4,7 +4,8 @@ Created on 2020-12-30
 @author: wf
 '''
 from flask import Flask, send_file
-from frontend.wikicms import Frontend, Frontends
+from frontend.wikicms import Frontend
+from frontend.server import Server
 from frontend.family import WikiFamily
 from frontend.widgets import Link, Image, MenuItem
 from flask import render_template
@@ -35,8 +36,8 @@ class AppWrap:
         self.app = Flask(__name__, template_folder=scriptdir + '/../templates')
         # pimp up jinja2
         self.app.jinja_env.globals.update(isinstance=isinstance)
-        self.frontends = Frontends()
-        self.frontends.load()
+        self.server = Server()
+        self.server.load()
         self.enabledSites = ['admin']
         self.auth= HTTPBasicAuth()
         self.baseUrl=""
@@ -71,7 +72,7 @@ class AppWrap:
             return
         for site in sites:
             frontend = Frontend(site)
-            self.frontends.enable(frontend)
+            self.server.enable(frontend)
             self.enabledSites.append(site)
             
     def adminMenuList(self,activeItem:str=None):
@@ -104,7 +105,7 @@ class AppWrap:
             str: the html for the admin view
         '''
         menuList=self.adminMenuList("Home")
-        html = render_template("tableview.html", title="Frontends", menuList=menuList,dictList=self.frontends.frontendConfigs)
+        html = render_template("welcome.html", server=self.server,title="Frontends", menuList=menuList,dictList=self.server.frontendConfigs)
         return html
     
     def wikis(self) -> str:
@@ -196,7 +197,7 @@ class AppWrap:
         if not siteName in self.enabledSites:
             error = "access to site '%s' is not enabled you might want to add it via the --sites command line option" % siteName
         else:
-            frontend = self.frontends.get(siteName) 
+            frontend = self.server.getFrontend(siteName) 
             if frontend.needsProxy(path):
                 return frontend.proxy(path)
             else:

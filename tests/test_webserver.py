@@ -4,7 +4,7 @@ Created on 2020-07-11
 @author: wf
 '''
 import unittest
-from frontend.wikicms import Frontends
+from frontend.server import Server
 from frontend.app import AppWrap
 from tests.test_wikicms import TestWikiCMS
 
@@ -12,8 +12,7 @@ class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
-      
-        TestWebServer.initFrontends()
+        TestWebServer.initServer()
         import frontend.webserver 
         app=frontend.webserver.app
         app.config['TESTING'] = True
@@ -30,13 +29,13 @@ class TestWebServer(unittest.TestCase):
         pass
     
     @staticmethod
-    def initFrontends():
+    def initServer():
         '''
-        initialize the frontends
+        initialize the server
         '''
-        Frontends.homePath="/tmp"
-        frontends=Frontends()
-        frontends.frontendConfigs=[
+        Server.homePath="/tmp"
+        server=Server()
+        server.frontendConfigs=[
             {
              'site':'or',
              'wikiId':'or', 
@@ -56,13 +55,13 @@ class TestWebServer(unittest.TestCase):
              'defaultPage':'Sharks'
             }
         ]
-        for frontendConfigs in frontends.frontendConfigs:
+        for frontendConfigs in server.frontendConfigs:
             # make sure ini file is available
             wikiId=frontendConfigs["wikiId"]
             TestWikiCMS.getSMW_WikiUser(wikiId)
-        frontends.store()
-        frontends.load()
-        return frontends
+        server.store()
+        server.load()
+        return server
     
     def testSplit(self):
         '''
