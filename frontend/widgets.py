@@ -3,7 +3,7 @@ Created on 2021-01-04
 
 @author: wf
 '''
-from PIL.FontFile import WIDTH
+
 class Widget(object):
     def __init(self):
         pass
