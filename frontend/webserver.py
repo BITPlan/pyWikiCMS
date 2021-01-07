@@ -19,7 +19,7 @@ def admin():
 def frontends():
     return appWrap.frontends()
 
-@app.route('/frontends')
+@app.route('/wikis')
 def wikis():
     return appWrap.wikis()
 
