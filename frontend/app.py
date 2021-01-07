@@ -178,12 +178,13 @@ class AppWrap:
             apacheEnabled=self.server.checkApacheConfiguration(localWiki.siteId,'enabled')
             dbName=localWiki.database
             backupState=self.server.sqlBackupStateAsHtml(dbName)
+            hereState=self.server.stateSymbol(localWiki.ip==self.server.ip)
             dictList.append({
                 'site': Link(localWiki.url,localWiki.siteName),
                 'logo': Image(logoAccess,height=70),
                 'database': localWiki.database,
                 'SQL backup': backupState,
-                'ip': localWiki.ip,
+                'ip': "%s%s" (hereState,localWiki.ip),
                 'apache': "%s/%s" % (apacheAvailable,apacheEnabled)
             })
         menuList=self.adminMenuList("Family")    
