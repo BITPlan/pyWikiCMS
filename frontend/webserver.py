@@ -8,9 +8,7 @@ from pydevd_file_utils import setup_client_server_paths
 import argparse
 import sys
 from frontend.app import AppWrap
-    
-appWrap=AppWrap()
-app=appWrap.app   
+     
 @app.route('/')
 def admin():
     return appWrap.family()
@@ -79,6 +77,8 @@ if __name__ == '__main__':
      
         pydevd.settrace(args.debugServer, port=args.debugPort,stdoutToServer=True, stderrToServer=True)
         print("command line args are: %s" % str(sys.argv))
+    appWrap=AppWrap()
+    app=appWrap.app      
     appWrap.debug=args.debug
     appWrap.baseUrl=args.baseUrl
     appWrap.enableSites(args.sites)
