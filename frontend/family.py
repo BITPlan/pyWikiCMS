@@ -6,6 +6,7 @@ Created on 2021-01-01
 import os
 import re
 import socket
+import requests
 class LocalWiki(object):
     '''
     a local Wiki
@@ -20,6 +21,7 @@ class LocalWiki(object):
             localSettings(str): path to the LocalSettings.php (if any) 
         '''
         self.siteName=siteName
+        self.statusCode=None
         try:
             self.ip=socket.gethostbyname(self.siteName)
         except Exception:
@@ -40,6 +42,9 @@ class LocalWiki(object):
             if self.scriptPath is None:
                 self.scriptPath=""
             self.url="%s%s" % (self.url,self.scriptPath)
+            page = requests.get(self.url,verify=False,timeout=0.1)
+            self.statusCode=page.status_code
+
         
     def getSetting(self,varName:str)->str:
         '''
