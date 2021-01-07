@@ -5,6 +5,7 @@ Created on 2021-01-06
 '''
 from sys import platform
 import os
+import socket
 import datetime
 from flask import render_template
 from lodstorage.jsonable import JSONAble
@@ -33,6 +34,8 @@ class Server(JSONAble):
         self.platform=platform
         self.uname=os.uname()
         self.name=self.uname[1]
+        self.hostname=socket.getfqdn()
+        self.ip=socket.gethostbyname(self.hostname)
         self.frontends={}
         self.siteLookup={}
         defaults={"sqlBackupPath":"/var/backup/sqlbackup"}

@@ -183,6 +183,7 @@ class AppWrap:
                 'logo': Image(logoAccess,height=70),
                 'database': localWiki.database,
                 'SQL backup': backupState,
+                'ip': localWiki.ip,
                 'apache': "%s/%s" % (apacheAvailable,apacheEnabled)
             })
         menuList=self.adminMenuList("Family")    

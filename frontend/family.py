@@ -5,7 +5,7 @@ Created on 2021-01-01
 '''
 import os
 import re
-
+import socket
 class LocalWiki(object):
     '''
     a local Wiki
@@ -20,6 +20,7 @@ class LocalWiki(object):
             localSettings(str): path to the LocalSettings.php (if any) 
         '''
         self.siteName=siteName
+        self.ip=socket.gethostbyname(self.siteName)
         self.siteId=siteName.split(".")[0]
         self.family=family
         self.localSettings=localSettings
