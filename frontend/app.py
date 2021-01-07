@@ -174,8 +174,8 @@ class AppWrap:
         for siteName in wikiFamily.family:
             localWiki = wikiFamily.family[siteName]
             logoAccess="%s/family/%s/logo" % (self.baseUrl,siteName)
-            apache=self.server.checkApacheConfiguration(localWiki.siteId,'available')
-            +self.server.checkApacheConfiguration(localWiki.siteId,'enabled')
+            apacheAvailable=self.server.checkApacheConfiguration(localWiki.siteId,'available')
+            apacheEnabled=self.server.checkApacheConfiguration(localWiki.siteId,'enabled')
             dbName=localWiki.database
             backupState=self.server.sqlBackupStateAsHtml(dbName)
             dictList.append({
@@ -183,7 +183,7 @@ class AppWrap:
                 'logo': Image(logoAccess),
                 'database': localWiki.database,
                 'SQL backup': backupState,
-                'apache': apache
+                'apache': "%s/%s" % (apacheAvailable,apacheEnabled)
             })
         menuList=self.adminMenuList("Family")    
         html = render_template("welcome.html", server=self.server,menuList=menuList,title="Wiki Family", dictList=dictList)
