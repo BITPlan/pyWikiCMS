@@ -175,11 +175,13 @@ class AppWrap:
             localWiki = wikiFamily.family[siteName]
             logoAccess="%s/family/%s/logo" % (self.baseUrl,siteName)
             apache=self.server.checkApacheConfiguration(localWiki.siteId)
-            db=localWiki.database
+            dbName=localWiki.database
+            backupState=self.server.sqlBackupState(dbName)
             dictList.append({
                 'site': Link(localWiki.url,localWiki.siteName),
                 'logo': Image(logoAccess),
                 'database': localWiki.database,
+                'SQL backup': backupState,
                 'apache': apache
             })
         menuList=self.adminMenuList("Family")    

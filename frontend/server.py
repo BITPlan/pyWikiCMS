@@ -5,6 +5,7 @@ Created on 2021-01-06
 '''
 from sys import platform
 import os
+import datetime
 from flask import render_template
 from lodstorage.jsonable import JSONAble
 from pathlib import Path
@@ -34,7 +35,7 @@ class Server(JSONAble):
         self.name=self.uname[1]
         self.frontends={}
         self.siteLookup={}
-        defaults={"sqlbackupPath":"/var/backup/sqlbackup"}
+        defaults={"sqlBackupPath":"/var/backup/sqlbackup"}
         for key,value in defaults.items():
             if not hasattr(self,key):
                 self.key=value
@@ -42,6 +43,29 @@ class Server(JSONAble):
             self.homePath = str(Path.home())
         else:
             self.homePath=Server.homePath
+            
+    def sqlBackupState(self,dbName):
+        '''
+        get the backup state of the given sql backup
+        
+        Args:
+           dbName(str): the name of the database to check
+        
+        Returns:
+            dict: backup State
+        
+        '''
+        fullBackup="%s/%s_full.sql" % (self.sqlBackupPath,dbName)
+        result={}
+        size=0
+        mdate=None
+        exists=os.path.isfile(fullBackup)
+        if exists:
+            stat=os.stat(fullBackup)
+            size=stat.st_size
+            mtime=stat.st_mtime
+            mdate=datetime.datetime.fromtimestamp(mtime)
+        result['size':size,'exist':exists,'mdate':mdate]
             
     def enableFrontend(self,siteName):
         '''
