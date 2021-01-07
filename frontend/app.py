@@ -180,7 +180,7 @@ class AppWrap:
             backupState=self.server.sqlBackupStateAsHtml(dbName)
             dictList.append({
                 'site': Link(localWiki.url,localWiki.siteName),
-                'logo': Image(logoAccess),
+                'logo': Image(logoAccess,height=70),
                 'database': localWiki.database,
                 'SQL backup': backupState,
                 'apache': "%s/%s" % (apacheAvailable,apacheEnabled)
