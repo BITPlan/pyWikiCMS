@@ -86,7 +86,7 @@ class AppWrap:
         menuList=[
             MenuItem('/','Home'),
             MenuItem('/wikis','Wikis'),
-            MenuItem('/family','Family'),
+            MenuItem('/frontends','Frontends'),
             MenuItem('https://github.com/BITPlan/pyWikiCMS','github')
             ]
         if activeItem is not None:
@@ -97,15 +97,15 @@ class AppWrap:
                     menuItem.url="%s%s" % (self.baseUrl,menuItem.url)
         return menuList
             
-    def admin(self) -> str:
+    def frontends(self) -> str:
         '''
-        render the admin view
+        render the frontends view
         
         Returns:
             str: the html for the admin view
         '''
-        menuList=self.adminMenuList("Home")
-        html = render_template("welcome.html", server=self.server,title="Frontends", menuList=menuList,dictList=self.server.frontendConfigs)
+        menuList=self.adminMenuList("Frontends")
+        html = render_template("tableview.html", title="Frontends", menuList=menuList,dictList=self.server.frontendConfigs)
         return html
     
     def wikis(self) -> str:
@@ -175,13 +175,14 @@ class AppWrap:
         for siteName in wikiFamily.family:
             localWiki = wikiFamily.family[siteName]
             logoAccess="%s/family/%s/logo" % (self.baseUrl,siteName)
+            db=localWiki.database
             dictList.append({
                 'site': Link(localWiki.url,localWiki.siteName),
                 'logo': Image(logoAccess),
                 'database': localWiki.database
             })
         menuList=self.adminMenuList("Family")    
-        html = render_template("tableview.html", menuList=menuList,title="Wiki Family", dictList=dictList)
+        html = render_template("welcome.html", server=self.server,menuList=menuList,title="Wiki Family", dictList=dictList)
         return html
         
     def wrap(self, siteName, path):

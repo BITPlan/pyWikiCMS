@@ -33,6 +33,10 @@ class Server(JSONAble):
         self.name=self.uname[1]
         self.frontends={}
         self.siteLookup={}
+        defaults={"sqlbackupPath":"/var/backup/sqlbackup"}
+        for key,value in defaults.items():
+            if not hasattr(self,key):
+                self.key=value
         if Server.homePath is None:
             self.homePath = str(Path.home())
         else:
@@ -49,7 +53,7 @@ class Server(JSONAble):
             raise Exception('No frontend configurations loaded yet')
         site=frontend.site
         if site.name not in self.siteLookup:
-            raise Exception('frontend for site %s not configured yet' % site)
+            raise Exception('frontend for site %s not configured yet' % site.name)
         self.frontends[site.name]=frontend
         config=self.siteLookup[site.name]
         site.configure(config)

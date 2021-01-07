@@ -13,9 +13,13 @@ appWrap=AppWrap()
 app=appWrap.app   
 @app.route('/')
 def admin():
-    return appWrap.admin()
+    return appWrap.family()
 
-@app.route('/wikis')
+@app.route('/frontends')
+def frontends():
+    return appWrap.frontends()
+
+@app.route('/frontends')
 def wikis():
     return appWrap.wikis()
 
