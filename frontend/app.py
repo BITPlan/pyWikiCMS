@@ -176,7 +176,7 @@ class AppWrap:
             logoAccess="%s/family/%s/logo" % (self.baseUrl,siteName)
             apache=self.server.checkApacheConfiguration(localWiki.siteId)
             dbName=localWiki.database
-            backupState=self.server.sqlBackupState(dbName)
+            backupState=self.server.sqlBackupStateAsHtml(dbName)
             dictList.append({
                 'site': Link(localWiki.url,localWiki.siteName),
                 'logo': Image(logoAccess),

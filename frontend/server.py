@@ -44,6 +44,14 @@ class Server(JSONAble):
         else:
             self.homePath=Server.homePath
             
+    def sqlBackupStateAsHtml(self,dbName):
+        backupState=self.sqlBackupState(dbName)
+        mbSize=backupState['size']/1024/1024
+        mdate=backupState['mdate']
+        isoDate=mdate.strftime('%Y-%m-%d% %H:%M:%S') if mdate else ""
+        html="%s %s %s MB" % (self.stateSymbol(backupState['exists']),isoDate,mbSize)
+        return html
+            
     def sqlBackupState(self,dbName):
         '''
         get the backup state of the given sql backup
