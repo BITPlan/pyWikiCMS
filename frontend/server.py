@@ -55,8 +55,7 @@ class Server(JSONAble):
             dict: backup State
         
         '''
-        fullBackup="%s/%s_full.sql" % (self.sqlBackupPath,dbName)
-        result={}
+        fullBackup="%s/today/%s_full.sql" % (self.sqlBackupPath,dbName)
         size=0
         mdate=None
         exists=os.path.isfile(fullBackup)
@@ -65,7 +64,8 @@ class Server(JSONAble):
             size=stat.st_size
             mtime=stat.st_mtime
             mdate=datetime.datetime.fromtimestamp(mtime)
-        result['size':size,'exist':exists,'mdate':mdate]
+        result={'size':size,'exist':exists,'mdate':mdate}
+        return result
             
     def enableFrontend(self,siteName):
         '''
