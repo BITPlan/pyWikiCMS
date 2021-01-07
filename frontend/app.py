@@ -140,7 +140,8 @@ class AppWrap:
         wikiFamily = WikiFamily()
         if not siteName in wikiFamily.family:
             return self.error("Logo Error","invalid siteName %s" % siteName)
-        logoFile=wikiFamily.getLogo(siteName)
+        wiki=wikiFamily.family[siteName]
+        logoFile=wiki.getLogo()
         if logoFile is None:
             return "no logo for %s" %siteName
         else:

@@ -11,7 +11,7 @@ class LocalWiki(object):
     a local Wiki
     '''
 
-    def __init__(self,siteName:str,localSettings:str=None):
+    def __init__(self,siteName:str,family=None,localSettings:str=None):
         '''
         Constructor
         
@@ -20,6 +20,7 @@ class LocalWiki(object):
             localSettings(str): path to the LocalSettings.php (if any) 
         '''
         self.siteName=siteName
+        self.family=family
         self.localSettings=localSettings
         if self.localSettings is None:
             self.settingLines=[]
@@ -51,6 +52,25 @@ class LocalWiki(object):
                 return value
         return None
     
+    def getLogo(self)->str:
+        '''
+        get the local path to the logo file of this wiki
+        
+        Returns:
+            str: the logo path if logo is defined as file else None
+        '''
+        logoPath=self.logo
+        # work around wgResourceBasePath
+        logoPath=logoPath.replace("$wgResourceBasePath","")
+        if logoPath.startswith("/") and self.family:
+            thumbRegex=r"(.*/images)(/.*?)(/thumb/*)"
+            if re.match(thumbRegex,logoPath):
+                logoPath=re.sub(thumbRegex,r"\1\3",logoPath)
+            logoFile="%s/%s%s" % (self.family.sitedir,self.siteName,logoPath)
+        else:
+            logoFile=None
+        return logoFile
+    
 class WikiFamily(object):
     '''
     the wiki family found in the given site dir
@@ -69,27 +89,8 @@ class WikiFamily(object):
             for siteName in os.listdir(sitedir):
                 lsettings="%s/%s/LocalSettings.php" % (sitedir,siteName)
                 if os.path.isfile(lsettings):
-                    localWiki=LocalWiki(siteName,lsettings)
+                    localWiki=LocalWiki(siteName,self,lsettings)
                     self.family[siteName]=localWiki
-                
-    def getLogo(self,siteName:str):
-        '''
-        get the logo for the given siteName
-        
-        Args:
-            siteName(str): the siteName e.g. wiki.bitplan.com
-            
-        Returns:
-            str: the logo path if logo is defined as file else None
-        '''
-        localWiki = self.family[siteName]
-        logoPath=localWiki.logo
-        # work around wgResourceBasePath
-        logoPath=logoPath.replace("$wgResourceBasePath","")
-        if logoPath.startswith("/"):
-            logoFile="%s/%s%s" % (self.sitedir,siteName,logoPath)
-        else:
-            logoFile=None
-        return logoFile
+       
         
         
