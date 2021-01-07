@@ -4,7 +4,6 @@ Created on 2020-12-30
 @author: wf
 '''
 from flask import Flask, send_file
-from frontend.wikicms import Frontend
 from frontend.server import Server
 from frontend.family import WikiFamily
 from frontend.widgets import Link, Image, MenuItem
@@ -175,11 +174,13 @@ class AppWrap:
         for siteName in wikiFamily.family:
             localWiki = wikiFamily.family[siteName]
             logoAccess="%s/family/%s/logo" % (self.baseUrl,siteName)
+            apache=self.server.checkApacheConfiguration(localWiki.siteId)
             db=localWiki.database
             dictList.append({
                 'site': Link(localWiki.url,localWiki.siteName),
                 'logo': Image(logoAccess),
-                'database': localWiki.database
+                'database': localWiki.database,
+                'apache': apache
             })
         menuList=self.adminMenuList("Family")    
         html = render_template("welcome.html", server=self.server,menuList=menuList,title="Wiki Family", dictList=dictList)

@@ -24,19 +24,6 @@ class Site(object):
         self.defaultPage=defaultPage
         self.lang=lang
         
-    def stateSymbol(self,b:bool)->str:
-        '''
-        return the symbol for the given boolean state b
-        
-        Args:
-            b(bool): the state to return a symbol for
-            
-        Returns:
-            ✅ for True and ❌ for false
-        '''
-        symbol="✅" if b else "❌"
-        return symbol
-        
     def configure(self,config:dict):
         '''
         configure me from the given configuration
@@ -47,11 +34,4 @@ class Site(object):
         self.defaultPage=config['defaultPage']
         self.template=config['template']
         
-    def checkApacheConfiguration(self)->str:
-        '''
-        check the apache configuration and return an indicator symbol
-        '''
-        path="/etc/apache2/sites-available/%s.conf" % self.name
-        confExists=os.path.isfile(path)
-        stateSymbol=self.stateSymbol(confExists)
-        return stateSymbol
+    

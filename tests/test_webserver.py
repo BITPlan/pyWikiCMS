@@ -4,6 +4,7 @@ Created on 2020-07-11
 @author: wf
 '''
 import unittest
+import warnings
 from frontend.server import Server
 from frontend.app import AppWrap
 from tests.test_wikicms import TestWikiCMS
@@ -12,6 +13,7 @@ class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
+        warnings.simplefilter("ignore", ResourceWarning)
         self.debug=False
         self.server=TestWebServer.initServer()
         import frontend.webserver 
@@ -97,6 +99,7 @@ class TestWebServer(unittest.TestCase):
             "Frontend",
             "invalid char"
         ]
+        #self.debug=True
         for i,query in enumerate(queries):
             response=self.app.get(query)
             self.assertEqual(response.status_code, 200)

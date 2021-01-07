@@ -56,7 +56,7 @@ class Server(JSONAble):
             raise Exception('No frontend configurations loaded yet')
         if siteName not in self.siteLookup:
             raise Exception('frontend for site %s not configured yet' % siteName)
-        frontend = Frontend(self,siteName) 
+        frontend = Frontend(siteName) 
         self.frontends[siteName]=frontend
         config=self.siteLookup[siteName]
         frontend.site.configure(config)
@@ -126,6 +126,34 @@ class Server(JSONAble):
         else:
             logo=logos['unknown']
         return logo
+    
+    def stateSymbol(self,b:bool)->str:
+        '''
+        return the symbol for the given boolean state b
+        
+        Args:
+            b(bool): the state to return a symbol for
+            
+        Returns:
+            ✅ for True and ❌ for false
+        '''
+        symbol="✅" if b else "❌"
+        return symbol
+    
+    def checkApacheConfiguration(self,conf)->str:
+        '''
+        check the given apache configuration and return an indicator symbol
+        
+        Args:
+            conf(str): the name of the apache configuration
+        
+        Returns:
+            a state symbol
+        '''
+        path="/etc/apache2/sites-available/%s.conf" % conf
+        confExists=os.path.isfile(path)
+        stateSymbol=self.stateSymbol(confExists)
+        return stateSymbol
     
     def render(self):
         '''
