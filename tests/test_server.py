@@ -4,7 +4,6 @@ Created on 2021-01-06
 @author: wf
 '''
 import unittest
-import socket
 from frontend.server import Server
 
 class TestServer(unittest.TestCase):
@@ -14,7 +13,7 @@ class TestServer(unittest.TestCase):
 
 
     def setUp(self):
-        self.debug=True
+        self.debug=False
         pass
 
 
@@ -32,8 +31,7 @@ class TestServer(unittest.TestCase):
         if self.debug:
             print("platform logo is %s " % logo)
             print (server.uname)
-            print (server.hostname)
-            print (socket.gethostbyname('swa.bitplan.com'))
+            print ("%s(%s)" % (server.hostname,server.ip))
             
         self.assertTrue("Tux" in logo)
         pass

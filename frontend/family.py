@@ -20,7 +20,11 @@ class LocalWiki(object):
             localSettings(str): path to the LocalSettings.php (if any) 
         '''
         self.siteName=siteName
-        self.ip=socket.gethostbyname(self.siteName)
+        try:
+            self.ip=socket.gethostbyname(self.siteName)
+        except Exception:
+            self.ip="?"
+            pass
         self.siteId=siteName.split(".")[0]
         self.family=family
         self.localSettings=localSettings
