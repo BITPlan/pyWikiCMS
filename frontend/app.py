@@ -62,18 +62,17 @@ class AppWrap:
                 path = path + "/%s" % (part)
         return site, path    
     
-    def enableSites(self, sites):
+    def enableSites(self, siteNames):
         '''
         enable the sites given in the sites list
         Args:
-            sites(list): a list of strings with wikiIds to be enabled
+            siteNames(list): a list of strings with wikiIds to be enabled
         '''
-        if sites is None:
+        if siteNames is None:
             return
-        for site in sites:
-            frontend = Frontend(site)
-            self.server.enable(frontend)
-            self.enabledSites.append(site)
+        for siteName in siteNames:
+            self.server.enableFrontend(siteName)
+            self.enabledSites.append(siteName)
             
     def adminMenuList(self,activeItem:str=None):
         '''

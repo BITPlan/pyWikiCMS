@@ -8,6 +8,7 @@ import os
 from flask import render_template
 from lodstorage.jsonable import JSONAble
 from pathlib import Path
+from frontend.wikicms import Frontend
 
 class Server(JSONAble):
     '''
@@ -42,22 +43,25 @@ class Server(JSONAble):
         else:
             self.homePath=Server.homePath
             
-    def enable(self,frontend):
+    def enableFrontend(self,siteName):
         '''
         enable the given frontend
         
         Args:
-            frontend(Frontend): the frontend to enable
+            siteName(str): the siteName of the frontend to enable
+        Returns:
+            Frontend: the configured frontend
         '''
         if self.frontendConfigs is None:
             raise Exception('No frontend configurations loaded yet')
-        site=frontend.site
-        if site.name not in self.siteLookup:
-            raise Exception('frontend for site %s not configured yet' % site.name)
-        self.frontends[site.name]=frontend
-        config=self.siteLookup[site.name]
-        site.configure(config)
+        if siteName not in self.siteLookup:
+            raise Exception('frontend for site %s not configured yet' % siteName)
+        frontend = Frontend(self,siteName) 
+        self.frontends[siteName]=frontend
+        config=self.siteLookup[siteName]
+        frontend.site.configure(config)
         frontend.open()
+        return frontend
         pass
         
     def getFrontend(self,wikiId):
@@ -81,8 +85,8 @@ class Server(JSONAble):
             self.restoreFromJsonFile(storePath)
             self.reinit()
             for config in self.frontendConfigs:
-                site=config["site"]
-                self.siteLookup[site]=config
+                siteName=config["site"]
+                self.siteLookup[siteName]=config
         pass
         
     def getStorePath(self,prefix:str="serverConfig")->str:

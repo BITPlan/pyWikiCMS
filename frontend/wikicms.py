@@ -15,13 +15,14 @@ class Frontend(object):
     '''
     Wiki Content Management System Frontend
     '''
-    def __init__(self, siteName,debug=False):
+    def __init__(self, siteName:str,debug:bool=False):
         '''
         Constructor
         Args:
             siteName(str): the name of the site this frontend is for
             defaultPage(str): the default page of this frontend
         '''
+        
         self.site=Site(siteName)
         self.debug=debug
         self.wiki=None

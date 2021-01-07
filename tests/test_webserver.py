@@ -12,6 +12,7 @@ class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
+        self.debug=False
         self.server=TestWebServer.initServer()
         import frontend.webserver 
         app=frontend.webserver.app
@@ -19,7 +20,7 @@ class TestWebServer(unittest.TestCase):
         app.config['WTF_CSRF_ENABLED'] = False
         app.config['DEBUG'] = False
         self.app = app.test_client()
-        self.debug=True
+       
         # make sure tests run in travis
         sites=['or','cr','sharks']
         frontend.webserver.appWrap.enableSites(sites)
