@@ -38,7 +38,7 @@ class Server(JSONAble):
         defaults={"sqlBackupPath":"/var/backup/sqlbackup"}
         for key,value in defaults.items():
             if not hasattr(self,key):
-                self.key=value
+                self.__dict__[key]=value
         if Server.homePath is None:
             self.homePath = str(Path.home())
         else:
