@@ -93,6 +93,6 @@ class MenuItem(Widget):
         '''
         activeState='active' if self.active else ''
         html='''<li class="nav-item %s">
-        <a class="nav-link" href="%s">%s</span></a>
+        <a class="nav-link" href="%s">%s</a>
       </li>''' % (activeState,self.url,self.title)
         return html
