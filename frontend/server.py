@@ -49,7 +49,7 @@ class Server(JSONAble):
         mbSize=backupState['size']/1024/1024
         mdate=backupState['mdate']
         isoDate=mdate.strftime('%Y-%m-%d% %H:%M:%S') if mdate else ""
-        html="%s %s %s MB" % (self.stateSymbol(backupState['exists']),isoDate,mbSize)
+        html="%s %s %s MB" % (self.stateSymbol(backupState['exists'],isoDate,mbSize)
         return html
             
     def sqlBackupState(self,dbName):
