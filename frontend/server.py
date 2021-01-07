@@ -72,7 +72,7 @@ class Server(JSONAble):
             size=stat.st_size
             mtime=stat.st_mtime
             mdate=datetime.datetime.fromtimestamp(mtime)
-        result={'size':size,'exist':exists,'mdate':mdate}
+        result={'size':size,'exists':exists,'mdate':mdate}
         return result
             
     def enableFrontend(self,siteName):
