@@ -20,6 +20,7 @@ class LocalWiki(object):
             localSettings(str): path to the LocalSettings.php (if any) 
         '''
         self.siteName=siteName
+        self.siteId=siteName.split(".")[0]
         self.family=family
         self.localSettings=localSettings
         if self.localSettings is None:
@@ -62,10 +63,8 @@ class LocalWiki(object):
         logoPath=self.logo
         # work around wgResourceBasePath
         logoPath=logoPath.replace("$wgResourceBasePath","")
+        logoPath=logoPath.replace("/images/%s/" % self.siteId,"/images/")
         if logoPath.startswith("/") and self.family:
-            thumbRegex=r"(.*/images)(/.*?)(/thumb/*)"
-            if re.match(thumbRegex,logoPath):
-                logoPath=re.sub(thumbRegex,r"\1\3",logoPath)
             logoFile="%s/%s%s" % (self.family.sitedir,self.siteName,logoPath)
         else:
             logoFile=None

@@ -24,12 +24,12 @@ class TestFamily(unittest.TestCase):
         test fixing BITPlan wiki family style logo references with a site subpath
         '''
         family=WikiFamily()
-        wiki=LocalWiki("test",family)
+        wiki=LocalWiki("md.bitplan.com",family)
         wiki.logo="/images/md/thumb/4/47/BITPlanMd.png/120px-BITPlanMd.png"
         logoFile=wiki.getLogo()
         if self.debug:
             print(logoFile)
-        self.assertFalse("/md" in logoFile)
+        self.assertFalse("/md/" in logoFile)
         
 
     def testGetSetting(self):
