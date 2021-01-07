@@ -172,7 +172,7 @@ class Server(JSONAble):
         symbol="✅" if b else "❌"
         return symbol
     
-    def checkApacheConfiguration(self,conf)->str:
+    def checkApacheConfiguration(self,conf,status='enabled')->str:
         '''
         check the given apache configuration and return an indicator symbol
         
@@ -182,7 +182,7 @@ class Server(JSONAble):
         Returns:
             a state symbol
         '''
-        path="/etc/apache2/sites-available/%s.conf" % conf
+        path="/etc/apache2/sites-%s/%s.conf" % (status,conf)
         confExists=os.path.isfile(path)
         stateSymbol=self.stateSymbol(confExists)
         return stateSymbol

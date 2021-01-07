@@ -174,7 +174,8 @@ class AppWrap:
         for siteName in wikiFamily.family:
             localWiki = wikiFamily.family[siteName]
             logoAccess="%s/family/%s/logo" % (self.baseUrl,siteName)
-            apache=self.server.checkApacheConfiguration(localWiki.siteId)
+            apache=self.server.checkApacheConfiguration(localWiki.siteId,'available')
+            +self.server.checkApacheConfiguration(localWiki.siteId,'enabled')
             dbName=localWiki.database
             backupState=self.server.sqlBackupStateAsHtml(dbName)
             dictList.append({
