@@ -21,7 +21,6 @@ class LocalWiki(object):
             localSettings(str): path to the LocalSettings.php (if any) 
         '''
         self.siteName=siteName
-        self.statusCode=-1
         try:
             self.ip=socket.gethostbyname(self.siteName)
         except Exception:
@@ -42,12 +41,26 @@ class LocalWiki(object):
             if self.scriptPath is None:
                 self.scriptPath=""
             self.url="%s%s" % (self.url,self.scriptPath)
-            try:
-                page = requests.get(self.url,verify=False,timeout=0.1)
-                self.statusCode=page.status_code
-            except Exception:
-                pass
+            self.statusCode=self.getStatusCode()
+            
 
+    def getStatusCode(self,timeout=0.2):
+        '''
+        get the status Code for my url
+        
+        Args:
+            timeout(float): the maximum time to wait for a response
+            
+        Returns:
+            int: html statusCode or -1 if there was a timeout
+        '''
+        statusCode=-1
+        try:
+            page = requests.get(self.url,verify=False,timeout=timeout)
+            statusCode=page.status_code
+        except Exception:
+            pass
+        return statusCode
         
     def getSetting(self,varName:str)->str:
         '''

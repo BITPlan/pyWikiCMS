@@ -31,12 +31,21 @@ class TestFamily(unittest.TestCase):
             print(logoFile)
         self.assertFalse("/md/" in logoFile)
         
+    def testStatusCode(self):
+        '''
+        test getting the status code for the a wiki
+        '''
+        lWiki=LocalWiki("wiki.bitplan.com")
+        lWiki.url="http://wiki.bitplan.com"
+        statusCode=lWiki.getStatusCode(0.2)
+        self.assertEqual(200,statusCode)
 
     def testGetSetting(self):
         '''
         get getting a setting from the local settings
         '''
         lWiki=LocalWiki("wgt.bitplan.com")
+        lWiki.url="http://wgt.bitplan.com"
         lWiki.settingLines=['''$wgLogo = "/images/wgt/thumb/3/35/Heureka-wgt.png/132px-Heureka-wgt.png";''']
         logo=lWiki.getSetting("wgLogo")
         self.assertTrue(logo.startswith("/images/wgt"))

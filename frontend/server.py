@@ -48,6 +48,15 @@ class Server(JSONAble):
             self.homePath=Server.homePath
             
     def sqlBackupStateAsHtml(self,dbName):
+        '''
+        get the backup state of the given sql backup
+        
+        Args:
+           dbName(str): the name of the database to check
+        
+        Returns:
+            html: backup State html representation
+        '''
         backupState=self.sqlBackupState(dbName)
         mbSize=backupState['size']/1024/1024
         mdate=backupState['mdate']
