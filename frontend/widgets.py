@@ -5,6 +5,9 @@ Created on 2021-01-04
 '''
 
 class Widget(object):
+    '''
+    a HTML widget
+    '''
     def __init(self):
         pass
     
