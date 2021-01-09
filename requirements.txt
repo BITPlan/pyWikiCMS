@@ -1,12 +1,5 @@
-# web server
-# https://pypi.org/project/Flask/
-Flask
-# requests (for forwarding)
-# https://pypi.org/project/requests/
-requests
-# basic auth
-# https://pypi.org/project/Flask-HTTPAuth/
-Flask-HTTPAuth
+# web server with Flask and Bootstrap4
+pyFlaskBootstrap4
 # Mediawiki and SMW API
 # https://pypi.org/project/py-3rdparty-mediawiki/
 py-3rdparty-mediawiki>=0.1.23
