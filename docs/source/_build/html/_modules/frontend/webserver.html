@@ -1,0 +1,446 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>frontend.webserver &mdash; pyWikiCMS  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> pyWikiCMS
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../frontend.html">frontend package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">tests package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pyWikiCMS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>frontend.webserver</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for frontend.webserver</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 2020-12-30</span>
+
+<span class="sd">@author: wf</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">fb4.app</span> <span class="kn">import</span> <span class="n">AppWrap</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">send_file</span>
+<span class="kn">from</span> <span class="nn">frontend.server</span> <span class="kn">import</span> <span class="n">Server</span>
+<span class="kn">from</span> <span class="nn">frontend.family</span> <span class="kn">import</span> <span class="n">WikiFamily</span>
+<span class="kn">from</span> <span class="nn">frontend.widgets</span> <span class="kn">import</span> <span class="n">Link</span><span class="p">,</span> <span class="n">Image</span><span class="p">,</span> <span class="n">MenuItem</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">render_template</span>
+<span class="kn">from</span> <span class="nn">wikibot.wikiuser</span> <span class="kn">import</span> <span class="n">WikiUser</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<div class="viewcode-block" id="WikiCMSWeb"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb">[docs]</a><span class="k">class</span> <span class="nc">WikiCMSWeb</span><span class="p">(</span><span class="n">AppWrap</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; </span>
+<span class="sd">    Wrapper for Flask Web Application </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8251</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        constructor</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            wikiId(str): id of the wiki to use as a CMS backend</span>
+<span class="sd">            host(str): flask host</span>
+<span class="sd">            port(int): the port to use for http connections</span>
+<span class="sd">            debug(bool): True if debugging should be switched on</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">scriptdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+        <span class="n">template_folder</span><span class="o">=</span><span class="n">scriptdir</span> <span class="o">+</span> <span class="s1">&#39;/../templates&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span><span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span><span class="n">template_folder</span><span class="o">=</span><span class="n">template_folder</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabledSites</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;admin&#39;</span><span class="p">]</span>
+        
+<div class="viewcode-block" id="WikiCMSWeb.splitPath"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb.splitPath">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">splitPath</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        split the given path</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path(str): the path to split</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str,str: the site of the path an the actual path</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># https://stackoverflow.com/questions/2136556/in-python-how-do-i-split-a-string-and-keep-the-separators</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+        <span class="n">site</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">site</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">part</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">site</span><span class="p">,</span> <span class="n">path</span>    </div>
+    
+<div class="viewcode-block" id="WikiCMSWeb.enableSites"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb.enableSites">[docs]</a>    <span class="k">def</span> <span class="nf">enableSites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">siteNames</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        enable the sites given in the sites list</span>
+<span class="sd">        Args:</span>
+<span class="sd">            siteNames(list): a list of strings with wikiIds to be enabled</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">siteNames</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">siteName</span> <span class="ow">in</span> <span class="n">siteNames</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">enableFrontend</span><span class="p">(</span><span class="n">siteName</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabledSites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">siteName</span><span class="p">)</span></div>
+            
+<div class="viewcode-block" id="WikiCMSWeb.adminMenuList"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb.adminMenuList">[docs]</a>    <span class="k">def</span> <span class="nf">adminMenuList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">activeItem</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        get the list of menu items for the admin menu</span>
+<span class="sd">        Args:</span>
+<span class="sd">            activeItem(str): the active  menu item</span>
+<span class="sd">        Return:</span>
+<span class="sd">            list: the list of menu items</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">menuList</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">MenuItem</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span><span class="s1">&#39;Home&#39;</span><span class="p">),</span>
+            <span class="n">MenuItem</span><span class="p">(</span><span class="s1">&#39;/wikis&#39;</span><span class="p">,</span><span class="s1">&#39;Wikis&#39;</span><span class="p">),</span>
+            <span class="n">MenuItem</span><span class="p">(</span><span class="s1">&#39;/frontends&#39;</span><span class="p">,</span><span class="s1">&#39;Frontends&#39;</span><span class="p">),</span>
+            <span class="n">MenuItem</span><span class="p">(</span><span class="s1">&#39;https://github.com/BITPlan/pyWikiCMS&#39;</span><span class="p">,</span><span class="s1">&#39;github&#39;</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">if</span> <span class="n">activeItem</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">menuItem</span> <span class="ow">in</span> <span class="n">menuList</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">menuItem</span><span class="o">.</span><span class="n">title</span><span class="o">==</span><span class="n">activeItem</span><span class="p">:</span>
+                    <span class="n">menuItem</span><span class="o">.</span><span class="n">active</span><span class="o">=</span><span class="kc">True</span>
+                <span class="k">if</span> <span class="n">menuItem</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
+                    <span class="n">menuItem</span><span class="o">.</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseUrl</span><span class="p">,</span><span class="n">menuItem</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">menuList</span></div>
+            
+<div class="viewcode-block" id="WikiCMSWeb.frontends"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb.frontends">[docs]</a>    <span class="k">def</span> <span class="nf">frontends</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        render the frontends view</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the html for the admin view</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">menuList</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adminMenuList</span><span class="p">(</span><span class="s2">&quot;Frontends&quot;</span><span class="p">)</span>
+        <span class="n">html</span> <span class="o">=</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;tableview.html&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Frontends&quot;</span><span class="p">,</span> <span class="n">menuList</span><span class="o">=</span><span class="n">menuList</span><span class="p">,</span><span class="n">dictList</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">frontendConfigs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">html</span></div>
+    
+<div class="viewcode-block" id="WikiCMSWeb.wikis"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb.wikis">[docs]</a>    <span class="k">def</span> <span class="nf">wikis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        render the wikis table</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the html code for the table of wikis</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">wikiUsers</span> <span class="o">=</span> <span class="n">WikiUser</span><span class="o">.</span><span class="n">getWikiUsers</span><span class="p">()</span>
+        <span class="n">dictList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">wikiUser</span> <span class="ow">in</span> <span class="n">wikiUsers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">dictList</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;wikiId&#39;</span><span class="p">:</span> <span class="n">wikiUser</span><span class="o">.</span><span class="n">wikiId</span><span class="p">,</span>
+                <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="n">Link</span><span class="p">(</span><span class="n">wikiUser</span><span class="o">.</span><span class="n">url</span><span class="p">,</span><span class="n">wikiUser</span><span class="o">.</span><span class="n">url</span><span class="p">),</span>
+                <span class="s1">&#39;scriptPath&#39;</span><span class="p">:</span><span class="n">wikiUser</span><span class="o">.</span><span class="n">scriptPath</span><span class="p">,</span>
+                <span class="s1">&#39;version&#39;</span><span class="p">:</span><span class="n">wikiUser</span><span class="o">.</span><span class="n">version</span>
+            <span class="p">})</span>
+        <span class="n">menuList</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adminMenuList</span><span class="p">(</span><span class="s2">&quot;Wikis&quot;</span><span class="p">)</span>      
+        <span class="n">html</span> <span class="o">=</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;tableview.html&quot;</span><span class="p">,</span> <span class="n">menuList</span><span class="o">=</span><span class="n">menuList</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Wikis&quot;</span><span class="p">,</span> <span class="n">dictList</span><span class="o">=</span><span class="n">dictList</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">html</span>    </div>
+    
+<div class="viewcode-block" id="WikiCMSWeb.logo"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb.logo">[docs]</a>    <span class="k">def</span> <span class="nf">logo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">siteName</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        render the Logo for the given siteName</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            siteName(str): the name of the site e.g. wiki.bitplan.com</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            the rendered Logo for the given Site</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">wikiFamily</span> <span class="o">=</span> <span class="n">WikiFamily</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">siteName</span> <span class="ow">in</span> <span class="n">wikiFamily</span><span class="o">.</span><span class="n">family</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Logo Error&quot;</span><span class="p">,</span><span class="s2">&quot;invalid siteName </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">siteName</span><span class="p">)</span>
+        <span class="n">wiki</span><span class="o">=</span><span class="n">wikiFamily</span><span class="o">.</span><span class="n">family</span><span class="p">[</span><span class="n">siteName</span><span class="p">]</span>
+        <span class="n">logoFile</span><span class="o">=</span><span class="n">wiki</span><span class="o">.</span><span class="n">getLogo</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">logoFile</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;no logo for </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="n">siteName</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">send_file</span><span class="p">(</span><span class="n">logoFile</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="WikiCMSWeb.family"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb.family">[docs]</a>    <span class="k">def</span> <span class="nf">family</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        show a html representation of the family of wikis on this server (if any)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: a html table of all wikis in the family</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">dictList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">wikiFamily</span> <span class="o">=</span> <span class="n">WikiFamily</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">siteName</span> <span class="ow">in</span> <span class="n">wikiFamily</span><span class="o">.</span><span class="n">family</span><span class="p">:</span>
+            <span class="n">localWiki</span> <span class="o">=</span> <span class="n">wikiFamily</span><span class="o">.</span><span class="n">family</span><span class="p">[</span><span class="n">siteName</span><span class="p">]</span>
+            <span class="n">logoAccess</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/family/</span><span class="si">%s</span><span class="s2">/logo&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseUrl</span><span class="p">,</span><span class="n">siteName</span><span class="p">)</span>
+            <span class="n">apacheAvailable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">checkApacheConfiguration</span><span class="p">(</span><span class="n">localWiki</span><span class="o">.</span><span class="n">siteId</span><span class="p">,</span><span class="s1">&#39;available&#39;</span><span class="p">)</span>
+            <span class="n">apacheEnabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">checkApacheConfiguration</span><span class="p">(</span><span class="n">localWiki</span><span class="o">.</span><span class="n">siteId</span><span class="p">,</span><span class="s1">&#39;enabled&#39;</span><span class="p">)</span>
+            <span class="n">dbName</span><span class="o">=</span><span class="n">localWiki</span><span class="o">.</span><span class="n">database</span>
+            <span class="n">backupState</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">sqlBackupStateAsHtml</span><span class="p">(</span><span class="n">dbName</span><span class="p">)</span>
+            <span class="n">hereState</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">stateSymbol</span><span class="p">(</span><span class="n">localWiki</span><span class="o">.</span><span class="n">ip</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
+            <span class="n">dictList</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;site&#39;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">Link</span><span class="p">(</span><span class="n">localWiki</span><span class="o">.</span><span class="n">url</span><span class="p">,</span><span class="n">localWiki</span><span class="o">.</span><span class="n">siteName</span><span class="p">),</span><span class="n">localWiki</span><span class="o">.</span><span class="n">statusCode</span><span class="p">),</span>
+                <span class="s1">&#39;logo&#39;</span><span class="p">:</span> <span class="n">Image</span><span class="p">(</span><span class="n">logoAccess</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">70</span><span class="p">),</span>
+                <span class="s1">&#39;database&#39;</span><span class="p">:</span> <span class="n">localWiki</span><span class="o">.</span><span class="n">database</span><span class="p">,</span>
+                <span class="s1">&#39;SQL backup&#39;</span><span class="p">:</span> <span class="n">backupState</span><span class="p">,</span>
+                <span class="s1">&#39;ip&#39;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%s%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">hereState</span><span class="p">,</span><span class="n">localWiki</span><span class="o">.</span><span class="n">ip</span><span class="p">),</span>
+                <span class="s1">&#39;apache&#39;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">apacheAvailable</span><span class="p">,</span><span class="n">apacheEnabled</span><span class="p">)</span>
+            <span class="p">})</span>
+        <span class="n">menuList</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adminMenuList</span><span class="p">(</span><span class="s2">&quot;Family&quot;</span><span class="p">)</span>    
+        <span class="n">html</span> <span class="o">=</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;welcome.html&quot;</span><span class="p">,</span> <span class="n">server</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="p">,</span><span class="n">menuList</span><span class="o">=</span><span class="n">menuList</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Wiki Family&quot;</span><span class="p">,</span> <span class="n">dictList</span><span class="o">=</span><span class="n">dictList</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">html</span></div>
+        
+<div class="viewcode-block" id="WikiCMSWeb.wrap"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.WikiCMSWeb.wrap">[docs]</a>    <span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">siteName</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        wrap the given path for the given site</span>
+<span class="sd">        Args:</span>
+<span class="sd">            siteName(str): the name of the site to wrap</span>
+<span class="sd">            path(path): the path to wrap</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;index.html&quot;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Error&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">siteName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabledSites</span><span class="p">:</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="s2">&quot;access to site &#39;</span><span class="si">%s</span><span class="s2">&#39; is not enabled you might want to add it via the --sites command line option&quot;</span> <span class="o">%</span> <span class="n">siteName</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">frontend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">getFrontend</span><span class="p">(</span><span class="n">siteName</span><span class="p">)</span> 
+            <span class="k">if</span> <span class="n">frontend</span><span class="o">.</span><span class="n">needsProxy</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">frontend</span><span class="o">.</span><span class="n">proxy</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">frontend</span><span class="o">.</span><span class="n">getContent</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+                <span class="n">template</span> <span class="o">=</span> <span class="n">frontend</span><span class="o">.</span><span class="n">site</span><span class="o">.</span><span class="n">template</span>
+        <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">error</span><span class="p">)</span></div></div>
+        
+<span class="c1"># </span>
+<span class="c1"># route of this Web application</span>
+<span class="c1">#</span>
+
+<span class="c1"># construct the web application    </span>
+<span class="n">wcw</span><span class="o">=</span><span class="n">WikiCMSWeb</span><span class="p">()</span>
+ 
+<span class="c1"># get the app to define routings for</span>
+<span class="n">app</span><span class="o">=</span><span class="n">wcw</span><span class="o">.</span><span class="n">app</span> 
+
+<div class="viewcode-block" id="root"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.root">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">root</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">wcw</span><span class="o">.</span><span class="n">family</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="family"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.family">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/family&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">family</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">wcw</span><span class="o">.</span><span class="n">family</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="frontends"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.frontends">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/frontends&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">frontends</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">wcw</span><span class="o">.</span><span class="n">frontends</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="wikis"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.wikis">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/wikis&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">wikis</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">wcw</span><span class="o">.</span><span class="n">wikis</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="wikiLogo"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.wikiLogo">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/family/&lt;string:siteName&gt;/logo&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">wikiLogo</span><span class="p">(</span><span class="n">siteName</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    render the Logo for the given siteName</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        siteName(str): the name of the site e.g. wiki.bitplan.com</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        the rendered Logo for the given Site</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">wcw</span><span class="o">.</span><span class="n">logo</span><span class="p">(</span><span class="n">siteName</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="wrap"><a class="viewcode-back" href="../../frontend.html#frontend.webserver.wrap">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&lt;path:path&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    wrap the url request for the given path</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        path(str): the path to wrap - the path should start with /&lt;wikiId&gt;/ followed by the actual path in the wiki</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">site</span><span class="p">,</span><span class="n">path</span><span class="o">=</span><span class="n">AppWrap</span><span class="o">.</span><span class="n">splitPath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wcw</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">site</span><span class="p">,</span><span class="n">path</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">parser</span><span class="o">=</span><span class="n">wcw</span><span class="o">.</span><span class="n">getParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Wiki Content Management webservice&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--sites&#39;</span><span class="p">,</span><span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span><span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;the sites to enable&quot;</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">=</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">wcw</span><span class="o">.</span><span class="n">optionalDebug</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">wcw</span><span class="o">.</span><span class="n">enableSites</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">sites</span><span class="p">)</span>
+    <span class="n">wcw</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2021, Wolfgang Fahl
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
