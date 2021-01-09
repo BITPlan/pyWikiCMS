@@ -5,8 +5,8 @@ Created on 2020-07-11
 '''
 import unittest
 import warnings
+from fb4.app import AppWrap
 from frontend.server import Server
-from frontend.app import AppWrap
 from tests.test_wikicms import TestWikiCMS
 
 class TestWebServer(unittest.TestCase):
@@ -25,7 +25,7 @@ class TestWebServer(unittest.TestCase):
        
         # make sure tests run in travis
         sites=['or','cr','sharks']
-        frontend.webserver.appWrap.enableSites(sites)
+        frontend.webserver.wcw.enableSites(sites)
         pass
 
     def tearDown(self):
@@ -74,6 +74,7 @@ class TestWebServer(unittest.TestCase):
         path=self.server.getStorePath()
         if self.debug:
             print(path)
+        self.assertTrue("/tmp" in path)
     
     def testSplit(self):
         '''

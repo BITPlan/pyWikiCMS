@@ -10,6 +10,7 @@ from frontend.family import WikiFamily
 from frontend.widgets import Link, Image, MenuItem
 from flask import render_template
 from wikibot.wikiuser import WikiUser
+import os
 
 class WikiCMSWeb(AppWrap):
     ''' 
@@ -26,7 +27,9 @@ class WikiCMSWeb(AppWrap):
             port(int): the port to use for http connections
             debug(bool): True if debugging should be switched on
         '''
-        super().init(host=host,port=port,debug=debug)
+        scriptdir = os.path.dirname(os.path.abspath(__file__))
+        template_folder=scriptdir + '/../templates'
+        super().__init__(host=host,port=port,debug=debug,template_folder=template_folder)
         self.server = Server()
         self.server.load()
         self.enabledSites = ['admin']
@@ -191,6 +194,7 @@ class WikiCMSWeb(AppWrap):
 
 # construct the web application    
 wcw=WikiCMSWeb()
+ 
 # get the app to define routings for
 app=wcw.app 
 

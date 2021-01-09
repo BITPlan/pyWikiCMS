@@ -31,6 +31,9 @@ class Server(JSONAble):
         self.reinit()
         
     def reinit(self):
+        '''
+        reinitialize me
+        '''
         self.platform=platform
         self.uname=os.uname()
         self.name=self.uname[1]
