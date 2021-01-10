@@ -37,7 +37,7 @@ class TestFamily(unittest.TestCase):
         '''
         lWiki=LocalWiki("wiki.bitplan.com")
         lWiki.url="http://wiki.bitplan.com"
-        statusCode=lWiki.getStatusCode(2.0)
+        statusCode=lWiki.getStatusCode(5.0)
         self.assertEqual(200,statusCode)
 
     def testGetSetting(self):
