@@ -37,6 +37,8 @@ class LocalWiki(object):
             self.logo=self.getSetting("wgLogo")
             self.database=self.getSetting("wgDBname")
             self.url=self.getSetting("wgServer")
+            self.dbUser=self.getSetting("wgDBuser")
+            self.dbPassword=self.getSetting("wgDBpassword")
             self.scriptPath=self.getSetting("wgScriptPath")
             if self.scriptPath is None:
                 self.scriptPath=""
@@ -44,7 +46,7 @@ class LocalWiki(object):
             self.statusCode=self.getStatusCode()
             
 
-    def getStatusCode(self,timeout=0.2):
+    def getStatusCode(self,timeout=0.5):
         '''
         get the status Code for my url
         

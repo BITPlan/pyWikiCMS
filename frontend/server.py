@@ -11,6 +11,7 @@ from flask import render_template
 from lodstorage.jsonable import JSONAble
 from pathlib import Path
 from frontend.wikicms import Frontend
+from sqlalchemy_utils import database_exists
 
 class Server(JSONAble):
     '''
@@ -49,6 +50,37 @@ class Server(JSONAble):
             self.homePath = str(Path.home())
         else:
             self.homePath=Server.homePath
+            
+    def sqlGetDatabaseUrl(self,dbname:str,username:str,password:str)->str:
+        '''
+        get the DatabaseUrl for the given database Name
+        
+        Args:
+            dbname(str): the name of the database
+            username(str): the username
+            password(str): the password
+            
+        Returns:
+            str: the url for sqlAlchemy in rfc1738 format e.g. mysql://dt_admin:dt2016@localhost:3308/dreamteam_db
+        '''
+        #http://docs.sqlalchemy.org/en/latest/dialects/mysql.html
+        url="mysql+pymysql://%s:%s@%s/%s" % (username,password,self.hostname,dbname)
+        return url
+            
+    def sqlDatabaseExist(self,dburl:str,)->bool:
+        '''
+        check if the database with the given name exists
+        
+  
+        Args:
+            dburl(str): rfd 1738 formatted database url e.g. mysql://dt_admin:dt2016@localhost:3308/dreamteam_db
+            
+        Returns:
+            True if the database exists, else False
+        '''
+        dbExists=database_exists(dburl)
+        return dbExists
+        
             
     def sqlBackupStateAsHtml(self,dbName):
         '''
