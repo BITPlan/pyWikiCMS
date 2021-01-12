@@ -153,7 +153,7 @@ class WikiCMSWeb(AppWrap):
             apacheAvailable=self.server.checkApacheConfiguration(localWiki.siteId,'available')
             apacheEnabled=self.server.checkApacheConfiguration(localWiki.siteId,'enabled')
             dbName=localWiki.database
-            dburl=self.server.sqlGetDatabaseUrl(localWiki.database, localWiki.dbUser, localWiki.dbPassword)
+            dburl=self.server.sqlGetDatabaseUrl(localWiki.database, localWiki.dbUser, localWiki.dbPassword,hostname='localhost')
             dbState=self.server.sqlDatabaseExist(dburl)
             dbStateSymbol=self.server.stateSymbol(dbState)
             backupState=self.server.sqlBackupStateAsHtml(dbName)
