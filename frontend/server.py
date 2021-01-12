@@ -51,7 +51,7 @@ class Server(JSONAble):
         else:
             self.homePath=Server.homePath
             
-    def sqlGetDatabaseUrl(self,dbname:str,username:str,password:str)->str:
+    def sqlGetDatabaseUrl(self,dbname:str,username:str,password:str,hostname:str=None)->str:
         '''
         get the DatabaseUrl for the given database Name
         
@@ -64,7 +64,9 @@ class Server(JSONAble):
             str: the url for sqlAlchemy in rfc1738 format e.g. mysql://dt_admin:dt2016@localhost:3308/dreamteam_db
         '''
         #http://docs.sqlalchemy.org/en/latest/dialects/mysql.html
-        url="mysql+pymysql://%s:%s@%s/%s" % (username,password,self.hostname,dbname)
+        if hostname is None:
+            hostname=self.hostname
+        url="mysql+pymysql://%s:%s@%s/%s" % (username,password,hostname,dbname)
         return url
             
     def sqlDatabaseExist(self,dburl:str,)->bool:
@@ -78,7 +80,12 @@ class Server(JSONAble):
         Returns:
             True if the database exists, else False
         '''
-        dbExists=database_exists(dburl)
+        dbExists=False
+        try:
+            dbExists=database_exists(dburl)
+        except Exception:
+            # bad luck
+            pass
         return dbExists
         
             
