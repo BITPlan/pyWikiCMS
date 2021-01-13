@@ -42,7 +42,7 @@ class LocalWiki(object):
             self.scriptPath=self.getSetting("wgScriptPath")
             if self.scriptPath is None:
                 self.scriptPath=""
-            self.url="%s%s" % (self.url,self.scriptPath)
+            self.url="%s%s/" % (self.url,self.scriptPath)
             self.statusCode=self.getStatusCode()
             
 

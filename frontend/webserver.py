@@ -158,8 +158,13 @@ class WikiCMSWeb(AppWrap):
             dbStateSymbol=self.server.stateSymbol(dbState)
             backupState=self.server.sqlBackupStateAsHtml(dbName)
             hereState=self.server.stateSymbol(localWiki.ip==self.server.ip)
+            statusSymbol="❌" 
+            if localWiki.statusCode==200:
+                statusSymbol="✅"
+            elif localWiki.statusCode==404:
+                statusSymbol="⚠️"
             dictList.append({
-                'site': "%s(%d)" % (Link(localWiki.url,localWiki.siteName),localWiki.statusCode),
+                'site': "%s %s" % (Link(localWiki.url,localWiki.siteName),statusSymbol),
                 'logo': Image(logoAccess,height=70),
                 'database': "%s %s" % (localWiki.database,dbStateSymbol),
                 'SQL backup': backupState,
