@@ -7,7 +7,7 @@ from fb4.app import AppWrap
 from flask import send_file
 from frontend.server import Server
 from frontend.family import WikiFamily, WikiBackup
-from frontend.widgets import Link, Image, MenuItem
+from frontend.widgets import Link, Icon, Image, MenuItem
 from flask import render_template
 from wikibot.wikiuser import WikiUser
 import os
@@ -116,7 +116,8 @@ class WikiCMSWeb(AppWrap):
                 'url': Link(wikiUser.url,wikiUser.url),
                 'scriptPath':wikiUser.scriptPath,
                 'version':wikiUser.version,
-                'backup': "✅" if wikiBackup.exists() else "❌"
+                'backup': "✅" if wikiBackup.exists() else "❌",
+                'git': Icon("github",32) if wikiBackup.hasGit() else ""
             })
         menuList=self.adminMenuList("Wikis")      
         html = render_template("tableview.html", menuList=menuList,title="Wikis", dictList=dictList)

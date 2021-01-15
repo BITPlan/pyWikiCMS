@@ -117,6 +117,7 @@ class WikiBackup(object):
         self.wikiuser=wikiuser
         home=str(Path.home())
         self.backupPath='%s/wikibackup/%s' % (home,wikiuser.wikiId)
+        self.gitPath="%s/.git" % self.backupPath
         pass
     
     def exists(self)->bool:
@@ -128,6 +129,14 @@ class WikiBackup(object):
         '''
         return os.path.isdir(self.backupPath)
     
+    def hasGit(self)->bool:
+        '''
+        check if this Backup has a local git repository
+        
+        Returns:
+            bool: True if the self.gitPath directory exists
+        '''
+        return os.path.isdir(self.gitPath)
         
     
 class WikiFamily(object):
