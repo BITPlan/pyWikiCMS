@@ -6,7 +6,7 @@ Created on 2020-12-30
 from fb4.app import AppWrap
 from flask import send_file
 from frontend.server import Server
-from frontend.family import WikiFamily
+from frontend.family import WikiFamily, WikiBackup
 from frontend.widgets import Link, Image, MenuItem
 from flask import render_template
 from wikibot.wikiuser import WikiUser
@@ -109,11 +109,14 @@ class WikiCMSWeb(AppWrap):
         wikiUsers = WikiUser.getWikiUsers()
         dictList = []
         for wikiUser in wikiUsers.values():
+            url="%s%s/" % (wikiUser.url,wikiUser.scriptPath)
+            wikiBackup=WikiBackup(wikiUser)
             dictList.append({
-                'wikiId': wikiUser.wikiId,
+                'wikiId': Link(url,wikiUser.wikiId),
                 'url': Link(wikiUser.url,wikiUser.url),
                 'scriptPath':wikiUser.scriptPath,
-                'version':wikiUser.version
+                'version':wikiUser.version,
+                'backup': "✅" if wikiBackup.exists() else "❌"
             })
         menuList=self.adminMenuList("Wikis")      
         html = render_template("tableview.html", menuList=menuList,title="Wikis", dictList=dictList)

@@ -18,7 +18,7 @@ class Server(JSONAble):
     a server that might serve multiple wikis for a wikiFarm
     '''
     homePath=None
-    def __init__(self):       
+    def __init__(self,debug=False):       
 
         '''
         Constructor
@@ -29,17 +29,25 @@ class Server(JSONAble):
         self.frontendConfigs=None
         self.logo=None
         self.purpose=""
-        self.reinit()
+        self.reinit(debug)
         
-    def reinit(self):
+    def reinit(self,debug=False):
         '''
         reinitialize me
         '''
+        self.debug=debug
         self.platform=platform
         self.uname=os.uname()
         self.name=self.uname[1]
-        self.hostname=socket.getfqdn()
-        self.ip=socket.gethostbyname(self.hostname)
+        self.hostname="?"
+        self.ip="127.0.0.1"
+        try:
+            self.hostname=socket.getfqdn()
+            self.ip=socket.gethostbyname(self.hostname)
+        except Exception as ex:
+            if self.debug:
+                print (str(ex))
+            pass
         self.frontends={}
         self.siteLookup={}
         defaults={"sqlBackupPath":"/var/backup/sqlbackup"}

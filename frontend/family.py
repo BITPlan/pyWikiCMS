@@ -7,6 +7,8 @@ import os
 import re
 import socket
 import requests
+from pathlib import Path
+
 class LocalWiki(object):
     '''
     a local Wiki
@@ -97,6 +99,36 @@ class LocalWiki(object):
         else:
             logoFile=None
         return logoFile
+    
+class WikiBackup(object):
+    '''
+    find out details about a WikiBackup
+    
+    potentially this class needs to move upstream to py-3rdparty-MediaWiki
+    '''
+    
+    def __init__(self,wikiuser):
+        '''
+        constructor
+        
+        Arguments:
+            wikiuser(WikiUser): the wikiuser to access this backup
+        '''
+        self.wikiuser=wikiuser
+        home=str(Path.home())
+        self.backupPath='%s/wikibackup/%s' % (home,wikiuser.wikiId)
+        pass
+    
+    def exists(self)->bool:
+        '''
+        check if this Backup exists
+        
+        Returns:
+            bool: True if the self.backupPath directory exists
+        '''
+        return os.path.isdir(self.backupPath)
+    
+        
     
 class WikiFamily(object):
     '''
