@@ -4,12 +4,15 @@ Created on 2020-12-30
 @author: wf
 '''
 from fb4.app import AppWrap
+from fb4.login_bp import LoginBluePrint
+from flask_login import current_user, login_user,logout_user, login_required
 from flask import send_file
 from frontend.server import Server
 from frontend.family import WikiFamily, WikiBackup
-from frontend.widgets import Link, Icon, Image, MenuItem
+from fb4.widgets import Link, Icon, Image, MenuItem
 from flask import render_template
 from wikibot.wikiuser import WikiUser
+from fb4.sqldb import db
 import os
 
 class WikiCMSWeb(AppWrap):
@@ -30,9 +33,44 @@ class WikiCMSWeb(AppWrap):
         scriptdir = os.path.dirname(os.path.abspath(__file__))
         template_folder=scriptdir + '/../templates'
         super().__init__(host=host,port=port,debug=debug,template_folder=template_folder)
+        self.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        db.init_app(self.app)
+        self.db=db
+        self.loginBluePrint=LoginBluePrint(self.app,'login')
         self.server = Server()
         self.server.load()
         self.enabledSites = ['admin']
+        
+        #
+        # setup global handlers
+        #
+        @self.app.before_first_request
+        def before_first_request_func():
+            self.initDB()
+            
+        @login_required
+        @self.app.route('/wikis')
+        def wikis():
+            return self.wikis()
+        
+        @login_required
+        @self.app.route('/frontends')
+        def frontends():
+            return wcw.frontends()
+        
+    def initDB(self):
+        '''
+        initialize the database
+        '''
+        self.db.drop_all()
+        self.db.create_all()
+        self.initUsers()
+    
+    def initUsers(self):
+        if hasattr("adminUser", self.server):
+            self.loginBluePrint.addUser(self.db,self.server.adminUser,self.server.adminPassword)
+        else:
+            self.hint="There is no adminUser configured yet"
         
     @staticmethod
     def splitPath(path):
@@ -76,10 +114,15 @@ class WikiCMSWeb(AppWrap):
         '''
         menuList=[
             MenuItem('/','Home'),
-            MenuItem('/wikis','Wikis'),
-            MenuItem('/frontends','Frontends'),
-            MenuItem('https://github.com/BITPlan/pyWikiCMS','github')
+            MenuItem('https://github.com/BITPlan/pyWikiCMS','github'),
             ]
+        if current_user.is_anonymous:
+            menuList.append(MenuItem('/login','login'))
+        else:
+            menuList.append(MenuItem('/wikis','Wikis')),
+            menuList.append(MenuItem('/frontends','Frontends')),
+            menuList.append(MenuItem('/logout','logout'))
+        
         if activeItem is not None:
             for menuItem in menuList:
                 if menuItem.title==activeItem:
@@ -211,20 +254,12 @@ wcw=WikiCMSWeb()
 app=wcw.app 
 
 @app.route('/')
-def root():
+def index():
     return wcw.family()
 
 @app.route('/family')
 def family():
     return wcw.family()
-
-@app.route('/frontends')
-def frontends():
-    return wcw.frontends()
-
-@app.route('/wikis')
-def wikis():
-    return wcw.wikis()
 
 @app.route('/family/<string:siteName>/logo')
 def wikiLogo(siteName:str):
