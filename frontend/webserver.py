@@ -67,7 +67,7 @@ class WikiCMSWeb(AppWrap):
         self.initUsers()
     
     def initUsers(self):
-        if hasattr("adminUser", self.server):
+        if hasattr(self.server,"adminUser"):
             self.loginBluePrint.addUser(self.db,self.server.adminUser,self.server.adminPassword)
         else:
             self.hint="There is no adminUser configured yet"
