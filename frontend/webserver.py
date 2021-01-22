@@ -70,7 +70,7 @@ class WikiCMSWeb(AppWrap):
         if hasattr(self.server,"adminUser"):
             self.loginBluePrint.addUser(self.db,self.server.adminUser,self.server.adminPassword)
         else:
-            self.hint="There is no adminUser configured yet"
+            self.loginBluePrint.hint="There is no adminUser configured yet"
         
     @staticmethod
     def splitPath(path):
