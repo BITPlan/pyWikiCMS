@@ -1,5 +1,5 @@
 # web server with Flask and Bootstrap4
-pyFlaskBootstrap4>=0.2.2
+pyFlaskBootstrap4>=0.2.7
 # mySQL support
 # https://pypi.org/project/PyMySQL/
 PyMySQL

@@ -47,6 +47,16 @@ class WikiCMSWeb(AppWrap):
         @self.app.before_first_request
         def before_first_request_func():
             self.initDB()
+            loginMenuList=self.adminMenuList("Login")
+            self.loginBluePrint.setLoginArgs(menuList=loginMenuList)
+            
+        @self.app.route('/')
+        def index():
+            return self.family()
+
+        @self.app.route('/family')
+        def family():
+            return wcw.family()    
             
         @login_required
         @self.app.route('/wikis')
@@ -210,14 +220,19 @@ class WikiCMSWeb(AppWrap):
                 statusSymbol="✅"
             elif localWiki.statusCode==404:
                 statusSymbol="⚠️"
-            dictList.append({
+            siteDict={
                 'site': "%s %s" % (Link(localWiki.url,localWiki.siteName),statusSymbol),
                 'logo': Image(logoAccess,height=70),
-                'database': "%s %s" % (localWiki.database,dbStateSymbol),
-                'SQL backup': backupState,
-                'ip': "%s%s" % (hereState,localWiki.ip),
-                'apache': "%s/%s" % (apacheAvailable,apacheEnabled)
-            })
+            }
+            if not current_user.is_anonymous:
+                adminDict={
+                   'database': "%s %s" % (localWiki.database,dbStateSymbol),
+                   'SQL backup': backupState,
+                    'ip': "%s%s" % (hereState,localWiki.ip),
+                    'apache': "%s/%s" % (apacheAvailable,apacheEnabled)
+                }  
+                siteDict={**siteDict,**adminDict}
+            dictList.append(siteDict)
         menuList=self.adminMenuList("Family")    
         html = render_template("welcome.html", server=self.server,menuList=menuList,title="Wiki Family", dictList=dictList)
         return html
@@ -253,13 +268,6 @@ wcw=WikiCMSWeb()
 # get the app to define routings for
 app=wcw.app 
 
-@app.route('/')
-def index():
-    return wcw.family()
-
-@app.route('/family')
-def family():
-    return wcw.family()
 
 @app.route('/family/<string:siteName>/logo')
 def wikiLogo(siteName:str):
