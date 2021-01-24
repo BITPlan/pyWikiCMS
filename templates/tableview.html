@@ -1,6 +1,15 @@
+{% extends 'base.html' %}
 {% import 'macros.html' as macros %}
-{{ macros.header(title) }}
-{% if menuList %}{{ macros.menu(menuList) }}{%endif %}
-{% if title is not none %}<h2>{{ title }}</h2>{%endif %}
+{% block content %}
 {{ macros.table4DictList(dictList) }}
-{{ macros.footer() }} 
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.23/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.23/js/jquery.dataTables.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+    	$('.table').DataTable();
+	});
+    </script>
+{% endblock %}
