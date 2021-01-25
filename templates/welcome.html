@@ -1,7 +1,12 @@
+{% extends 'base.html' %}
 {% import 'macros.html' as macros %}
-{{ macros.header(title) }}
-{% if menuList %}{{ macros.menu(menuList) }}{%endif %}
+{% block content %}
 {% if server is not none %}{{ server.render() | safe }}{%endif %}
 {% if title is not none %}<h2>{{ title }}</h2>{%endif %}
 {{ macros.table4DictList(dictList) }}
-{{ macros.footer() }} 
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    {{ macros.loadDataTable() }}
+    {{ macros.activateDataTable() }}
+{% endblock %}
