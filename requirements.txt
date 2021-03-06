@@ -17,3 +17,5 @@ pydevd
 pylodstorage
 # https://pypi.org/project/beautifulsoup4/
 beautifulsoup4
+# https://pypi.org/project/lxml/
+lxml

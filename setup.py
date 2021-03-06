@@ -40,9 +40,11 @@ setup(name='pyWikiCMS',
           'templates': ['*.html'],
       },
       install_requires=[
+          'lxml',
           'pyFlaskBootstrap4',
           'py-3rdparty-mediawiki',
-	      'pydevd',
+	  'pydevd',
           'beautifulsoup4'
+
       ],
       zip_safe=False)
