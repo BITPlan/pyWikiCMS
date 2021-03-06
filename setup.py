@@ -1,5 +1,5 @@
 from setuptools import setup
-import os 
+import os
 from collections import OrderedDict
 
 try:
@@ -12,7 +12,7 @@ except:
     long_description = open('../../README.md').read()
 
 setup(name='pyWikiCMS',
-      version='0.0.5',
+      version='0.0.6',
       description='python implementation of a Mediawiki based Content Management System',
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -42,6 +42,7 @@ setup(name='pyWikiCMS',
       install_requires=[
           'pyFlaskBootstrap4',
           'py-3rdparty-mediawiki',
-	      'pydevd'
+	      'pydevd',
+          'beautifulsoup4'
       ],
       zip_safe=False)
