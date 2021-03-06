@@ -5,7 +5,7 @@ Created on 2020-07-27
 '''
 from wikibot.wikiclient import WikiClient
 from frontend.site import Site
-
+from bs4 import BeautifulSoup
 import traceback
 
 import requests
@@ -113,11 +113,22 @@ class Frontend(object):
         r = requests.get(url)
         return Response(r.content)
         
+    def filterEditSections(self,html):
+        '''
+        filter Edit sections from html code
+        '''
+        # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup
+        soup = BeautifulSoup(html,'lxml')
+        # https://stackoverflow.com/questions/5041008/how-to-find-elements-by-class
+        for s in soup.select('span',{"class": "mw-editsection"}):
+            s.extract()
+        return str(soup)
             
-    def getContent(self,pagePath:str):
+    def getContent(self,pagePath:str,dofilterEditSections=True):
         ''' get the content for the given pagePath 
         Args:
-            pagePath(str): the page Pageh
+            pagePath(str): the pagePath
+            dofilterEditSections(bool): True if editSection html code should be filtered
         Returns:
             str: the HTML content for the given path
         '''
@@ -131,7 +142,11 @@ class Frontend(object):
                 error=self.checkPath(pagePath)
                 pageTitle=self.wikiPage(pagePath)
             if error is None:
+                if self.wiki is None:
+                    raise Exception("getContent without wiki - you might want to call open first")
                 content=self.wiki.getHtml(pageTitle)
+                if dofilterEditSections:
+                    content=self.filterEditSections(content)
         except Exception as e:
             error=self.errMsg(e)
         return pageTitle,content,error

@@ -7,6 +7,7 @@ import unittest
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
 
+
 class TestFrontend(unittest.TestCase):
     '''
     test the frontend
@@ -48,6 +49,27 @@ class TestFrontend(unittest.TestCase):
         self.assertFalse(imageResponse is None)
         self.assertEqual("200 OK",imageResponse.status)
         self.assertEqual(79499,len(imageResponse.data))
+        
+    def testIssue15(self):
+        '''
+        test Filter "edit" section buttons 
+        
+        see https://github.com/BITPlan/pyWikiCMS/issues/15
+        
+        '''
+        frontend=self.server.enableFrontend('cr')
+        unfiltered="""<span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=...;action=edit&amp;section=T-1" title="Edit section: ">edit</a><span class="mw-editsection-bracket">]</span></span>"""
+        filtered=frontend.filterEditSections(unfiltered)
+        if self.debug:
+            print(filtered)      
+        self.assertFalse('''<span class="mw-editsection">''' in filtered)
+        pageTitle,content,error=frontend.getContent('Issue15')
+        self.assertEqual("Issue15",pageTitle)
+        self.assertIsNone(error)
+        if self.debug:
+            print(content)
+        self.assertFalse('''<span class="mw-editsection">''' in content)
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

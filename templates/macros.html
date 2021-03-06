@@ -84,7 +84,11 @@
 {% macro activateDataTable() -%}
     <script type="text/javascript">
     $(document).ready(function() {
-    	$('.table').DataTable();
+    	$('.table').DataTable({
+		    buttons: [
+		        'copy', 'excel', 'pdf'
+		    ]
+		});
 	});
     </script>
 {%- endmacro %}
