@@ -11,7 +11,6 @@ class TestServer(unittest.TestCase):
     test the server specifics
     '''
 
-
     def setUp(self):
         self.debug=False
         pass
