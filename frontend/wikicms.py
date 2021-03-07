@@ -4,6 +4,7 @@ Created on 2020-07-27
 @author: wf
 '''
 from wikibot.wikiclient import WikiClient
+from wikibot.smw import SMWClient
 from frontend.site import Site
 from bs4 import BeautifulSoup
 import traceback
@@ -43,7 +44,8 @@ class Frontend(object):
         '''
         if self.wiki is None:
             self.wiki=WikiClient.ofWikiId(self.site.wikiId)
-            #self.wiki.login()
+            self.wiki.login()
+            self.smwclient=SMWClient(self.wiki.getSite())
         
     def errMsg(self,ex):
         if self.debug:
@@ -123,6 +125,31 @@ class Frontend(object):
         for s in soup.select('span',{"class": "mw-editsection"}):
             s.extract()
         return str(soup)
+    
+    def getFrame(self,pageTitle):
+        '''
+        get the frame template to be used for the given pageTitle#
+        
+        Args:
+            pageTitle(str): the pageTitle to get the Property:Frame for
+            
+        Returns:
+            str: the frame or None
+        '''
+        askQuery="""{{#ask: [[%s]]
+|mainlabel=-
+|?Frame=frame
+}}
+""" % pageTitle
+        frame=None
+        frameResult=self.smwclient.query(askQuery)
+        if pageTitle in frameResult:
+            frameRow=frameResult[pageTitle]
+            frame=frameRow['frame']
+            # legacy java handling
+            frame=frame.replace(".rythm","")
+            pass
+        return frame
             
     def getContent(self,pagePath:str,dofilterEditSections=True):
         ''' get the content for the given pagePath 
@@ -144,6 +171,7 @@ class Frontend(object):
             if error is None:
                 if self.wiki is None:
                     raise Exception("getContent without wiki - you might want to call open first")
+                frame=self.getFrame(pageTitle)
                 content=self.wiki.getHtml(pageTitle)
                 if dofilterEditSections:
                     content=self.filterEditSections(content)

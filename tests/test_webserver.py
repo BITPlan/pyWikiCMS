@@ -57,6 +57,12 @@ class TestWebServer(unittest.TestCase):
              'wikiId':'wiki', 
              'template':'bootstrap.html',
              'defaultPage':'Sharks'
+            },
+            {
+             'site': 'wiki',
+             'wikiId':'wiki', 
+             'template':'bootstrap.html',
+             'defaultPage':'Welcome'
             }
         ]
         for frontendConfigs in server.frontendConfigs:

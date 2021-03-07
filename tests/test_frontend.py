@@ -50,6 +50,19 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual("200 OK",imageResponse.status)
         self.assertEqual(79499,len(imageResponse.data))
         
+    def testIssue14(self):
+        '''
+        test Allow to use templates specified in Wiki
+        https://github.com/BITPlan/pyWikiCMS/issues/14
+        '''
+        # see e.g. http://wiki.bitplan.com/index.php/Property:Frame
+        frontend=self.server.enableFrontend('wiki')
+        pageTitle="Feedback"
+        frame=frontend.getFrame(pageTitle)
+        self.assertEqual("Contact",frame)
+        html=frontend.getContent(pageTitle)
+        print(html) 
+        
     def testIssue15(self):
         '''
         test Filter "edit" section buttons 
