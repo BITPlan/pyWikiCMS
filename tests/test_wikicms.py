@@ -33,7 +33,7 @@ class TestWikiCMS(unittest.TestCase):
             if wikiId=="smwcopy":
                 wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"http://smw.bitplan.com","scriptPath":"","version":"MediaWiki 1.35.0"}
             elif wikiId=="cr":
-                wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"http://cr.bitplan.com","scriptPath":"/w","version":"MediaWiki 1.31.7"}
+                wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"http://cr.bitplan.com","scriptPath":"","version":"MediaWiki 1.33.4"}
             elif wikiId=="smw":
                 wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.semantic-mediawiki.org","scriptPath":"/w","version":"MediaWiki 1.31.7"}
             elif wikiId=="or":
