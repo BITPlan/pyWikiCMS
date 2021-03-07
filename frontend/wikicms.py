@@ -147,7 +147,8 @@ class Frontend(object):
             frameRow=frameResult[pageTitle]
             frame=frameRow['frame']
             # legacy java handling
-            frame=frame.replace(".rythm","")
+            if frame is not None:
+                frame=frame.replace(".rythm","")
             pass
         return frame
             
