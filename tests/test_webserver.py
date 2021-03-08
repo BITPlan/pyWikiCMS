@@ -59,10 +59,13 @@ class TestWebServer(unittest.TestCase):
              'defaultPage':'Sharks'
             },
             {
-             'site': 'wiki',
+             'site': 'www',
              'wikiId':'wiki', 
-             'template':'bootstrap.html',
-             'defaultPage':'Welcome'
+             'template':'design.html',
+             'defaultPage':'Welcome',
+             'packageFolder': '/tmp/www.wikicms',
+             'packageName': 'bitplan',
+             'templateFolder': 'templates'
             }
         ]
         for frontendConfigs in server.frontendConfigs:

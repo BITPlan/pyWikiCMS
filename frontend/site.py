@@ -3,8 +3,8 @@ Created on 2020-12-31
 
 @author: wf
 '''
-import os
-from wikibot.smw import SMWClient
+import jinja2
+import sys
 
 class Site(object):
     '''
@@ -24,6 +24,7 @@ class Site(object):
         self.name=name
         self.defaultPage=defaultPage
         self.lang=lang
+        self.configured=False
         
     def configure(self,config:dict):
         '''
@@ -38,5 +39,26 @@ class Site(object):
             self.templateFolder=config['templateFolder']
         else:
             self.templateFolder=self.name
+        if "packageName" in config:
+            self.packageName=config["packageName"]
+        else:
+            self.packageName=self.name
+        if "packageFolder" in config:
+            self.packageFolder=config["packageFolder"]
+        else:
+            self.packageFolder=self.name
+        self.configured=True
+            
+    def open(self):
+        '''
+        open this site
+        '''
+        if not self.configured:
+            raise Exception("need to configure site before opening it")
+        # https://stackoverflow.com/a/14276993/1497139
+        # http://code.nabla.net/doc/jinja2/api/jinja2/loaders/jinja2.loaders.PackageLoader.html
+        sys.path.insert(0,self.packageFolder)
+        self.templateEnv = jinja2.Environment( loader=jinja2.PackageLoader(self.packageName, self.templateFolder))
+
         
     

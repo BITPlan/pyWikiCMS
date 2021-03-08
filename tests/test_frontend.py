@@ -6,7 +6,7 @@ Created on 2020-12-27
 import unittest
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
-
+import os
 
 class TestFrontend(unittest.TestCase):
     '''
@@ -50,13 +50,36 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual("200 OK",imageResponse.status)
         self.assertEqual(79499,len(imageResponse.data))
         
+    def createPackage(self,packageFolder,templateFolder,moduleName,moduleCode,templateCode):
+        moduleFolder="%s/%s" % (packageFolder,moduleName)
+        os.makedirs(moduleFolder,exist_ok=True)
+        absTemplateFolder="%s/%s" % (moduleFolder,templateFolder)
+        os.makedirs(absTemplateFolder,exist_ok=True)
+        modulePath="%s/__init__.py" % moduleFolder 
+        print(moduleCode,file=open(modulePath,"w"))
+        templatePath="%s/test.html" % (absTemplateFolder)
+        print(templateCode,file=open(templatePath,"w"))
         
     def testIssue14Templates(self):
         '''
         test template handling
         '''
-        frontend=self.server.enableFrontend('wiki')
-        print (frontend.site)
+        packageFolder='/tmp/www.wikicms'
+        templateFolder='templates'
+        moduleName='bitplan'
+        moduleCode="""
+def test():
+    pass
+        """
+        templateCode="""
+{{ msg }}        
+"""
+        self.createPackage(packageFolder, templateFolder, moduleName, moduleCode, templateCode)
+        frontend=self.server.enableFrontend('www')
+        #self.assertEqual(templateFolder,frontend.site.templateFolder)
+        self.assertEqual(moduleName,frontend.site.packageName)       
+        html=frontend.renderTemplate("test.html",{"msg":"Hello world!"})
+        self.assertTrue("Hello world!" in html)
         
     def testIssue14(self):
         '''

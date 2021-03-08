@@ -8,7 +8,6 @@ from wikibot.smw import SMWClient
 from frontend.site import Site
 from bs4 import BeautifulSoup
 import traceback
-
 import requests
 from flask import Response
 
@@ -46,6 +45,7 @@ class Frontend(object):
             self.wiki=WikiClient.ofWikiId(self.site.wikiId)
             self.wiki.login()
             self.smwclient=SMWClient(self.wiki.getSite())
+            self.site.open()
         
     def errMsg(self,ex):
         if self.debug:
@@ -70,7 +70,6 @@ class Frontend(object):
         else:
             wikipage=pagePath
         return wikipage
-        
     
     def checkPath(self,pagePath):
         '''
@@ -193,4 +192,19 @@ class Frontend(object):
         pageTitle,content,error=self.getPageContent(pagePath, dofilterEditSections)
         frame=self.getFrame(pageTitle)
         return pageTitle,content,error
+    
+    def renderTemplate(self,templateFile,args):
+        '''
+        render the given templateFile with the given arguments
+        
+        Args:
+            templateFile(str): the template file to be used
+            args(): same arguments a for dict constructor
+            
+        Returns:
+            str: the rendered result
+        '''
+        template = self.site.templateEnv.get_template( templateFile )
+        result=template.render(args)
+        return result
         
