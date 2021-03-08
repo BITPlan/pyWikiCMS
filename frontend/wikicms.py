@@ -204,7 +204,10 @@ class Frontend(object):
         Returns:
             str: the rendered result
         '''
-        template = self.site.templateEnv.get_template( templateFile )
-        result=template.render(args)
-        return result
+        if self.site.templateEnv is not None:
+            template = self.site.templateEnv.get_template( templateFile )
+            result=template.render(args)
+            return result,None
+        else:
+            return None,self.site.error
         

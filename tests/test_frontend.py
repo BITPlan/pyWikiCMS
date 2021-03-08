@@ -80,7 +80,8 @@ def test():
         frontend=self.server.enableFrontend('www')
         #self.assertEqual(templateFolder,frontend.site.templateFolder)
         self.assertEqual(moduleName,frontend.site.packageName)       
-        html=frontend.renderTemplate("test.html",{"msg":"Hello world!"})
+        html,error=frontend.renderTemplate("test.html",{"msg":"Hello world!"})
+        self.assertIsNone(error)
         self.assertTrue("Hello world!" in html)
         
     def testIssue14(self):
