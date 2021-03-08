@@ -12,7 +12,7 @@ class Site(object):
     https://github.com/BITPlan/com.bitplan.wikifrontend/blob/master/src/main/java/com/bitplan/wikifrontend/Site.java
     '''
 
-    def __init__(self,name:str,defaultPage:str="Main Page",lang:str="en"):
+    def __init__(self,name:str,defaultPage:str="Main Page",lang:str="en", debug=False):
         '''
         Constructor
         
@@ -20,11 +20,13 @@ class Site(object):
             name(str): the name of this site
             defaultPage(str): the default Page of this site
             lang(str): the default language of this site
+            debug(bool): True if debug info should be given
         '''
         self.name=name
         self.defaultPage=defaultPage
         self.lang=lang
         self.configured=False
+        self.debug=debug
         
     def configure(self,config:dict):
         '''
@@ -58,6 +60,8 @@ class Site(object):
         # https://stackoverflow.com/a/14276993/1497139
         # http://code.nabla.net/doc/jinja2/api/jinja2/loaders/jinja2.loaders.PackageLoader.html
         self.templateEnv=None
+        if self.debug:
+            print("adding %s to PYTHON PATH" % self.packageFolder)
         sys.path.insert(0,self.packageFolder)
         try:
             self.templateEnv = jinja2.Environment( loader=jinja2.PackageLoader(self.packageName, self.templateFolder))

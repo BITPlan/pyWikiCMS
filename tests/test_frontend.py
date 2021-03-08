@@ -77,7 +77,7 @@ def test():
 {{ msg }}        
 """
         self.createPackage(packageFolder, templateFolder, moduleName, moduleCode, templateCode)
-        frontend=self.server.enableFrontend('www')
+        frontend=self.server.enableFrontend('www',debug=True)
         #self.assertEqual(templateFolder,frontend.site.templateFolder)
         self.assertEqual(moduleName,frontend.site.packageName)       
         html,error=frontend.renderTemplate("test.html",{"msg":"Hello world!"})
