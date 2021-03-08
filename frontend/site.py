@@ -62,7 +62,7 @@ class Site(object):
         self.templateEnv=None
         if self.debug:
             print("adding %s to PYTHON PATH" % self.packageFolder)
-        sys.path.append(self.packageFolder)
+        sys.path.insert(1,self.packageFolder)
         try:
             self.templateEnv = jinja2.Environment( loader=jinja2.PackageLoader(self.packageName, self.templateFolder))
         except Exception as ex:
