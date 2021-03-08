@@ -142,7 +142,14 @@ class Frontend(object):
 }}
 """ % pageTitle
         frame=None
-        frameResult=self.smwclient.query(askQuery)
+        frameResult={}
+        try:
+            frameResult=self.smwclient.query(askQuery)
+        except Exception as ex:
+            if "invalid characters" in str(ex):
+                pass
+            else:
+                raise ex
         if pageTitle in frameResult:
             frameRow=frameResult[pageTitle]
             frame=frameRow['frame']
@@ -152,7 +159,7 @@ class Frontend(object):
             pass
         return frame
             
-    def getContent(self,pagePath:str,dofilterEditSections=True):
+    def getPageContent(self,pagePath:str,dofilterEditSections=True):
         ''' get the content for the given pagePath 
         Args:
             pagePath(str): the pagePath
@@ -172,11 +179,18 @@ class Frontend(object):
             if error is None:
                 if self.wiki is None:
                     raise Exception("getContent without wiki - you might want to call open first")
-                frame=self.getFrame(pageTitle)
                 content=self.wiki.getHtml(pageTitle)
                 if dofilterEditSections:
                     content=self.filterEditSections(content)
         except Exception as e:
             error=self.errMsg(e)
+        return pageTitle,content,error
+    
+    def getContent(self,pagePath:str,dofilterEditSections=True):
+        '''
+        get the content for the given pagePath
+        '''
+        pageTitle,content,error=self.getPageContent(pagePath, dofilterEditSections)
+        frame=self.getFrame(pageTitle)
         return pageTitle,content,error
         

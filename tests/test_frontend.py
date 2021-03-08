@@ -50,6 +50,14 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual("200 OK",imageResponse.status)
         self.assertEqual(79499,len(imageResponse.data))
         
+        
+    def testIssue14Templates(self):
+        '''
+        test template handling
+        '''
+        frontend=self.server.enableFrontend('wiki')
+        print (frontend.site)
+        
     def testIssue14(self):
         '''
         test Allow to use templates specified in Wiki

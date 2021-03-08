@@ -4,6 +4,7 @@ Created on 2020-12-31
 @author: wf
 '''
 import os
+from wikibot.smw import SMWClient
 
 class Site(object):
     '''
@@ -33,5 +34,9 @@ class Site(object):
         self.wikiId=config['wikiId']
         self.defaultPage=config['defaultPage']
         self.template=config['template']
+        if "templateFolder" in config:
+            self.templateFolder=config['templateFolder']
+        else:
+            self.templateFolder=self.name
         
     
