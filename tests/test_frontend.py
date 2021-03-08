@@ -7,6 +7,7 @@ import unittest
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
 import os
+import tempfile
 
 class TestFrontend(unittest.TestCase):
     '''
@@ -66,7 +67,7 @@ class TestFrontend(unittest.TestCase):
         '''
         test template handling
         '''
-        packageFolder='/tmp/www.wikicms'
+        packageFolder='%s/www.wikicms' % tempfile.gettempdir()
         templateFolder='templates'
         moduleName='bitplan'
         moduleCode="""

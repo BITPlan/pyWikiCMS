@@ -8,6 +8,7 @@ import warnings
 from fb4.app import AppWrap
 from frontend.server import Server
 from tests.test_wikicms import TestWikiCMS
+import tempfile
 
 class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
@@ -63,7 +64,7 @@ class TestWebServer(unittest.TestCase):
              'wikiId':'wiki', 
              'template':'design.html',
              'defaultPage':'Welcome',
-             'packageFolder': '/tmp/www.wikicms',
+             'packageFolder': '%s/www.wikicms' % tempfile.gettempdir(),
              'packageName': 'bitplan',
              'templateFolder': 'templates'
             }
