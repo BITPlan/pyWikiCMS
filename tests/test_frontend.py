@@ -69,7 +69,7 @@ class TestFrontend(unittest.TestCase):
         '''
         packageFolder='%s/www.wikicms' % tempfile.gettempdir()
         templateFolder='templates'
-        moduleName='bitplan'
+        moduleName='bitplan_webfrontend'
         moduleCode="""
 def test():
     pass

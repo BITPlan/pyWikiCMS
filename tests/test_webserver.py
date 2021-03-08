@@ -65,7 +65,7 @@ class TestWebServer(unittest.TestCase):
              'template':'design.html',
              'defaultPage':'Welcome',
              'packageFolder': '%s/www.wikicms' % tempfile.gettempdir(),
-             'packageName': 'bitplan',
+             'packageName': 'bitplan_webfrontend',
              'templateFolder': 'templates'
             }
         ]
