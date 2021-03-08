@@ -58,7 +58,12 @@ class Site(object):
         # https://stackoverflow.com/a/14276993/1497139
         # http://code.nabla.net/doc/jinja2/api/jinja2/loaders/jinja2.loaders.PackageLoader.html
         sys.path.insert(0,self.packageFolder)
-        self.templateEnv = jinja2.Environment( loader=jinja2.PackageLoader(self.packageName, self.templateFolder))
-
+        try:
+            self.templateEnv = jinja2.Environment( loader=jinja2.PackageLoader(self.packageName, self.templateFolder))
+        except Exception as ex:
+            if "No module named" in str(ex):
+                pass
+            else:
+                raise ex
         
     

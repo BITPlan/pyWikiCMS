@@ -56,9 +56,11 @@ class TestFrontend(unittest.TestCase):
         absTemplateFolder="%s/%s" % (moduleFolder,templateFolder)
         os.makedirs(absTemplateFolder,exist_ok=True)
         modulePath="%s/__init__.py" % moduleFolder 
-        print(moduleCode,file=open(modulePath,"w"))
+        with open(modulePath,"w") as moduleFile:
+            moduleFile.write(moduleCode)
         templatePath="%s/test.html" % (absTemplateFolder)
-        print(templateCode,file=open(templatePath,"w"))
+        with open(templatePath,"w") as templateFile:
+            templateFile.write(templateCode)
         
     def testIssue14Templates(self):
         '''
@@ -87,12 +89,13 @@ def test():
         https://github.com/BITPlan/pyWikiCMS/issues/14
         '''
         # see e.g. http://wiki.bitplan.com/index.php/Property:Frame
-        frontend=self.server.enableFrontend('wiki')
+        frontend=self.server.enableFrontend('www')
         pageTitle="Feedback"
         frame=frontend.getFrame(pageTitle)
         self.assertEqual("Contact",frame)
         html=frontend.getContent(pageTitle)
-        print(html) 
+        if self.debug:
+            print(html) 
         
     def testIssue15(self):
         '''
