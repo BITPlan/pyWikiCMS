@@ -244,19 +244,15 @@ class WikiCMSWeb(AppWrap):
             siteName(str): the name of the site to wrap
             path(path): the path to wrap
         '''
-        content = None
-        template = "index.html"
-        title = "Error"
         if not siteName in self.enabledSites:
             error = "access to site '%s' is not enabled you might want to add it via the --sites command line option" % siteName
+            content = None
+            template = "index.html"
+            title = "Error"
+            return render_template(template, title=title, content=content, error=error)
         else:
             frontend = self.server.getFrontend(siteName) 
-            if frontend.needsProxy(path):
-                return frontend.proxy(path)
-            else:
-                title, content, error = frontend.getContent(path);
-                template = frontend.site.template
-        return render_template(template, title=title, content=content, error=error)
+            return frontend.render(path)
         
 # 
 # route of this Web application

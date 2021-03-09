@@ -12,7 +12,7 @@ except:
     long_description = open('../../README.md').read()
 
 setup(name='pyWikiCMS',
-      version='0.0.6',
+      version='0.0.8',
       description='python implementation of a Mediawiki based Content Management System',
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -43,7 +43,7 @@ setup(name='pyWikiCMS',
           'lxml',
           'pyFlaskBootstrap4',
           'py-3rdparty-mediawiki',
-	  'pydevd',
+	      'pydevd',
           'beautifulsoup4'
 
       ],

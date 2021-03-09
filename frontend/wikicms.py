@@ -9,7 +9,7 @@ from frontend.site import Site
 from bs4 import BeautifulSoup
 import traceback
 import requests
-from flask import Response
+from flask import Response, render_template
 
 class Frontend(object):
     '''
@@ -190,7 +190,6 @@ class Frontend(object):
         get the content for the given pagePath
         '''
         pageTitle,content,error=self.getPageContent(pagePath, dofilterEditSections)
-        frame=self.getFrame(pageTitle)
         return pageTitle,content,error
     
     def renderTemplate(self,templateFile,args):
@@ -211,3 +210,21 @@ class Frontend(object):
         else:
             return None,self.site.error
         
+    def render(self,path:str)->str:
+        '''
+        render the given path
+        
+        Args:
+            path(str): the path to render the content for
+            
+        Returns:
+            str: the rendered result
+        '''
+        if self.needsProxy(path):
+            result=self.proxy(path)
+        else:
+            pageTitle, content, error = self.getContent(path);
+            frame=self.getFrame(pageTitle)
+            template = self.site.template
+            result=render_template(template, title=pageTitle, content=content, error=error)
+        return result
