@@ -128,7 +128,7 @@ class Frontend(object):
         if "parser-output" in filterKeys:
             parserdiv=soup.find('div',{"class": "mw-parser-output"})
             if parserdiv:
-                soup=parserdiv.children.__next__()
+                soup=parserdiv
                 pass
         # https://stackoverflow.com/questions/5041008/how-to-find-elements-by-class
         if "editsection" in filterKeys:
