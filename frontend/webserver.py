@@ -253,7 +253,6 @@ class WikiCMSWeb(AppWrap):
         else:
             frontend = self.server.getFrontend(siteName) 
             return frontend.render(path)
-        
 # 
 # route of this Web application
 #

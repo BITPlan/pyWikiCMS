@@ -121,6 +121,12 @@ class Frontend(object):
     
     def filter(self,html):
         return self.doFilter(html,self.filterKeys)
+    
+    def unwrap(self,soup):
+        html=str(soup)
+        html=html.replace("<html><body>","")
+        html=html.replace("</body></html>","")
+        return html
         
     def doFilter(self,html,filterKeys):
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup
@@ -134,9 +140,7 @@ class Frontend(object):
         if "editsection" in filterKeys:
             for s in soup.select('span.mw-editsection'):
                 s.extract()
-        html=str(soup)
-        html=html.replace("<html><body>","")
-        html=html.replace("</body></html>","")
+        html=self.unwrap(soup)
         return html
     
     def getFrame(self,pageTitle):
@@ -159,7 +163,7 @@ class Frontend(object):
         try:
             frameResult=self.smwclient.query(askQuery)
         except Exception as ex:
-            if "invalid characters" in str(ex):
+            if "invalid characters" in self.unwrap(ex):
                 pass
             else:
                 raise ex
@@ -216,6 +220,28 @@ class Frontend(object):
         else:
             return None,self.site.error
         
+    def toReveal(self,html):
+        '''
+        convert the given html to reveal
+        '''
+        soup = BeautifulSoup(html,'lxml')
+        for h2 in soup.findChildren(recursive=True):
+            if h2.name=="h2":
+                span=h2.next_element
+                if span.name=="span":
+                    tagid=span.get('id')
+                    if tagid.startswith("⌘⌘"):
+                        section = soup.new_tag("section")
+                        h2.parent.append(section)
+                        section.insert(0,h2)
+                        tag=h2.next_element
+                        while (tag is not None and tag.name!="h2"):
+                            if tag.parent!=h2:
+                                section.append(tag)
+                            tag=tag.next_element
+        html=self.unwrap(soup)
+        return html
+        
     def render(self,path:str)->str:
         '''
         render the given path
@@ -233,6 +259,8 @@ class Frontend(object):
             frame=self.getFrame(pageTitle)
             if frame is not None:
                 template = "%s.html" % frame
+                if frame == "reveal" and error is None:
+                    content=self.toReveal(content)
             else:
                 template = self.site.template
             result=render_template(template, title=pageTitle, content=content, error=error)

@@ -11,7 +11,11 @@
 		crossorigin="anonymous" />
 {% endblock %}
 {% block content %}
+	<div class='reveal'>
+		<div class="slides">
    {% if content is not none %}{{ content|safe }}{%endif %}
+   		</div>
+   </div>
    {% if error is not none %}<span style="color:red">Error: {{ error }}</span>{%endif %}
 {% endblock %}
 {% block scripts %}

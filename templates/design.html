@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block styles %}
+	{{ super() }}
+{% endblock %}
+{% block content %}
+   {% if content is not none %}{{ content|safe }}{%endif %}
+   {% if error is not none %}<span style="color:red">Error: {{ error }}</span>{%endif %}
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+{% endblock %}

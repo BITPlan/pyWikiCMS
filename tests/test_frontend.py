@@ -173,6 +173,29 @@ def test():
         self.assertEqual("Issue17",pageTitle)
         if self.debug:
             print(content)
+            
+    def testToReveal(self):
+        '''
+        test reveal handling
+        '''
+        wikihtml="""
+        <!DOCTYPE html>
+        <html>
+          <body>
+             <div>
+        <h2><span id="⌘⌘_Slide1"></span><span class="mw-headline" id=".E2.8C.98.E2.8C.98_Slide1">⌘⌘ Slide1</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=RevealTest&amp;action=edit&amp;section=1" title="Edit section: ⌘⌘ Slide1">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
+<p>Content for slide 1
+</p>
+<h2><span id="⌘⌘_Slide2"></span><span class="mw-headline" id=".E2.8C.98.E2.8C.98_Slide2">⌘⌘ Slide2</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=RevealTest&amp;action=edit&amp;section=2" title="Edit section: ⌘⌘ Slide2">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
+<p>Content for slide 2
+</p>    
+                </div>
+            </body>
+        <html>"""
+        frontend=self.server.enableFrontend('www')
+        html=frontend.toReveal(wikihtml)
+        print(html)
+        
  
 
 if __name__ == "__main__":

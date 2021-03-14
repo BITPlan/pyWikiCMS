@@ -133,7 +133,7 @@ class TestWebServer(unittest.TestCase):
         '''
         html=self.getHtml("www/SMWConTalk2015-05")
 
-        #print(html)
+        print(html)
         self.assertTrue("reveal.min.css" in html)
         self.assertTrue("Reveal.initialize({" in html)
 
