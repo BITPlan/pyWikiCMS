@@ -126,9 +126,9 @@ class Frontend(object):
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup
         soup = BeautifulSoup(html,'lxml')
         if "parser-output" in filterKeys:
-            resultset=soup.select('div',{"class": "mw-parser-output"})
-            if len(resultset)==1:
-                soup=resultset[0].children.__next__()
+            parserdiv=soup.find('div',{"class": "mw-parser-output"})
+            if parserdiv:
+                soup=parserdiv.children.__next__()
                 pass
         # https://stackoverflow.com/questions/5041008/how-to-find-elements-by-class
         if "editsection" in filterKeys:
