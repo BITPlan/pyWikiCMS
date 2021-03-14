@@ -25,7 +25,7 @@ class TestWebServer(unittest.TestCase):
         self.app = app.test_client()
        
         # make sure tests run in travis
-        sites=['or','cr','sharks']
+        sites=['or','cr','sharks','www']
         frontend.webserver.wcw.enableSites(sites)
         pass
 
@@ -99,6 +99,15 @@ class TestWebServer(unittest.TestCase):
             esite,epath=expected[i]
             self.assertEqual(esite,site)
             self.assertEqual(epath,path)
+            
+    def getHtml(self,path):
+        response=self.app.get(path)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data is not None)
+        html=response.data.decode()
+        if self.debug:
+            print(html)
+        return html
 
     def testWebServer(self):
         ''' 
@@ -112,14 +121,21 @@ class TestWebServer(unittest.TestCase):
         ]
         #self.debug=True
         for i,query in enumerate(queries):
-            response=self.app.get(query)
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue(response.data is not None)
-            html=response.data.decode()
-            if self.debug:
-                print(html)
+            html=self.getHtml(query)
             ehtml=expected[i]
             self.assertTrue(ehtml,ehtml in html)
+            
+    def testReveal(self):
+        '''
+        test Issue 20
+        https://github.com/BITPlan/pyWikiCMS/issues/20
+        support reveal.js slideshow if frame is "reveal" #20
+        '''
+        html=self.getHtml("www/SMWConTalk2015-05")
+
+        #print(html)
+        self.assertTrue("reveal.min.css" in html)
+        self.assertTrue("Reveal.initialize({" in html)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

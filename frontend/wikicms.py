@@ -231,6 +231,9 @@ class Frontend(object):
         else:
             pageTitle, content, error = self.getContent(path);
             frame=self.getFrame(pageTitle)
-            template = self.site.template
+            if frame is not None:
+                template = "%s.html" % frame
+            else:
+                template = self.site.template
             result=render_template(template, title=pageTitle, content=content, error=error)
         return result
