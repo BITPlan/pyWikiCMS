@@ -101,7 +101,7 @@ class Frontend(object):
         Returns:
             True if this path needs to be proxied 
         '''
-        result=path.startswith("/images")
+        result=path.startswith("/images/")
         return result
     
     def proxy(self,path:str)->str:

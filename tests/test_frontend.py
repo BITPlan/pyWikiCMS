@@ -59,6 +59,19 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual("200 OK",imageResponse.status)
         self.assertEqual(79499,len(imageResponse.data))
         
+    def testIssue18(self):
+        '''
+        https://github.com/BITPlan/pyWikiCMS/issues/18
+        image proxying should work #18
+        '''
+        frontend=self.server.enableFrontend('www')
+        url="/images/wiki/thumb/4/42/1738-006.jpg/400px-1738-006.jpg"
+        self.assertTrue(frontend.needsProxy(url))
+        imageResponse=frontend.render(url)
+        self.assertFalse(imageResponse is None)
+        self.assertEqual("200 OK",imageResponse.status)
+        self.assertEqual(33742,len(imageResponse.data))
+        
     def createPackage(self,packageFolder,templateFolder,moduleName,moduleCode,templateCode):
         moduleFolder="%s/%s" % (packageFolder,moduleName)
         os.makedirs(moduleFolder,exist_ok=True)
