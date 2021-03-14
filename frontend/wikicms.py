@@ -15,17 +15,22 @@ class Frontend(object):
     '''
     Wiki Content Management System Frontend
     '''
-    def __init__(self, siteName:str,debug:bool=False):
+    def __init__(self, siteName:str,debug:bool=False,filterKeys=None):
         '''
         Constructor
         Args:
             siteName(str): the name of the site this frontend is for
-            defaultPage(str): the default page of this frontend
+            debug: (bool): True if debugging should be on
+            filterKeys: (list): a list of keys for filters to be applied e.g. editsection
         '''
         
         self.site=Site(siteName)
         self.debug=debug
         self.wiki=None
+        if filterKeys is None:
+            self.filterKeys=["editsection","parser-output"]
+        else:
+            self.filterKeys=[]
         
     def log(self,msg):
         '''
@@ -113,17 +118,23 @@ class Frontend(object):
         url="%s%s%s" % (wikiUser.url,wikiUser.scriptPath,path)
         r = requests.get(url)
         return Response(r.content)
+    
+    def filter(self,html):
+        return self.doFilter(html,self.filterKeys)
         
-    def filterEditSections(self,html):
-        '''
-        filter Edit sections from html code
-        '''
+    def doFilter(self,html,filterKeys):
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup
         soup = BeautifulSoup(html,'lxml')
+        if "parser-output" in filterKeys:
+            resultset=soup.select('div',{"class": "mw-parser-output"})
+            if len(resultset)==1:
+                soup=resultset[0].children.__next__()
+                pass
         # https://stackoverflow.com/questions/5041008/how-to-find-elements-by-class
-        for s in soup.select('span',{"class": "mw-editsection"}):
-            s.extract()
-        return str(soup)
+        if "editsection" in filterKeys:
+            for s in soup.select('span',{"class": "mw-editsection"}):
+                s.extract()
+        return str(soup)   
     
     def getFrame(self,pageTitle):
         '''
@@ -158,11 +169,11 @@ class Frontend(object):
             pass
         return frame
             
-    def getPageContent(self,pagePath:str,dofilterEditSections=True):
+    def getContent(self,pagePath:str):
         ''' get the content for the given pagePath 
         Args:
             pagePath(str): the pagePath
-            dofilterEditSections(bool): True if editSection html code should be filtered
+            whatToFilter(list): list of filter keys
         Returns:
             str: the HTML content for the given path
         '''
@@ -179,17 +190,9 @@ class Frontend(object):
                 if self.wiki is None:
                     raise Exception("getContent without wiki - you might want to call open first")
                 content=self.wiki.getHtml(pageTitle)
-                if dofilterEditSections:
-                    content=self.filterEditSections(content)
+                content=self.filter(content)
         except Exception as e:
             error=self.errMsg(e)
-        return pageTitle,content,error
-    
-    def getContent(self,pagePath:str,dofilterEditSections=True):
-        '''
-        get the content for the given pagePath
-        '''
-        pageTitle,content,error=self.getPageContent(pagePath, dofilterEditSections)
         return pageTitle,content,error
     
     def renderTemplate(self,templateFile,args):

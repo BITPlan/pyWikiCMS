@@ -120,7 +120,7 @@ def test():
         '''
         frontend=self.server.enableFrontend('cr')
         unfiltered="""<span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=...;action=edit&amp;section=T-1" title="Edit section: ">edit</a><span class="mw-editsection-bracket">]</span></span>"""
-        filtered=frontend.filterEditSections(unfiltered)
+        filtered=frontend.doFilter(unfiltered,["editsection"])
         if self.debug:
             print(filtered)      
         self.assertFalse('''<span class="mw-editsection">''' in filtered)
@@ -131,6 +131,26 @@ def test():
             print(content)
         self.assertFalse('''<span class="mw-editsection">''' in content)
         
+    def testIssue17(self):
+        '''
+        https://github.com/BITPlan/pyWikiCMS/issues/17
+        
+        filter <html><body><div class="mw-parser-output">
+        '''
+        frontend=self.server.enableFrontend('cr')
+        unfiltered="""<html><body><div class="mw-parser-output">content</div></body></html>"""
+        filtered=frontend.doFilter(unfiltered,"mw-parser-output")
+        #self.debug=True
+        if self.debug:
+            print(filtered)    
+        self.assertFalse("<html>" in filtered)
+        self.assertFalse("<body>" in filtered)
+        pageTitle,content,error=frontend.getContent('Issue17')
+        self.assertIsNone(error)
+        self.assertEqual("Issue17",pageTitle)
+        if self.debug:
+            print(content)
+ 
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
