@@ -132,9 +132,12 @@ class Frontend(object):
                 pass
         # https://stackoverflow.com/questions/5041008/how-to-find-elements-by-class
         if "editsection" in filterKeys:
-            for s in soup.select('span',{"class": "mw-editsection"}):
+            for s in soup.select('span.mw-editsection'):
                 s.extract()
-        return str(soup)   
+        html=str(soup)
+        html=html.replace("<html><body>","")
+        html=html.replace("</body></html>","")
+        return html
     
     def getFrame(self,pageTitle):
         '''

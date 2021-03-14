@@ -144,6 +144,16 @@ def test():
             print(content)
         self.assertFalse('''<span class="mw-editsection">''' in content)
         
+    def testIssue19(self):
+        '''
+        https://github.com/BITPlan/pyWikiCMS/issues/19
+        editsection filter should keep other span's untouched #19
+        '''
+        unfiltered="""<span class="mw-editsection">editsection</span><span class='image'>image section</span>"""
+        frontend=self.server.enableFrontend('cr')
+        filtered=frontend.doFilter(unfiltered,["editsection"])
+        self.assertEqual("""<span class="image">image section</span>""",filtered)     
+        
     def testIssue17(self):
         '''
         https://github.com/BITPlan/pyWikiCMS/issues/17
