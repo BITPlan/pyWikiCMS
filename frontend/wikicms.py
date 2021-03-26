@@ -122,20 +122,37 @@ class Frontend(object):
     def filter(self,html):
         return self.doFilter(html,self.filterKeys)
     
-    def fixNode(self,node,attribute,prefix):
+    def fixNode(self,node,attribute,prefix,delim=None):
         '''
         fix the given node
+        
+        node(BeautifulSoup): the node
+        attribute(str): the name of the attribute e.g. "href", "src"
+        prefix(str): the prefix to replace e.g. "/", "/images", "/thumbs"
+        delim(str): if not None the delimiter for multiple values
         '''
         siteprefix="/%s%s" % (self.site.name,prefix)
         if attribute in node.attrs:
-            val=node.attrs[attribute]
-            if val.startswith(prefix):
-                node.attrs[attribute]=val.replace(prefix,siteprefix,1)
-                pass
+            attrval=node.attrs[attribute]
+            if delim is not None:
+                vals=attrval.split(delim)
+            else:
+                vals=[attrval]
+                delim=""
+            newvals=[]
+            for val in vals:    
+                if val.startswith(prefix):
+                    newvals.append(val.replace(prefix,siteprefix,1))
+                else:
+                    newvals.append(val)
+            if delim is not None:
+                node.attrs[attribute]=delim.join(newvals)
     
     def fixImages(self,soup):
         for img in soup.findAll('img'):
             self.fixNode(img,"src","/")
+            self.fixNode(img,"srcset","/",", ")
+            
     
     def fixHtml(self,soup):
         '''

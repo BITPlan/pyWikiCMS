@@ -206,13 +206,15 @@ def test():
         frontend=self.server.enableFrontend('www')
         pageTitle,content,error=frontend.getContent("Welcome")
         self.assertEqual(pageTitle,"Welcome")
-        if self.debug:
-            print(content)
+        #if self.debug:
+        print(content)
         
         self.assertFalse('''href="/index.php''' in content)
         self.assertTrue('''href="/www/index.php''' in content)
         self.assertFalse('''src="/images''' in content)
         self.assertTrue('''src="/www/images''' in content)
+        self.assertFalse('''srcset="/images''' in content)
+        self.assertTrue('''srcset="/www/images''' in content)
         pass
         
  
