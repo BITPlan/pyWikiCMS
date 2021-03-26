@@ -152,7 +152,8 @@ def test():
         unfiltered="""<span class="mw-editsection">editsection</span><span class='image'>image section</span>"""
         frontend=self.server.enableFrontend('cr')
         filtered=frontend.doFilter(unfiltered,["editsection"])
-        self.assertEqual("""<span class="image">image section</span>""",filtered)     
+        #print(filtered)
+        self.assertTrue("""<span class="image">image section</span>""" in str(filtered))     
         
     def testIssue17(self):
         '''
@@ -194,7 +195,8 @@ def test():
         <html>"""
         frontend=self.server.enableFrontend('www')
         html=frontend.toReveal(wikihtml)
-        print(html)
+        if self.debug:
+            print(html)
         
     def testFixHtml(self):
         '''
