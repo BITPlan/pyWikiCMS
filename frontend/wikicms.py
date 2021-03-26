@@ -122,6 +122,34 @@ class Frontend(object):
     def filter(self,html):
         return self.doFilter(html,self.filterKeys)
     
+    def fixNode(self,node,attribute,prefix):
+        '''
+        fix the given node
+        '''
+        siteprefix="/%s%s" % (self.site.name,prefix)
+        if attribute in node.attrs:
+            val=node.attrs[attribute]
+            if val.startswith(prefix):
+                node.attrs[attribute]=val.replace(prefix,siteprefix,1)
+                pass
+    
+    def fixImages(self,soup):
+        for img in soup.findAll('img'):
+            self.fixNode(img,"src","/")
+    
+    def fixHtml(self,soup):
+        '''
+        fix the HTML in the given soup
+        
+        Args:
+            soup(BeautifulSoup): the html parser
+        '''
+        self.fixImages(soup)
+        # fix absolute hrefs
+        for a in soup.findAll('a'):
+            self.fixNode(a,"href","/")
+        return soup
+    
     def unwrap(self,soup):
         html=str(soup)
         html=html.replace("<html><body>","")
@@ -140,8 +168,7 @@ class Frontend(object):
         if "editsection" in filterKeys:
             for s in soup.select('span.mw-editsection'):
                 s.extract()
-        html=self.unwrap(soup)
-        return html
+        return soup
     
     def getFrame(self,pageTitle):
         '''
@@ -197,7 +224,9 @@ class Frontend(object):
                 if self.wiki is None:
                     raise Exception("getContent without wiki - you might want to call open first")
                 content=self.wiki.getHtml(pageTitle)
-                content=self.filter(content)
+                soup=self.filter(content)
+                soup=self.fixHtml(soup)
+                content=self.unwrap(soup)
         except Exception as e:
             error=self.errMsg(e)
         return pageTitle,content,error

@@ -19,3 +19,5 @@ pylodstorage
 beautifulsoup4
 # https://pypi.org/project/lxml/
 lxml
+# https://stackoverflow.com/a/66648061/1497139
+sqlalchemy < 1.4.0

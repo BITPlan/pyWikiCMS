@@ -196,6 +196,23 @@ def test():
         html=frontend.toReveal(wikihtml)
         print(html)
         
+    def testFixHtml(self):
+        '''
+        test that hrefs, images src, srcset videos and objects are
+        modified from local-absolute urls to ones with "www"
+        '''
+        frontend=self.server.enableFrontend('www')
+        pageTitle,content,error=frontend.getContent("Welcome")
+        self.assertEqual(pageTitle,"Welcome")
+        if self.debug:
+            print(content)
+        
+        self.assertFalse('''href="/index.php''' in content)
+        self.assertTrue('''href="/www/index.php''' in content)
+        self.assertFalse('''src="/images''' in content)
+        self.assertTrue('''src="/www/images''' in content)
+        pass
+        
  
 
 if __name__ == "__main__":

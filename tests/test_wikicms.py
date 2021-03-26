@@ -70,6 +70,7 @@ class TestWikiCMS(unittest.TestCase):
             print(text)
         self.assertTrue("OpenResearch" in text)
         pass
+    
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
