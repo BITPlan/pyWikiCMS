@@ -5,6 +5,8 @@ Created on 2020-07-11
 '''
 import unittest
 import warnings
+import getpass
+import os
 from fb4.app import AppWrap
 from frontend.server import Server
 from tests.test_wikicms import TestWikiCMS
@@ -22,15 +24,23 @@ class TestWebServer(unittest.TestCase):
         app.config['TESTING'] = True
         app.config['WTF_CSRF_ENABLED'] = False
         app.config['DEBUG'] = False
-        self.app = app.test_client()
+        self.app=app
+        self.client = app.test_client()
        
         # make sure tests run in travis
         sites=['or','cr','sharks','www']
         frontend.webserver.wcw.enableSites(sites)
+        self.wcw=frontend.webserver.wcw
         pass
 
     def tearDown(self):
         pass
+    
+    def inPublicCI(self):
+        '''
+        are we running in a public Continuous Integration Environment?
+        '''
+        return getpass.getuser() in [ "travis", "runner" ];
     
     @staticmethod
     def initServer():
@@ -101,7 +111,7 @@ class TestWebServer(unittest.TestCase):
             self.assertEqual(epath,path)
             
     def getHtml(self,path):
-        response=self.app.get(path)
+        response=self.client.get(path)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data is not None)
         html=response.data.decode()
@@ -132,10 +142,48 @@ class TestWebServer(unittest.TestCase):
         support reveal.js slideshow if frame is "reveal" #20
         '''
         html=self.getHtml("www/SMWConTalk2015-05")
-
-        print(html)
+        if self.debug:
+            print(html)
         self.assertTrue("reveal.min.css" in html)
         self.assertTrue("Reveal.initialize({" in html)
+    
+    def createPackage(self,packageFolder,templateFolder,moduleName,moduleCode,templateCode):
+        moduleFolder="%s/%s" % (packageFolder,moduleName)
+        os.makedirs(moduleFolder,exist_ok=True)
+        absTemplateFolder="%s/%s" % (moduleFolder,templateFolder)
+        os.makedirs(absTemplateFolder,exist_ok=True)
+        modulePath="%s/__init__.py" % moduleFolder 
+        with open(modulePath,"w") as moduleFile:
+            moduleFile.write(moduleCode)
+        templatePath="%s/test.html" % (absTemplateFolder)
+        with open(templatePath,"w") as templateFile:
+            templateFile.write(templateCode)
+        
+    def testIssue14Templates(self):
+        '''
+        test template handling
+        '''
+        # work around CI environment problem
+        # https://github.com/pallets/jinja/issues/1365
+        if self.inPublicCI():
+            return
+        packageFolder='%s/www.wikicms' % tempfile.gettempdir()
+        templateFolder='templates'
+        moduleName='bitplan_webfrontend'
+        moduleCode="""
+def test():
+    return "test result"
+        """
+        templateCode="""
+{{ msg }}     
+"""
+        self.createPackage(packageFolder, templateFolder, moduleName, moduleCode, templateCode)
+        frontend=self.server.enableFrontend('www',self.wcw,debug=False)
+        #self.assertEqual(templateFolder,frontend.site.templateFolder)
+        self.assertEqual(moduleName,frontend.site.packageName)       
+        html,error=frontend.renderTemplate("test.html",msg="Hello world!")
+        self.assertIsNone(error)
+        self.assertTrue("Hello world!" in html)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

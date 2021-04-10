@@ -42,15 +42,19 @@ class Frontend(object):
         if self.debug:
             print(msg,flush=True)
         
-    def open(self):
+    def open(self,appWrap=None):
         '''
         open the frontend
+        
+        Args:
+             appWrap(appWrap): optional fb4 Application Wrapper
         '''
+        self.appWrap=appWrap
         if self.wiki is None:
             self.wiki=WikiClient.ofWikiId(self.site.wikiId)
             self.wiki.login()
             self.smwclient=SMWClient(self.wiki.getSite())
-            self.site.open()
+            self.site.open(appWrap)
         
     def errMsg(self,ex):
         if self.debug:
@@ -248,23 +252,27 @@ class Frontend(object):
             error=self.errMsg(e)
         return pageTitle,content,error
     
-    def renderTemplate(self,templateFile,args):
+    def renderTemplate(self,template,**kwargs):
         '''
-        render the given templateFile with the given arguments
+        render the given template with the given arguments
         
         Args:
-            templateFile(str): the template file to be used
-            args(): same arguments a for dict constructor
+            template(str): the template file to be used
+            kwargs(): same arguments a for dict constructor
             
         Returns:
             str: the rendered result
         '''
-        if self.site.templateEnv is not None:
-            template = self.site.templateEnv.get_template( templateFile )
-            result=template.render(args)
-            return result,None
-        else:
+        # pass on keyword args
+        if self.appWrap is not None:
+            with self.appWrap.app.app_context():
+                result=render_template(template,**kwargs)
+        else:   
+            result=render_template(template,**kwargs)
+        if result is None:
             return None,self.site.error
+        else:
+            return result,None
         
     def toReveal(self,html):
         '''
@@ -309,5 +317,5 @@ class Frontend(object):
                     content=self.toReveal(content)
             else:
                 template = self.site.template
-            result=render_template(template, title=pageTitle, content=content, error=error)
+            result=self.renderTemplate(template, title=pageTitle, content=content, error=error)
         return result

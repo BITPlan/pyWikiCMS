@@ -3,7 +3,8 @@ Created on 2020-12-31
 
 @author: wf
 '''
-import jinja2
+#import jinja2
+import os
 import sys
 
 class Site(object):
@@ -37,10 +38,6 @@ class Site(object):
         self.wikiId=config['wikiId']
         self.defaultPage=config['defaultPage']
         self.template=config['template']
-        if "templateFolder" in config:
-            self.templateFolder=config['templateFolder']
-        else:
-            self.templateFolder=self.name
         if "packageName" in config:
             self.packageName=config["packageName"]
         else:
@@ -51,21 +48,27 @@ class Site(object):
             self.packageFolder=self.name
         self.configured=True
             
-    def open(self):
+    def open(self,appWrap=None):
         '''
         open this site
+        
+        Args:
+             appWrap(appWrap): optional fb4 Application Wrapper
         '''
         if not self.configured:
             raise Exception("need to configure site before opening it")
         # https://stackoverflow.com/a/14276993/1497139
         # http://code.nabla.net/doc/jinja2/api/jinja2/loaders/jinja2.loaders.PackageLoader.html
-        self.templateEnv=None
         if self.debug:
             print("adding %s to PYTHON PATH" % self.packageFolder)
         sys.path.insert(1,self.packageFolder)
-        try:
-            self.templateEnv = jinja2.Environment( loader=jinja2.PackageLoader(self.packageName, self.templateFolder))
-        except Exception as ex:
-            self.error=ex
+        if appWrap is not None:
+            templatePath="%s/%s/templates" % (self.packageFolder,self.packageName)
+            if os.path.isdir(templatePath):
+                appWrap.addTemplatePath(templatePath)
+        # TODO: use a more elaborate loader concept if need be
+        # self.templateEnv = jinja2.Environment( loader=jinja2.PackageLoader(self.packageName))
+        
+        pass
         
     

@@ -16,7 +16,7 @@
     {% if title is not none %}<title>{{ title }}</title>{%endif %}
     {% endblock %}
   </head>
-  <body>å
+  <body>
 {% if menuList %}{{ macros.menu(menuList) }}{%endif %}
     <main class="container">
         {{ render_messages(container=False, dismissible=True) }}

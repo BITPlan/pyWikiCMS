@@ -137,12 +137,13 @@ class Server(JSONAble):
         result={'size':size,'exists':exists,'mdate':mdate}
         return result
             
-    def enableFrontend(self,siteName:str,debug:bool=False):
+    def enableFrontend(self,siteName:str,appWrap=None,debug:bool=False):
         '''
         enable the given frontend
         
         Args:
             siteName(str): the siteName of the frontend to enable
+            appWrap(appWrap): optional fb4 Application Wrapper
         Returns:
             Frontend: the configured frontend
         '''
@@ -155,7 +156,7 @@ class Server(JSONAble):
         config=self.siteLookup[siteName]
         frontend.site.configure(config)
         frontend.site.debug=debug
-        frontend.open()
+        frontend.open(appWrap)
         return frontend
         pass
         
