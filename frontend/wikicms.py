@@ -296,12 +296,13 @@ class Frontend(object):
         html=self.unwrap(soup)
         return html
         
-    def render(self,path:str)->str:
+    def render(self,path:str,**kwargs)->str:
         '''
         render the given path
         
         Args:
             path(str): the path to render the content for
+            kwargs(): optional keyword arguments
             
         Returns:
             str: the rendered result
@@ -317,5 +318,11 @@ class Frontend(object):
                     content=self.toReveal(content)
             else:
                 template = self.site.template
-            result=self.renderTemplate(template, title=pageTitle, content=content, error=error)
+            if not 'title' in kwargs:
+                kwargs['title']=pageTitle
+            if not 'content' in kwargs:
+                kwargs['content']=content
+            if not 'error' in kwargs:
+                kwargs['error']=error
+            result=self.renderTemplate(template, **kwargs)
         return result

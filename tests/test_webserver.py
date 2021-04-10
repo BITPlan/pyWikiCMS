@@ -16,7 +16,9 @@ class TestWebServer(unittest.TestCase):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
-        warnings.simplefilter("ignore", ResourceWarning)
+        '''
+        prepare everything needed for the tests
+        '''
         self.debug=False
         self.server=TestWebServer.initServer()
         import frontend.webserver 
@@ -47,6 +49,7 @@ class TestWebServer(unittest.TestCase):
         '''
         initialize the server
         '''
+        warnings.simplefilter("ignore", ResourceWarning)
         Server.homePath="/tmp"
         server=Server()
         server.logo="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
