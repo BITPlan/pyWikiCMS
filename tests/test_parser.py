@@ -9,11 +9,13 @@ import lxml.etree as etree
 from io import StringIO
 
 class InsertSections(xml.sax.handler.ContentHandler):
-    def __init__(self):
+    def __init__(self,debug=False):
+        self.debug=debug
         pass
     
     def startElement(self, name, attrs):
-        print (name,attrs)
+        if self.debug:
+            print (name,attrs)
 
     def endElement(self, name):
         pass
@@ -43,7 +45,7 @@ class Test(unittest.TestCase):
     
    
     def testSax(self):
-        handler = InsertSections()
+        handler = InsertSections(debug=False)
         xml.sax.parseString(self.html,handler)
         pass
     

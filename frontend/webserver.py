@@ -122,7 +122,7 @@ class WikiCMSWeb(AppWrap):
         if siteNames is None:
             return
         for siteName in siteNames:
-            self.server.enableFrontend(siteName)
+            self.server.enableFrontend(siteName,self)
             self.enabledSites.append(siteName)
             
     def adminMenuList(self,activeItem:str=None):

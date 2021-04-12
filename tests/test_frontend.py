@@ -6,8 +6,6 @@ Created on 2020-12-27
 import unittest
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
-import os
-import tempfile
 import getpass
 
 class TestFrontend(unittest.TestCase):
@@ -16,6 +14,7 @@ class TestFrontend(unittest.TestCase):
     '''
 
     def setUp(self):
+        print ("TestWebServer")
         self.debug=False
         self.server=TestWebServer.initServer()
         pass
@@ -71,44 +70,6 @@ class TestFrontend(unittest.TestCase):
         self.assertFalse(imageResponse is None)
         self.assertEqual("200 OK",imageResponse.status)
         self.assertEqual(33742,len(imageResponse.data))
-        
-    def createPackage(self,packageFolder,templateFolder,moduleName,moduleCode,templateCode):
-        moduleFolder="%s/%s" % (packageFolder,moduleName)
-        os.makedirs(moduleFolder,exist_ok=True)
-        absTemplateFolder="%s/%s" % (moduleFolder,templateFolder)
-        os.makedirs(absTemplateFolder,exist_ok=True)
-        modulePath="%s/__init__.py" % moduleFolder 
-        with open(modulePath,"w") as moduleFile:
-            moduleFile.write(moduleCode)
-        templatePath="%s/test.html" % (absTemplateFolder)
-        with open(templatePath,"w") as templateFile:
-            templateFile.write(templateCode)
-        
-    def testIssue14Templates(self):
-        '''
-        test template handling
-        '''
-        # work around CI environment problem
-        # https://github.com/pallets/jinja/issues/1365
-        if TestFrontend.inPublicCI():
-            return
-        packageFolder='%s/www.wikicms' % tempfile.gettempdir()
-        templateFolder='templates'
-        moduleName='bitplan_webfrontend'
-        moduleCode="""
-def test():
-    pass
-        """
-        templateCode="""
-{{ msg }}        
-"""
-        self.createPackage(packageFolder, templateFolder, moduleName, moduleCode, templateCode)
-        frontend=self.server.enableFrontend('www',debug=False)
-        #self.assertEqual(templateFolder,frontend.site.templateFolder)
-        self.assertEqual(moduleName,frontend.site.packageName)       
-        html,error=frontend.renderTemplate("test.html",{"msg":"Hello world!"})
-        self.assertIsNone(error)
-        self.assertTrue("Hello world!" in html)
         
     def testIssue14(self):
         '''
@@ -206,8 +167,8 @@ def test():
         frontend=self.server.enableFrontend('www')
         pageTitle,content,error=frontend.getContent("Welcome")
         self.assertEqual(pageTitle,"Welcome")
-        #if self.debug:
-        print(content)
+        if self.debug:
+            print(content)
         
         self.assertFalse('''href="/index.php''' in content)
         self.assertTrue('''href="/www/index.php''' in content)
