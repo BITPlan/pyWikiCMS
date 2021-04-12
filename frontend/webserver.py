@@ -69,7 +69,7 @@ class WikiCMSWeb(AppWrap):
         def frontends():
             return wcw.frontends()
 
-        #@login_required
+        @login_required
         @self.app.route('/generate/<string:siteName>', methods=['GET', 'POST'])
         def generate(siteName: str):
             '''
