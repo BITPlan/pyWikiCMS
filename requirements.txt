@@ -5,7 +5,7 @@ pyFlaskBootstrap4>=0.2.14
 PyMySQL
 # Mediawiki and SMW API
 # https://pypi.org/project/py-3rdparty-mediawiki/
-py-3rdparty-mediawiki>=0.4.2
+py-3rdparty-mediawiki>=0.4.6
 # https://phabricator.wikimedia.org/T171886
 # https://pypi.org/project/pywikibot/
 pywikibot>=6.0.1
