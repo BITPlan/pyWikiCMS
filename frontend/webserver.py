@@ -7,7 +7,7 @@ from fb4.app import AppWrap
 from fb4.login_bp import LoginBluePrint
 from flask_login import current_user, login_user,logout_user, login_required
 from flask import send_file, flash, request
-from frontend.generator import Generator, GenerateTopicForm
+#from frontend.generator import Generator, GenerateTopicForm
 from frontend.server import Server
 from frontend.family import WikiFamily, WikiBackup
 from fb4.widgets import Link, Icon, Image, MenuItem
@@ -266,22 +266,6 @@ class WikiCMSWeb(AppWrap):
             frontend = self.server.getFrontend(siteName) 
             return frontend.render(path)
 
-    def generate(self, siteName):
-        '''
-        show generate page for given siteName (wikiId of wiki family member)
-        Args:
-            siteName(str): the name of the wiki
-        Returns:
-            the rendered generate page
-        '''
-        actuator = GenerateTopicForm.getActuatorTopic(request.form.lists())
-        generator = Generator(siteName)
-        menuList = self.adminMenuList("Generator")
-        if actuator is not None:
-            # Generate button was clicked
-            generatedPages = generator.generatePages(actuator, dict(request.form.lists()))
-            flash(f"Generated the following pages: {','.join(generatedPages)}", 'success')
-        return generator.render(menuList)
 # 
 # route of this Web application
 #
