@@ -200,7 +200,7 @@ class Server(JSONAble):
     def store(self):
         if self.frontends is not None:
             storePath=self.getStorePath()
-            self.storeToJsonFile(storePath,"frontendConfigs")
+            self.storeToJsonFile(storePath)
         
     def getPlatformLogo(self)->str:
         '''
