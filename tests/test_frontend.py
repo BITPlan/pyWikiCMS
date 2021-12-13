@@ -166,6 +166,9 @@ class TestFrontend(unittest.TestCase):
         '''
         frontend=self.server.enableFrontend('www')
         pageTitle,content,error=frontend.getContent("Welcome")
+        if error is not None:
+            print(error)
+            self.fail(error)
         self.assertEqual(pageTitle,"Welcome")
         if self.debug:
             print(content)
