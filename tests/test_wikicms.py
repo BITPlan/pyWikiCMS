@@ -9,12 +9,15 @@ import os
 from wikibot.wikiclient import WikiClient
 from wikibot.wikiuser import WikiUser
 #from wikibot.smw import SMWClient
+from tests.basetest import Basetest
 
-
-class TestWikiCMS(unittest.TestCase):
+class TestWikiCMS(Basetest):
+    '''
+    test the Mediawiki based Content Management System
+    '''
     
     def setUp(self):
-        self.debug=False
+        Basetest.setUp(self)
         pass
 
 

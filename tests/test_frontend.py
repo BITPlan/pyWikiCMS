@@ -7,19 +7,16 @@ import unittest
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
 import getpass
+from tests.basetest import Basetest
 
-class TestFrontend(unittest.TestCase):
+class TestFrontend(Basetest):
     '''
     test the frontend
     '''
 
     def setUp(self):
-        print ("TestWebServer")
-        self.debug=False
+        Basetest.setUp(self)
         self.server=TestWebServer.initServer()
-        pass
-
-    def tearDown(self):
         pass
     
     @staticmethod

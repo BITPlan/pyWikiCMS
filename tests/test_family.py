@@ -5,18 +5,14 @@ Created on 2021-01-01
 '''
 import unittest
 from frontend.family import LocalWiki, WikiFamily
-
-class TestFamily(unittest.TestCase):
+from tests.basetest import Basetest
+class TestFamily(Basetest):
     '''
     test wiki family code
     '''
 
     def setUp(self):
-        self.debug=False
-        pass
-
-
-    def tearDown(self):
+        Basetest.setUp(self)
         pass
 
     def testLogo(self):

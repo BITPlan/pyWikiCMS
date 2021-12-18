@@ -20,11 +20,12 @@ class InsertSections(xml.sax.handler.ContentHandler):
     def endElement(self, name):
         pass
 
-        
-class Test(unittest.TestCase):
+from tests.basetest import Basetest
+class Test(Basetest):
 
 
     def setUp(self):
+        Basetest.setUp(self)
         self.html="""
         <!DOCTYPE html>
         <html>
@@ -38,20 +39,23 @@ class Test(unittest.TestCase):
             </body>
         </html>"""
         pass
-
-
-    def tearDown(self):
-        pass
     
    
     def testSax(self):
+        '''
+        test sax parser
+        '''
         handler = InsertSections(debug=False)
         xml.sax.parseString(self.html,handler)
         pass
     
     def testLxml(self):
-        parser=etree.HTMLParser()
+        '''
+        test html parser
+        '''
+        #parser=etree.HTMLParser()
         tree=etree.parse(StringIO(self.html))
+        self.assertNotNone(tree)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

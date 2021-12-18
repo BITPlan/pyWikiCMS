@@ -5,14 +5,15 @@ Created on 2021-01-06
 '''
 import unittest
 from frontend.server import Server
+from tests.basetest import Basetest
 
-class TestServer(unittest.TestCase):
+class TestServer(Basetest):
     '''
     test the server specifics
     '''
 
     def setUp(self):
-        self.debug=False
+        Basetest.setUp(self)
         pass
 
 

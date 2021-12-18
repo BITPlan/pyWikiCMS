@@ -11,15 +11,16 @@ from fb4.app import AppWrap
 from frontend.server import Server
 from tests.test_wikicms import TestWikiCMS
 import tempfile
+from tests.basetest import Basetest
 
-class TestWebServer(unittest.TestCase):
+class TestWebServer(Basetest):
     ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
 
     def setUp(self):
         '''
         prepare everything needed for the tests
         '''
-        self.debug=False
+        Basetest.setUp(self)
         self.server=TestWebServer.initServer()
         import frontend.webserver 
         app=frontend.webserver.app
@@ -34,15 +35,6 @@ class TestWebServer(unittest.TestCase):
         frontend.webserver.wcw.enableSites(sites)
         self.wcw=frontend.webserver.wcw
         pass
-
-    def tearDown(self):
-        pass
-    
-    def inPublicCI(self):
-        '''
-        are we running in a public Continuous Integration Environment?
-        '''
-        return getpass.getuser() in [ "travis", "runner" ];
     
     @staticmethod
     def initServer():

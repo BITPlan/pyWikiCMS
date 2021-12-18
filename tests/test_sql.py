@@ -7,15 +7,13 @@ import unittest
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from frontend.server import Server
-import os
-class TestSQL(unittest.TestCase):
+from tests.basetest import Basetest
+
+class TestSQL(Basetest):
 
 
     def setUp(self):
-        pass
-
-
-    def tearDown(self):
+        Basetest.setUp(self)
         pass
 
 
