@@ -9,6 +9,9 @@ import lxml.etree as etree
 from io import StringIO
 
 class InsertSections(xml.sax.handler.ContentHandler):
+    '''
+    ContentHandler for test
+    '''
     def __init__(self,debug=False):
         self.debug=debug
         pass
