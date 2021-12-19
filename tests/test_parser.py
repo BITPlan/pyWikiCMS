@@ -24,7 +24,11 @@ class InsertSections(xml.sax.handler.ContentHandler):
         pass
 
 from tests.basetest import Basetest
-class Test(Basetest):
+
+class TestParser(Basetest):
+    '''
+    test different parser approaches
+    '''
 
 
     def setUp(self):
