@@ -55,7 +55,7 @@ class Test(Basetest):
         '''
         #parser=etree.HTMLParser()
         tree=etree.parse(StringIO(self.html))
-        self.assertNotNone(tree)
+        self.assertTrue(tree is not None)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
