@@ -40,17 +40,17 @@ class TestWikiCMS(Basetest):
             elif wikiId=="smw":
                 wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.semantic-mediawiki.org","scriptPath":"/w","version":"MediaWiki 1.31.7"}
             elif wikiId=="or":
-                wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.openresearch.org","scriptPath":"/mediawiki/","version":"MediaWiki 1.31.1"}  
+                # wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.openresearch.org","scriptPath":"/mediawiki/","version":"MediaWiki 1.31.1"}  
+                # if wikiId=="orclone":
+                wikiDict={"wikiId": wikiId,"email":"noreply@nouser.com","url":"https://confident.dbis.rwth-aachen.de","scriptPath":"/or/","version":"MediaWiki 1.35.1"}
+         
             elif wikiId=='wiki':
                 wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"http://wiki.bitplan.com","scriptPath":"","version":"MediaWiki 1.27.3"}                       
             if wikiDict is None:
-                raise Exception("%s missing for wikiId %s" % (iniFile,wikiId))
+                raise Exception(f"{iniFile} missing for wikiId {wikiId}")
             else:
                 wikiUser=WikiUser.ofDict(wikiDict, lenient=True)
-                user=getpass.getuser()
-                print("user is: %s" % user)
-                # check the continuous integration users
-                if user=="travis" or user=="runner":
+                if self.inPublicCI():
                     wikiUser.save()
         else: 
             wikiUser=WikiUser.ofWikiId(wikiId,lenient=True)
