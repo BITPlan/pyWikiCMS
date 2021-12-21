@@ -5,7 +5,6 @@ Created on 2020-07-11
 '''
 import unittest
 import warnings
-import getpass
 import os
 from fb4.app import AppWrap
 from frontend.server import Server
@@ -48,7 +47,7 @@ class TestWebServer(Basetest):
         server.frontendConfigs=[
             {
              'site':'or',
-             'wikiId':'or', 
+             'wikiId':'orclone', 
              'template':'bootstrap.html',
              'defaultPage':'Frontend'
             },

@@ -4,7 +4,6 @@ Created on 27.07.2020
 @author: wf
 '''
 import unittest
-import getpass
 import os
 from wikibot.wikiclient import WikiClient
 from wikibot.wikiuser import WikiUser
@@ -40,8 +39,8 @@ class TestWikiCMS(Basetest):
             elif wikiId=="smw":
                 wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.semantic-mediawiki.org","scriptPath":"/w","version":"MediaWiki 1.31.7"}
             elif wikiId=="or":
-                # wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.openresearch.org","scriptPath":"/mediawiki/","version":"MediaWiki 1.31.1"}  
-                # if wikiId=="orclone":
+                wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://www.openresearch.org","scriptPath":"/mediawiki/","version":"MediaWiki 1.31.1"}  
+            elif wikiId=="orclone":
                 wikiDict={"wikiId": wikiId,"email":"noreply@nouser.com","url":"https://confident.dbis.rwth-aachen.de","scriptPath":"/or/","version":"MediaWiki 1.35.1"}
          
             elif wikiId=='wiki':
@@ -65,7 +64,7 @@ class TestWikiCMS(Basetest):
 
     def testWikiCMS(self):
         ''' test CMS access '''
-        wikiclient=TestWikiCMS.getSMW_Wiki("or")
+        wikiclient=TestWikiCMS.getSMW_Wiki("orclone")
         pageTitle="Main Page"
         page=wikiclient.getPage(pageTitle)
         text=page.text()
