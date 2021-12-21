@@ -16,11 +16,6 @@ class TestServer(Basetest):
         Basetest.setUp(self)
         pass
 
-
-    def tearDown(self):
-        pass
-
-
     def testServer(self):
         '''
         test server functions

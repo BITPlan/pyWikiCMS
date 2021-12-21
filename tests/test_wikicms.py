@@ -44,7 +44,7 @@ class TestWikiCMS(Basetest):
                 wikiDict={"wikiId": wikiId,"email":"noreply@nouser.com","url":"https://confident.dbis.rwth-aachen.de","scriptPath":"/or/","version":"MediaWiki 1.35.1"}
          
             elif wikiId=='wiki':
-                wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"http://wiki.bitplan.com","scriptPath":"","version":"MediaWiki 1.27.3"}                       
+                wikiDict={"wikiId": wikiId,"email":"john@doe.com","url":"https://wiki.bitplan.com","scriptPath":"","version":"MediaWiki 1.27.3"}                       
             if wikiDict is None:
                 raise Exception(f"{iniFile} missing for wikiId {wikiId}")
             else:

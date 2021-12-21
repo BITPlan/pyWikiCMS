@@ -10,7 +10,9 @@ from frontend.server import Server
 from tests.basetest import Basetest
 
 class TestSQL(Basetest):
-
+    '''
+    test SQL access
+    '''
 
     def setUp(self):
         Basetest.setUp(self)

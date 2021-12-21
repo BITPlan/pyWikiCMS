@@ -18,14 +18,6 @@ class TestFrontend(Basetest):
         Basetest.setUp(self)
         self.server=TestWebServer.initServer()
         pass
-    
-    @staticmethod
-    def inPublicCI():
-        '''
-        are we running in a public Continuous Integration Environment?
-        '''
-        return getpass.getuser() in [ "travis", "runner" ];
-    
 
     def testWikiPage(self):
         '''
@@ -39,8 +31,7 @@ class TestFrontend(Basetest):
             if self.debug:
                 print (pageTitle)
             expected=expectedList[i]
-            self.assertEqual(expected,pageTitle)
-            
+            self.assertEqual(expected,pageTitle)    
         pass
     
     def testProxy(self):
@@ -178,8 +169,6 @@ class TestFrontend(Basetest):
         self.assertTrue('''srcset="/www/images''' in content)
         pass
         
- 
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

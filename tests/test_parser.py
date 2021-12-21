@@ -7,6 +7,7 @@ import unittest
 import xml.sax
 import lxml.etree as etree
 from io import StringIO
+from tests.basetest import Basetest
 
 class InsertSections(xml.sax.handler.ContentHandler):
     '''
@@ -23,13 +24,10 @@ class InsertSections(xml.sax.handler.ContentHandler):
     def endElement(self, name):
         pass
 
-from tests.basetest import Basetest
-
 class TestParser(Basetest):
     '''
     test different parser approaches
     '''
-
 
     def setUp(self):
         Basetest.setUp(self)
@@ -46,7 +44,6 @@ class TestParser(Basetest):
             </body>
         </html>"""
         pass
-    
    
     def testSax(self):
         '''
