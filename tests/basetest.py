@@ -6,6 +6,7 @@ Created on 2021-08-19
 from unittest import TestCase
 import time
 import getpass
+import urllib3
 
 class Basetest(TestCase):
     '''
@@ -16,6 +17,8 @@ class Basetest(TestCase):
         '''
         setUp test environment
         '''
+        # https://stackoverflow.com/a/44615889/1497139
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         TestCase.setUp(self)
         self.debug=debug
         self.profile=profile
