@@ -29,7 +29,8 @@ class Basetest(TestCase):
         TestCase.tearDown(self)
         self.profiler.time()    
         
-    def inPublicCI(self):
+    @classmethod    
+    def inPublicCI(cls):
         '''
         are we running in a public Continuous Integration Environment?
         '''

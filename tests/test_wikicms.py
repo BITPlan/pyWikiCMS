@@ -49,7 +49,7 @@ class TestWikiCMS(Basetest):
                 raise Exception(f"{iniFile} missing for wikiId {wikiId}")
             else:
                 wikiUser=WikiUser.ofDict(wikiDict, lenient=True)
-                if self.inPublicCI():
+                if Basetest.inPublicCI():
                     wikiUser.save()
         else: 
             wikiUser=WikiUser.ofWikiId(wikiId,lenient=True)
