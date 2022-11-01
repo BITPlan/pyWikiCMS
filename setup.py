@@ -30,10 +30,10 @@ setup(name='pyWikiCMS',
       ),
       classifiers=[
             'Programming Language :: Python',
-            'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
-            'Programming Language :: Python :: 3.9'
+            'Programming Language :: Python :: 3.9',
+            'Programming Language :: Python :: 3.10'
       ],
       packages=['frontend'],
       package_data={
@@ -41,10 +41,9 @@ setup(name='pyWikiCMS',
       },
       install_requires=[
           'lxml',
-          'pyFlaskBootstrap4~=0.3.0',
-          'py-3rdparty-mediawiki~=0.5.1',
-	  'pydevd',
+          'pyFlaskBootstrap4~=0.5.1',
+          'py-3rdparty-mediawiki~=0.6.3',
+	      'pydevd',
           'beautifulsoup4'
-
       ],
       zip_safe=False)
