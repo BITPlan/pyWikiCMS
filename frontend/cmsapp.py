@@ -12,8 +12,8 @@ JpConfig.set("STATIC_DIRECTORY",static_dir)
 # shut up justpy
 JpConfig.set("VERBOSE","False")
 JpConfig.setup()
-from jpwidgets.bt5widgets import App,About,ProgressBar,Switch
-from wikibot.wikiuser import WikiUser
+from jpwidgets.bt5widgets import App,About,ProgressBar
+from frontend.wikigrid import WikiGrid
 
 class CmsApp(App):
     """
@@ -40,8 +40,6 @@ class CmsApp(App):
         
         jp.Route('/settings',self.settings)
         jp.Route('/about',self.about)
-        # wiki users
-        self.wikiUsers=WikiUser.getWikiUsers()
         
     async def onPageReady(self,_msg):
         """
@@ -69,8 +67,7 @@ class CmsApp(App):
         self.rowE=self.jp.Div(classes="row",a=self.contentbox)
         # columns
         self.colA1=self.jp.Div(classes="col-12",a=self.rowA)
-        self.colB1=self.jp.Div(classes="col-3",a=self.rowB)
-        self.colB2=self.jp.Div(classes="col-2",a=self.rowB)
+        self.colB1=self.jp.Div(classes="col-12",a=self.rowB)
         self.colC1=self.jp.Div(classes="col-3",a=self.rowC)
         self.colC2=self.jp.Div(classes="col-2",a=self.rowC)
         self.colD1=self.jp.Div(classes="col-12",a=self.rowD)
@@ -111,7 +108,7 @@ class CmsApp(App):
             jp.WebPage: a justpy webpage renderer
         '''
         self.setupRowsAndCols()
-        #await self.add_or_update_context_select()
+        self.wikiGrid=WikiGrid(a=self.colB1,app=self)
         self.wp.on("page_ready", self.onPageReady)
         return self.wp
     
