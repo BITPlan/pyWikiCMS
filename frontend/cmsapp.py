@@ -38,6 +38,8 @@ class CmsApp(App):
         self.addMenuLink(text='Settings',icon='cog',href="/settings")
         self.addMenuLink(text='About',icon='information',href="/about")
         
+        self.wikiGrid=None
+        
         jp.Route('/settings',self.settings)
         jp.Route('/about',self.about)
         
@@ -46,9 +48,8 @@ class CmsApp(App):
         react on page Ready
         """
         try:
-            pass
-            #if len(self.gridRows.components)==0:
-            #    await self.showGenerateGrid()
+            if self.wikiGrid is not None:
+                await self.wikiGrid.onPageReady(_msg)
         except BaseException as ex:
             self.handleException(ex)
         

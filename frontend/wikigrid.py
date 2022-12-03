@@ -5,8 +5,10 @@ Created on 2022-12-03
 '''
 import asyncio
 from wikibot.wikiuser import WikiUser
-from jpwidgets.bt5widgets import Alert, App, IconButton, Switch, ProgressBar
+from jpwidgets.bt5widgets import Link, Switch
 from jpwidgets.widgets import LodGrid
+from frontend.html_table import HtmlTables
+from lodstorage.lod import LOD
 
 class Display:
     '''
@@ -65,17 +67,64 @@ class WikiGrid(Display):
         self.jp=app.jp
         # wiki users
         self.wikiUsers=WikiUser.getWikiUsers()
+        self.sortedWikiUsers=sorted(self.wikiUsers.values(),key=lambda w:w.wikiId)
+        self.jp.Button(text="Check Versions",a=a,click=self.checkVersions)
         self.agGrid=LodGrid(a=a)
         self.agGrid.theme="ag-theme-material"
-        lod=[]
-        sortedWikis=sorted(self.wikiUsers.values(),key=lambda w:w.wikiId)
-        for index,wikiUser in enumerate(sortedWikis):
-            lod.append({
+        self.lod=[]
+        self.lodindex={}
+        for index,wikiUser in enumerate(self.sortedWikiUsers):
+            self.lod.append({
                 "#": index+1,
-                "wikiId":wikiUser.wikiId
+                "wiki": Link.newTab(url=wikiUser.getWikiUrl(), text=wikiUser.wikiId),
+                "mw version": wikiUser.version 
             })
+            self.lodindex[wikiUser.wikiId]=index+1
         self.setDefaultColDef(self.agGrid)
-        self.agGrid.load_lod(lod)
+        self.agGrid.load_lod(self.lod)
         #self.agGrid.options.columnDefs[0].checkboxSelection = True
         self.agGrid.html_columns=[1]
+        
+    def checkVersion(self,wikiUrl:str):
+        """
+        check the mediawiki version
+        """
+        version_url=f"{wikiUrl}/index.php/Special:Version"
+        mw_version="?"
+        try:
+            html_tables=HtmlTables(version_url)
+            tables=html_tables.get_tables("h2")      
+            if "Installed software" in tables:
+                software=tables["Installed software"]
+                software_map,_dup=LOD.getLookup(software, "Product", withDuplicates=False)
+                mw_version=software_map["MediaWiki"]["Version"]
+        except Exception as ex:
+            mw_version=f"error: {str(ex)}"
+        return mw_version
+    
+    async def checkVersions(self,_msg):
+        try:
+            for wikiUser in self.sortedWikiUsers:
+                mw_version=self.checkVersion(wikiUser.getWikiUrl())
+                for row in self.lod:
+                    if row["#"]==self.lodindex[wikiUser.wikiId]:
+                        ex_version=row["mw version"]
+                        if ex_version==mw_version:
+                            row["mw version"]=f"{mw_version}✅"
+                        else:
+                            row["mw version"]=f"{ex_version}!={mw_version}❌"
+                self.agGrid.load_lod(self.lod)
+                await self.app.wp.update()
+            pass
+        except BaseException as ex:
+            self.app.handleException(ex)
+        
+    async def onPageReady(self,_msg):
+        """
+        react on page Ready
+        """
+        try:
+            pass
+        except BaseException as ex:
+            self.app.handleException(ex)
         

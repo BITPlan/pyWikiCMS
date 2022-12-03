@@ -95,7 +95,6 @@ class Server(JSONAble):
             # bad luck
             pass
         return dbExists
-        
             
     def sqlBackupStateAsHtml(self,dbName):
         '''
@@ -257,8 +256,4 @@ class Server(JSONAble):
         '''
         html=render_template('server.html',server=self)
         return html
-        
-        
-        
-    
         

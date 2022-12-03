@@ -3,6 +3,7 @@
 	<name>pyWikiCMS</name>
 	<comment></comment>
 	<projects>
+		<project>pyJustpyWidgets</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
