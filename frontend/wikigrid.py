@@ -152,14 +152,15 @@ class WikiGrid(Display):
                 row=self.getRowForWikiId(wikiUser.wikiId)
                 backupPath=f"{Path.home()}/wikibackup/{wikiUser.wikiId}"
                 if os.path.isdir(backupPath):
-                    wikiFiles = glob.glob(f"{backupPath}/*.wiki")
-                    #https://stackoverflow.com/a/39327156/1497139
-                    latest_file = max(wikiFiles, key=os.path.getctime)
-                    st=os.stat(latest_file)
-                    age_days=round((time.time()-st.st_mtime)/86400)
+                    wikiFiles = glob.glob(f"{backupPath}/*.wiki") 
                     msg=f"{len(wikiFiles):6} ✅"
                     await self.updateRow(row, "wiki backup", msg)
-                    await self.updateRow(row, "age",f"{age_days}")
+                    #https://stackoverflow.com/a/39327156/1497139
+                    if len(wikiFiles)>0:
+                        latest_file = max(wikiFiles, key=os.path.getctime)
+                        st=os.stat(latest_file)
+                        age_days=round((time.time()-st.st_mtime)/86400)
+                        await self.updateRow(row, "age",f"{age_days}")
                 else:
                     msg="❌"
                     await self.updateRow(row, "wiki backup", msg)
