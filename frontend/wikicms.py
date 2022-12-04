@@ -3,8 +3,8 @@ Created on 2020-07-27
 
 @author: wf
 '''
-from wikibot.wikiclient import WikiClient
-from wikibot.smw import SMWClient
+from wikibot3rd.wikiclient import WikiClient
+from wikibot3rd.smw import SMWClient
 from frontend.site import Site
 from bs4 import BeautifulSoup
 import traceback

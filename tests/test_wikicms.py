@@ -5,8 +5,8 @@ Created on 27.07.2020
 '''
 import unittest
 import os
-from wikibot.wikiclient import WikiClient
-from wikibot.wikiuser import WikiUser
+from wikibot3rd.wikiclient import WikiClient
+from wikibot3rd.wikiuser import WikiUser
 #from wikibot.smw import SMWClient
 from tests.basetest import Basetest
 

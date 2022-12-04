@@ -12,7 +12,7 @@ from frontend.server import Server
 from frontend.family import WikiFamily, WikiBackup
 from fb4.widgets import Link, Icon, Image, MenuItem
 from flask import render_template
-from wikibot.wikiuser import WikiUser
+from wikibot3rd.wikiuser import WikiUser
 from fb4.sqldb import db
 import os
 
