@@ -254,4 +254,3 @@ class WikiGrid(Display):
             pass
         except BaseException as ex:
             self.app.handleException(ex)
-        
