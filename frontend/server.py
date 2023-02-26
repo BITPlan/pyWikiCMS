@@ -27,7 +27,7 @@ class Server(JSONAble):
             storePath(str): the path to load my configuration from (if any)
         '''
         self.frontendConfigs=None
-        self.logo=None
+        self.logo="https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png"
         self.purpose=""
         self.reinit(debug)
         
@@ -53,7 +53,7 @@ class Server(JSONAble):
         defaults={"sqlBackupPath":"/var/backup/sqlbackup"}
         for key,value in defaults.items():
             if not hasattr(self,key):
-                self.__dict__[key]=value
+                setattr(self,key,value)
         if Server.homePath is None:
             self.homePath = str(Path.home())
         else:

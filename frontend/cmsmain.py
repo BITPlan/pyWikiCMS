@@ -19,16 +19,36 @@ import traceback
 import webbrowser
 # import after app!
 from jpcore.justpy_app import JustpyServer
-
-class CmsMain():
-    """
-    ContentManagement System Main Program
-    """
+from frontend.server import Server
 
 __version__ = Version.version
 __date__ = Version.date
 __updated__ = Version.updated
 
+class CmsMain():
+    """
+    ContentManagement System Main Program
+    """
+    
+    def __init__(self):
+        """
+        construct me
+        """
+        self.server = Server()
+        self.server.load()
+        
+    def getArgParser(self,program_license,program_version_message):
+        # Setup argument parser
+        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
+        parser.add_argument("-a","--about",help="show about info [default: %(default)s]",action="store_true")
+        parser.add_argument("-b","--browse",help="open browser", action="store_true")
+        parser.add_argument("-d", "--debug", dest="debug", action="store_true", help="show debug info [default: %(default)s]")
+        parser.add_argument('--host',default=JustpyServer.getDefaultHost(),help="the host to serve / listen from [default: %(default)s]")
+        parser.add_argument('--logo',help="the server logo [default: %(default)s]",default=self.server.logo)
+        parser.add_argument('--port',type=int,default=8252,help="the port to serve from [default: %(default)s]")
+        parser.add_argument("--serve",help="start webserver",action="store_true")
+        parser.add_argument('-V', '--version', action='version', version=program_version_message)
+        return parser
 
 def main(argv=None): # IGNORE:C0111
     '''main program.'''
@@ -58,16 +78,8 @@ def main(argv=None): # IGNORE:C0111
 USAGE
 ''' % (program_shortdesc, user_name,str(__date__))
     try:
-        # Setup argument parser
-        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
-        parser.add_argument("-a","--about",help="show about info [default: %(default)s]",action="store_true")
-        parser.add_argument("-b","--browse",help="open browser", action="store_true")
-        parser.add_argument("-d", "--debug", dest="debug", action="store_true", help="show debug info [default: %(default)s]")
-        parser.add_argument('--host',default=JustpyServer.getDefaultHost(),help="the host to serve / listen from [default: %(default)s]")
-        parser.add_argument('--logo',help="the server logo [default: %(default)s]",default="https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png")
-        parser.add_argument('--port',type=int,default=8252,help="the port to serve from [default: %(default)s]")
-        parser.add_argument("--serve",help="start webserver",action="store_true")
-        parser.add_argument('-V', '--version', action='version', version=program_version_message)
+        cmsMain=CmsMain()
+        parser=cmsMain.getArgParser(program_license, program_version_message)
         args = parser.parse_args(argv)
         if len(argv) < 1:
             parser.print_usage()
