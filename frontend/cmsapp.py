@@ -14,6 +14,7 @@ JpConfig.set("VERBOSE","False")
 JpConfig.setup()
 from jpwidgets.bt5widgets import App,About,ProgressBar
 from frontend.wikigrid import WikiGrid
+import sys
 
 class CmsApp(App):
     """
@@ -69,15 +70,15 @@ class CmsApp(App):
         # columns
         self.colA1=self.jp.Div(classes="col-12",a=self.rowA)
         self.colB1=self.jp.Div(classes="col-12",a=self.rowB)
-        self.colC1=self.jp.Div(classes="col-3",a=self.rowC)
-        self.colC2=self.jp.Div(classes="col-2",a=self.rowC)
-        self.colD1=self.jp.Div(classes="col-12",a=self.rowD)
-        self.colE1=self.jp.Div(classes="col-12",a=self.rowE)
+        self.colC1=self.jp.Div(classes="col-12",a=self.rowB)
+        self.colD1=self.jp.Div(classes="col-3",a=self.rowC)
+        self.colD2=self.jp.Div(classes="col-2",a=self.rowC)
+        self.colE1=self.jp.Div(classes="col-12",a=self.rowD)
+        self.colF1=self.jp.Div(classes="col-12",a=self.rowE)
         # standard elements
         self.errors=self.jp.Div(a=self.colA1,style='color:red')
         self.messages=self.jp.Div(a=self.colE1,style='color:black')  
-        self.progressBar = ProgressBar(a=self.rowC)
-
+        self.progressBar = ProgressBar(a=self.rowD)
     
     async def settings(self)->"jp.WebPage":
         '''
@@ -97,9 +98,29 @@ class CmsApp(App):
             jp.WebPage: a justpy webpage renderer
         '''
         self.setupRowsAndCols()
-        self.aboutDiv=About(a=self.colB1,version=self.version)
+        self.aboutDiv=About(a=self.colC1,version=self.version)
 
         return self.wp
+    
+    def addServerInfo(self,a):
+        """
+        add ServerInfo
+        """
+        infoDiv=self.jp.Div(a=a)
+        if sys.platform == "linux" or sys.platform == "linux2":
+            # linux
+            os_logo="https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png"
+        elif sys.platform == "darwin":
+            # OS X
+            os_logo="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Icon-Mac.svg/256px-Icon-Mac.svg.png"
+        elif sys.platform == "win32":
+            # Windows...
+            os_logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Windows_icon.svg/256px-Windows_icon.svg.png"
+        else:
+            os_logo=""
+        
+        infoDiv.inner_html=f"<h3>Welcome to {self.args.host}</h3><img src='{os_logo}' height='128px'><img src='{self.args.logo}' height='128px'>"
+        
     
     async def content(self)->"jp.WebPage":
         '''
@@ -109,7 +130,8 @@ class CmsApp(App):
             jp.WebPage: a justpy webpage renderer
         '''
         self.setupRowsAndCols()
-        self.wikiGrid=WikiGrid(a=self.colB1,app=self)
+        self.addServerInfo(a=self.colB1)
+        self.wikiGrid=WikiGrid(a=self.colC1,app=self)
         self.wp.on("page_ready", self.onPageReady)
         return self.wp
     

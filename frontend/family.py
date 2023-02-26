@@ -116,8 +116,8 @@ class WikiBackup(object):
         '''
         self.wikiuser=wikiuser
         home=str(Path.home())
-        self.backupPath='%s/wikibackup/%s' % (home,wikiuser.wikiId)
-        self.gitPath="%s/.git" % self.backupPath
+        self.backupPath=f"{home}/wikibackup/{wikiuser.wikiId}" 
+        self.gitPath=f"{self.backupPath}/.git"  
         pass
     
     def exists(self)->bool:
