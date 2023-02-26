@@ -194,16 +194,16 @@ class WikiGrid(Display):
             try: 
                 smwClient=SMWClient(wikiClient.getSite())
                 self.smwClients[wikiUser.wikiId]=smwClient
+                smwClient=self.smwClients[wikiUser.wikiId]
+                askQuery="""{{#ask: [[Modification date::+]]
+|format=count
+}}"""
+                result=list(smwClient.query(askQuery))
+                pass
             except Exception as ex:
                 await self.updateRow(row, "login", f"❌ {str(ex)}")
                 await self.updateRow(row, "pages", "❌")
                 return 
-            smwClient=self.smwClients[wikiUser.wikiId]
-            askQuery="""{{#ask: [[Modification date::+]]
-|format=count
-}}"""
-            result=list(smwClient.query(askQuery))
-           
             pass
         except BaseException as ex:
             self.app.handleException(ex)

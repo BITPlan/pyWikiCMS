@@ -67,14 +67,14 @@ class CmsApp(App):
         self.rowC=self.jp.Div(classes="row",a=self.contentbox)
         self.rowD=self.jp.Div(classes="row",a=self.contentbox)
         self.rowE=self.jp.Div(classes="row",a=self.contentbox)
+        self.rowF=self.jp.Div(classes="row",a=self.contentbox)
         # columns
         self.colA1=self.jp.Div(classes="col-12",a=self.rowA)
-        self.colB1=self.jp.Div(classes="col-12",a=self.rowB)
-        self.colC1=self.jp.Div(classes="col-12",a=self.rowB)
-        self.colD1=self.jp.Div(classes="col-3",a=self.rowC)
-        self.colD2=self.jp.Div(classes="col-2",a=self.rowC)
-        self.colE1=self.jp.Div(classes="col-12",a=self.rowD)
-        self.colF1=self.jp.Div(classes="col-12",a=self.rowE)
+        self.colC1=self.jp.Div(classes="col-12",a=self.rowC)
+        self.colD1=self.jp.Div(classes="col-3",a=self.rowD)
+        self.colD2=self.jp.Div(classes="col-2",a=self.rowD)
+        self.colE1=self.jp.Div(classes="col-12",a=self.rowE)
+        self.colF1=self.jp.Div(classes="col-12",a=self.rowF)
         # standard elements
         self.errors=self.jp.Div(a=self.colA1,style='color:red')
         self.messages=self.jp.Div(a=self.colE1,style='color:black')  
@@ -102,11 +102,16 @@ class CmsApp(App):
 
         return self.wp
     
+    def logo_img(self,a,logo,logo_size):
+        markup=f"""<img class='rounded' src='{logo}' height='{logo_size}' width='{logo_size}'>"""
+        logo_div=self.jp.Div(a=a,classes="col-1")#
+        logo_div.inner_html=markup
+    
     def addServerInfo(self,a):
         """
         add ServerInfo
         """
-        infoDiv=self.jp.Div(a=a)
+        infoDiv=self.jp.Div(a=a,classes='col-2 h4 align-middle')
         if sys.platform == "linux" or sys.platform == "linux2":
             # linux
             os_logo="https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png"
@@ -118,9 +123,11 @@ class CmsApp(App):
             os_logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Windows_icon.svg/256px-Windows_icon.svg.png"
         else:
             os_logo=""
-        
-        infoDiv.inner_html=f"<h3>Welcome to {self.args.host}</h3><img src='{os_logo}' height='128px'><img src='{self.args.logo}' height='128px'>"
-        
+        logo_size=64
+        infoDiv.inner_html=f"<span>Welcome to {self.args.host}</span>"
+        self.logo_img(a,os_logo,logo_size)
+        self.logo_img(a,self.args.logo,logo_size)
+        pass
     
     async def content(self)->"jp.WebPage":
         '''
@@ -130,7 +137,7 @@ class CmsApp(App):
             jp.WebPage: a justpy webpage renderer
         '''
         self.setupRowsAndCols()
-        self.addServerInfo(a=self.colB1)
+        self.addServerInfo(a=self.rowB)
         self.wikiGrid=WikiGrid(a=self.colC1,app=self)
         self.wp.on("page_ready", self.onPageReady)
         return self.wp
