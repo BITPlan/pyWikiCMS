@@ -27,6 +27,8 @@ dependencies = [
     # Beautiful Soup HTML parser
 	# https://pypi.org/project/beautifulsoup4/
 	'beautifulsoup4>=4.9.3',
+	# # https://pypi.org/project/lxml/
+	'lxml',
 	#https://pypi.org/project/pydevd/
 	'pydevd',
 	# pyFlaskBootstrap4
