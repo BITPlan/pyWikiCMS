@@ -14,7 +14,7 @@ maintainers = [
   { name = "Wolfgang Fahl", email = "wf@bitplan.com" },
 ]
 readme = "README.md"
-license = "Apache-2.0"
+license = {text = "Apache-2.0"} 
 dependencies = [
 	# https://github.com/justpy-org/justpy
     'justpy>=0.11.3',
@@ -28,7 +28,9 @@ dependencies = [
 	# https://pypi.org/project/beautifulsoup4/
 	'beautifulsoup4>=4.9.3',
 	#https://pypi.org/project/pydevd/
-	'pydevd'
+	'pydevd',
+	# pyFlaskBootstrap4
+	'pyFlaskBootstrap4>=0.6.1'
  ]
 
 requires-python = ">=3.8"
