@@ -6,7 +6,6 @@ Created on 2020-07-11
 import unittest
 import warnings
 import os
-from fb4.app import AppWrap
 from frontend.server import Server
 from tests.test_wikicms import TestWikiCMS
 import tempfile
@@ -178,7 +177,3 @@ def test():
         html,error=frontend.renderTemplate("test.html",msg="Hello world!")
         self.assertIsNone(error)
         self.assertTrue("Hello world!" in html)
-
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()

@@ -60,7 +60,3 @@ class TestParser(Basetest):
         #parser=etree.HTMLParser()
         tree=etree.parse(StringIO(self.html))
         self.assertTrue(tree is not None)
-
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()

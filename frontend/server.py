@@ -7,7 +7,6 @@ from sys import platform
 import os
 import socket
 import datetime
-from flask import render_template
 from lodstorage.jsonable import JSONAble
 from pathlib import Path
 from frontend.wikicms import Frontend
@@ -26,6 +25,7 @@ class Server(JSONAble):
         Args:
             storePath(str): the path to load my configuration from (if any)
         '''
+        self.storage_secret=None
         self.frontendConfigs=None
         self.logo="https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png"
         self.purpose=""
@@ -250,10 +250,21 @@ class Server(JSONAble):
         stateSymbol=self.stateSymbol(confExists)
         return stateSymbol
     
-    def render(self):
+    def asHtml(self)->str:
         '''
-        render me 
+        render me as HTML code
         '''
-        html=render_template('server.html',server=self)
+        server=self
+        logo_html=""
+        if server.logo is not None:
+            logo_html=f"""<td><img src='{server.logo }' alt='{server.name} logo' height=150></td>"""
+        html=f"""<table>
+<tr>
+    <td><img src='{server.getPlatformLogo()}' alt='{server.platform} logo' height=150></td>
+    {logo_html}
+    <td>Welcome to {server.name } ({ server.ip }) { server.purpose }<td>
+</tr>
+</table>
+"""
         return html
         

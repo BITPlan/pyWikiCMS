@@ -3,9 +3,9 @@ Created on 2021-01-01
 
 @author: wf
 '''
-import unittest
 from frontend.family import LocalWiki, WikiFamily
 from tests.basetest import Basetest
+
 class TestFamily(Basetest):
     '''
     test wiki family code
@@ -46,8 +46,3 @@ class TestFamily(Basetest):
         logo=lWiki.getSetting("wgLogo")
         self.assertTrue(logo.startswith("/images/wgt"))
         pass
-
-
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()

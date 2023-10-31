@@ -72,8 +72,3 @@ class TestWikiCMS(Basetest):
             print(text)
         self.assertTrue("OpenResearch" in text)
         pass
-    
-
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()

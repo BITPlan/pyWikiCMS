@@ -6,7 +6,6 @@ Created on 2020-12-27
 import unittest
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
-import getpass
 from tests.basetest import Basetest
 
 class TestFrontend(Basetest):

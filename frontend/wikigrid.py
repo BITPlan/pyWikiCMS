@@ -3,56 +3,18 @@ Created on 2022-12-03
 
 @author: wf
 '''
-import asyncio
 from wikibot3rd.wikiuser import WikiUser
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.smw import SMWClient
-from jpwidgets.bt5widgets import Link, Switch
-from jpwidgets.widgets import LodGrid
 from frontend.html_table import HtmlTables
 from lodstorage.lod import LOD
+from frontend.family import WikiFamily, WikiBackup
 import os
 import glob
 import time
 from pathlib import Path
+from ngwidgets.widgets import Link
 
-class Display:
-    '''
-    generic Display
-    '''
-    noneValue="-"
-    
-    def setDefaultColDef(self,agGrid):
-        """
-        set the default column definitions
-        """
-        defaultColDef=agGrid.options.defaultColDef
-        defaultColDef.resizable=True
-        defaultColDef.sortable=True
-        defaultColDef.filter=True
-        # https://www.ag-grid.com/javascript-data-grid/grid-size/
-        defaultColDef.wrapText=True
-        defaultColDef.autoHeight=True
-        defaultColDef.headerClass="font-bold"
-        
-    def addFitSizeButton(self,a):
-        self.onSizeColumnsToFitButton=Switch(
-            a=a,
-            labelText="fit",
-            checked=False
-            #iconName='format-columns',
-            #classes="btn btn-primary btn-sm col-1"
-        )
-        self.onSizeColumnsToFitButton.on("input",self.onSizeColumnsToFit)
-        
-    async def onSizeColumnsToFit(self,_msg:dict):   
-        try:
-            await asyncio.sleep(0.2)
-            if self.agGrid:
-                await self.agGrid.run_api('sizeColumnsToFit()', self.app.wp)
-        except Exception as ex:
-            self.app.handleException(ex)
-    
 class WikiCheck:
     """
     
@@ -81,45 +43,49 @@ class WikiCheck:
         jp.Span(classes='ml-1', a=label, text=self.name)
         return radio_btn
     
-class WikiGrid(Display):
+class WikiGrid():
     """
     grid of Wikis
     """
     
-    def __init__(self,a,app):
+    def __init__(self):
         """
         constructor
         
         Args:
             targets(dict): a list of targets
-            a: the parent element
-            app: the parent app
             
         """
-        self.app=app
-        self.jp=app.jp
         self.setupWikiUsers()
-        self.addCheckButtons(a=a)
-        self.agGrid=LodGrid(a=a)
-        self.agGrid.theme="ag-theme-material"
+        #self.addCheckButtons(a=a)
         self.lod=[]
         self.lodindex={}
         for index,wikiUser in enumerate(self.sortedWikiUsers):
+            wikiBackup=WikiBackup(wikiUser)
+            url=f"{wikiUser.url}{wikiUser.scriptPath}"
+            link=Link.create(url=url,text=wikiUser.wikiId,target="_blank")
             self.lod.append({
                 "#": index+1,
-                "wiki": Link.newTab(url=wikiUser.getWikiUrl(), text=wikiUser.wikiId),
+                "wiki": link,
                 "version": wikiUser.version,
                 "since": "",
                 "until": "",
                 "pages": "",
-                "backup": "",
+                "backup": "✅" if wikiBackup.exists() else "❌",
+                "git": "✅" if wikiBackup.hasGit() else "❌",
                 "age": ""
             })
-            self.lodindex[wikiUser.wikiId]=index+1
-        self.setDefaultColDef(self.agGrid)
-        self.agGrid.load_lod(self.lod)
-        #self.agGrid.options.columnDefs[0].checkboxSelection = True
-        self.agGrid.html_columns=[1]
+            self.lodindex[wikiUser.wikiId]=index+1  
+           
+            #dictList.append({
+            #    'wikiId': Link(url,wikiUser.wikiId),
+            #    'url': Link(wikiUser.url,wikiUser.url),
+            #    'scriptPath':wikiUser.scriptPath,
+            #    'version':wikiUser.version,
+            #    'backup': ,
+            #    'git': Icon("github",32) if wikiBackup.hasGit() else ""
+            #})  
+      
     
     def setupWikiUsers(self):
         # wiki users
@@ -246,11 +212,3 @@ class WikiGrid(Display):
         except BaseException as ex:
             self.app.handleException(ex)
         
-    async def onPageReady(self,_msg):
-        """
-        react on page Ready
-        """
-        try:
-            pass
-        except BaseException as ex:
-            self.app.handleException(ex)
