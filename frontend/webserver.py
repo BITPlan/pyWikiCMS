@@ -7,12 +7,12 @@ from nicegui import app,ui, Client
 from ngwidgets.input_webserver import InputWebserver
 from frontend.server import Server
 from ngwidgets.webserver import WebserverConfig
+from ngwidgets.background import BackgroundTaskHandler
 from frontend.version import Version
 from frontend.wikigrid import WikiGrid
 from ngwidgets.users import Users
 from ngwidgets.login import Login
 from fastapi.responses import RedirectResponse
-from ngwidgets.lod_grid import ListOfDictsGrid
 
 class WebServer(InputWebserver):
     """
@@ -36,7 +36,7 @@ class WebServer(InputWebserver):
         self.server = Server()
         self.server.load()
         self.enabledSites = ['admin']
-        self.wiki_grid=WikiGrid()
+        self.wiki_grid=WikiGrid(self)
         
         @ui.page('/')
         async def home(client: Client):
@@ -76,23 +76,15 @@ class WebServer(InputWebserver):
         self.setup_menu()
         with ui.element("div").classes("w-full h-full"):
             self.server_html=ui.html(self.server.asHtml())
-            self.show_wikis()
+            self.wiki_grid.setup()
         await self.setup_footer()
-            
-    def show_wikis(self):
-        """
-        """
-        self.lod_grid=ListOfDictsGrid(lod=self.wiki_grid.lod)
-        self.lod_grid.ag_grid._props['html_columns']= [0, 1, 2]
-        pass
-         
+                     
     def configure_menu(self):
         """
         configure specific menu entries
         """
         username=app.storage.user.get('username', '?')
         ui.label(username)
-
         
     def configure_run(self):
         self.enableSites(self.args.sites)

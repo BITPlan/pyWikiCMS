@@ -1,214 +1,219 @@
-'''
+"""
 Created on 2022-12-03
 
 @author: wf
-'''
+"""
+import os
+import glob
+import time
+from pathlib import Path
 from wikibot3rd.wikiuser import WikiUser
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.smw import SMWClient
 from frontend.html_table import HtmlTables
 from lodstorage.lod import LOD
 from frontend.family import WikiFamily, WikiBackup
-import os
-import glob
-import time
-from pathlib import Path
+from nicegui import app,ui
 from ngwidgets.widgets import Link
+from ngwidgets.lod_grid import ListOfDictsGrid
+from ngwidgets.background import BackgroundTaskHandler
+from ngwidgets.progress import Progressbar,NiceguiProgressbar
 
-class WikiCheck:
+class WikiState:
     """
-    
+    the state of a wiki
     """
-    def __init__(self,name,func,checked:bool=True):
+    def __init__(self,row_index,wiki_user):
         """
         constructor
         """
-        self.name=name
-        self.func=func
-        self.checked=checked
+        self.row_no=row_index+1
+        self.wiki_user=wiki_user
+        self.wiki_backup = WikiBackup(wiki_user)
         
-    def radio_changed(self,msg):
-        """
-        react on a changed radio button
-        """
-        self.checked=not msg["target"].checked
-        msg["target"].checked=self.checked
-        pass
-        
-    def asRadioButton(self,jp,a):
-        """
-        """
-        label = jp.Label(classes='inline-block mb-1 p-1', a=a)
-        radio_btn = jp.Input(type='radio', name=self.name, value=self.name, a=label, click=self.radio_changed,checked=self.checked)
-        jp.Span(classes='ml-1', a=label, text=self.name)
-        return radio_btn
+    def as_dict(self):
+        url = f"{self.wiki_user.url}{self.wiki_user.scriptPath}"
+        link = Link.create(url=url, text=self.wiki_user.wikiId, target="_blank")
     
-class WikiGrid():
-    """
-    grid of Wikis
-    """
-    
-    def __init__(self):
-        """
-        constructor
-        
-        Args:
-            targets(dict): a list of targets
-            
-        """
-        self.setupWikiUsers()
-        #self.addCheckButtons(a=a)
-        self.lod=[]
-        self.lodindex={}
-        for index,wikiUser in enumerate(self.sortedWikiUsers):
-            wikiBackup=WikiBackup(wikiUser)
-            url=f"{wikiUser.url}{wikiUser.scriptPath}"
-            link=Link.create(url=url,text=wikiUser.wikiId,target="_blank")
-            self.lod.append({
-                "#": index+1,
+        record={
+                "#": self.row_no,
                 "wiki": link,
-                "version": wikiUser.version,
+                "version": self.wiki_user.version,
                 "since": "",
                 "until": "",
                 "pages": "",
-                "backup": "✅" if wikiBackup.exists() else "❌",
-                "git": "✅" if wikiBackup.hasGit() else "❌",
-                "age": ""
-            })
-            self.lodindex[wikiUser.wikiId]=index+1  
-           
-            #dictList.append({
-            #    'wikiId': Link(url,wikiUser.wikiId),
-            #    'url': Link(wikiUser.url,wikiUser.url),
-            #    'scriptPath':wikiUser.scriptPath,
-            #    'version':wikiUser.version,
-            #    'backup': ,
-            #    'git': Icon("github",32) if wikiBackup.hasGit() else ""
-            #})  
-      
+                "backup": "✅" if self.wiki_backup.exists() else "❌",
+                "git": "✅" if self.wiki_backup.hasGit() else "❌",
+                "age": "",
+        }
+        return record
     
-    def setupWikiUsers(self):
-        # wiki users
-        self.wikiUsers=WikiUser.getWikiUsers()
-        self.sortedWikiUsers=sorted(self.wikiUsers.values(),key=lambda w:w.wikiId)
-        self.wikiClients={}
-        self.smwClients={}           
-       
-    def addCheckButtons(self,a):
-        self.wikiChecks=[
-            WikiCheck("version",self.checkWikiVersion4WikiUser),
-            WikiCheck("backup",self.checkBackup4WikiUser),
-            WikiCheck("pages",self.checkPages4WikiUser)
+class WikiCheck:
+    """
+    A check for a Mediawiki.
+    """
+
+    def __init__(self, name, func, checked=True):
+        self.name = name
+        self.func = func # the check function to be performed on a WikiState
+        self.checked = checked
+        self.checkbox = None
+
+    def as_checkbox(self):
+        """
+        Return a checkbox representation of the instance.
+        """
+        self.checkbox = ui.checkbox(self.name).bind_value(self, "checked")
+        return self.checkbox
+
+class WikiGrid:
+    """
+    A grid of Wikis.
+    """
+
+    def __init__(self,napp):
+        # back reference to nicegui app
+        self.napp=napp
+        self.bth=BackgroundTaskHandler()
+        app.on_shutdown(self.bth.cleanup())
+   
+        self.wiki_users = WikiUser.getWikiUsers()
+        self.wiki_clients = {}
+        self.smw_clients = {}
+        self.sorted_wiki_users = sorted(
+            self.wiki_users.values(), key=lambda w: w.wikiId
+        )
+        self.lod = []
+        self.wikistates_by_row_no={}
+        for index, wiki_user in enumerate(self.sorted_wiki_users):
+            wiki_state=WikiState(index,wiki_user)   
+            record=wiki_state.as_dict()      
+            self.lod.append(record)
+            self.wikistates_by_row_no[wiki_state.row_no]=wiki_state
+        
+    def setup(self):
+        self.add_checkboxes()
+        self.progressbar = NiceguiProgressbar(len(self.wikistates_by_row_no),"work on wikis","steps")
+        self.as_grid()
+        self.lod_grid.update()
+    
+    def as_grid(self):
+        self.lod_grid=ListOfDictsGrid(lod=self.lod)
+        self.lod_grid.ag_grid._props['html_columns']= [0, 1, 2]
+        return self.lod_grid
+
+    def add_checkboxes(self):
+        """
+        Add check boxes.
+        """
+        self.wiki_checks = [
+            WikiCheck("version", self.check_wiki_version),
+            WikiCheck("backup", self.check_backup),
+            WikiCheck("pages", self.check_pages),
         ]
-        for wikiCheck in self.wikiChecks:
-            wikiCheck.asRadioButton(self.jp, a=a)
-        button_classes="btn btn-primary"
-        self.jp.Button(text="Checks",a=a,classes=button_classes,click=self.performWikiChecks)
-  
-    def checkVersion(self,wikiUrl:str):
+        for wiki_check in self.wiki_checks:
+            wiki_check.as_checkbox()
+        ui.button(text="Checks", on_click=self.perform_wiki_checks)
+
+    def check_version(self, wiki_url):
         """
-        check the mediawiki version
+        Check the MediaWiki version.
         """
-        version_url=f"{wikiUrl}/index.php/Special:Version"
-        mw_version="?"
+        version_url = f"{wiki_url}/index.php/Special:Version"
+        mw_version = "?"
         try:
-            html_tables=HtmlTables(version_url)
-            tables=html_tables.get_tables("h2")      
+            html_tables = HtmlTables(version_url)
+            tables = html_tables.get_tables("h2")
             if "Installed software" in tables:
-                software=tables["Installed software"]
-                software_map,_dup=LOD.getLookup(software, "Product", withDuplicates=False)
-                mw_version=software_map["MediaWiki"]["Version"]
+                software = tables["Installed software"]
+                software_map, _dup = LOD.getLookup(
+                    software, "Product", with_duplicates=False
+                )
+                mw_version = software_map["MediaWiki"]["Version"]
         except Exception as ex:
-            mw_version=f"error: {str(ex)}"
+            mw_version = f"error: {str(ex)}"
         return mw_version
     
-    def getRowForWikiId(self,wikiId):
-        for row in self.lod:
-            if row["#"]==self.lodindex[wikiId]:
-                return row
-        else:
-            return None
+    async def perform_wiki_checks(self, _msg):
+        self.progressbar.reset()    
+        self.future, result_coro = self.bth.execute_in_background(self.run_wiki_checks, progress_bar=self.progressbar)
+        await result_coro()
         
-    async def updateRow(self,row,key,value):
+    def run_wiki_checks(self,progress_bar:Progressbar=None):
         """
-        update a row in the grid
+        perform the selected wiki checks
         """
-        row[key]=value
-        for grid_row in self.agGrid.options.rowData:
-            if row["#"]==grid_row["#"]:
-                grid_row[key]=value
-                break
-
-    async def performWikiChecks(self,_msg):
         try:
-            for wikiUser in self.sortedWikiUsers:
-                for wikiCheck in self.wikiChecks:
-                    if wikiCheck.checked:
-                        await wikiCheck.func(wikiUser)
-                await self.app.wp.update()
+            for wiki_state in self.wikistates_by_row_no.values():
+                for wiki_check in self.wiki_checks:
+                    if wiki_check.checked:
+                        wiki_check.func(wiki_state)
+                self.lod_grid.update()
+                if progress_bar:
+                    # Update the progress bar
+                    progress_bar.update(1)
         except BaseException as ex:
-            self.app.handleException(ex)
-            
-    async def checkPages4WikiUser(self,wikiUser):
+            self.napp.handle_exception(ex)
+
+    def check_pages(self, wiki_state):
         """
-        try login for wikUser and report success or failure
+        Try login for wiki user and report success or failure.
         """
         try:
-            row=self.getRowForWikiId(wikiUser.wikiId)
-            wikiClient=WikiClient.ofWikiUser(wikiUser)
-            self.wikiClients[wikiUser.wikiId]=wikiClient
-            try: 
-                smwClient=SMWClient(wikiClient.getSite())
-                self.smwClients[wikiUser.wikiId]=smwClient
-                smwClient=self.smwClients[wikiUser.wikiId]
-                askQuery="""{{#ask: [[Modification date::+]]
+            wiki_state.wiki_client = WikiClient.ofWikiUser(wiki_state.wiki_user)
+            try:
+                wiki_state.smw_client = SMWClient(wiki_state.wiki_client.getSite())
+                ask_query = """{{#ask: [[Modification date::+]]
 |format=count
 }}"""
-                result=list(smwClient.query(askQuery))
+                result=list(wiki_state.smw_client.query(ask_query))
                 pass
             except Exception as ex:
-                await self.updateRow(row, "login", f"❌ {str(ex)}")
-                await self.updateRow(row, "pages", "❌")
-                return 
-            pass
+                self.lod_grid.update_row(wiki_state.row_no, "login", f"❌ {str(ex)}")
+                self.lod_grid.update_row(wiki_state.row_no, "pages", "❌")
+                return
         except BaseException as ex:
-            self.app.handleException(ex)
-            
-    async def checkWikiVersion4WikiUser(self,wikiUser):
+            self.napp.handle_exception(ex)
+
+    def check_wiki_version(self, wiki_state):
         """
+        Check the MediaWiki version for a specific WikiState.
         """
         try:
-            mw_version=self.checkVersion(wikiUser.getWikiUrl())
+            wiki_url=wiki_state.wiki_user.getWikiUrl()
+            mw_version = self.check_version(wiki_url)
             if not mw_version.startswith("MediaWiki"):
-                mw_version=f"MediaWiki {mw_version}"
-            row=self.getRowForWikiId(wikiUser.wikiId)
-            ex_version=row["version"]
-            if ex_version==mw_version:
-                await self.updateRow(row, "version",f"{mw_version}✅")
-            else:
-                await self.updateRow(row,"version",f"{ex_version}!={mw_version}❌")
+                mw_version = f"MediaWiki {mw_version}"
+            row = self.lod_grid.get_row_for_key(wiki_state.row_no)
+            if row:
+                ex_version = row["version"]
+                if ex_version == mw_version:
+                    self.lod_grid.update_row(wiki_state.row_no, "version", f"{mw_version}✅")
+                else:
+                    self.lod_grid.update_row(wiki_state.row_no, "version", f"{ex_version}!={mw_version}❌")
         except BaseException as ex:
-            self.app.handleException(ex)
-            
-    async def checkBackup4WikiUser(self,wikiUser):
+            self.napp.handle_exception(ex)
+
+    def check_backup(self, wiki_state):
         """
+        Check the backup status for a specific WikiUser.
         """
         try:
-            row=self.getRowForWikiId(wikiUser.wikiId)
-            backupPath=f"{Path.home()}/wikibackup/{wikiUser.wikiId}"
-            if os.path.isdir(backupPath):
-                wikiFiles = glob.glob(f"{backupPath}/*.wiki") 
-                msg=f"{len(wikiFiles):6} ✅"
-                await self.updateRow(row, "backup", msg)
-                #https://stackoverflow.com/a/39327156/1497139
-                if len(wikiFiles)>0:
-                    latest_file = max(wikiFiles, key=os.path.getctime)
-                    st=os.stat(latest_file)
-                    age_days=round((time.time()-st.st_mtime)/86400)
-                    await self.updateRow(row, "age",f"{age_days}")
-            else:
-                msg="❌"
-                await self.updateRow(row, "backup", msg)
+            row = self.lod_grid.get_row_for_key(wiki_state.row_no)
+            if row:
+                backup_path = f"{Path.home()}/wikibackup/{wiki_state.wiki_user.wikiId}"
+                if os.path.isdir(backup_path):
+                    wiki_files = glob.glob(f"{backup_path}/*.wiki")
+                    msg = f"{len(wiki_files):6} ✅"
+                    self.lod_grid.update_row(wiki_state.row_no, "backup", msg)
+                    # https://stackoverflow.com/a/39327156/1497139
+                    if wiki_files:
+                        latest_file = max(wiki_files, key=os.path.getctime)
+                        st = os.stat(latest_file)
+                        age_days = round((time.time() - st.st_mtime) / 86400)
+                        self.lod_grid.update_row(wiki_state.row_no, "age", f"{age_days}")
+                else:
+                    msg = "❌"
+                    self.lod_grid.update_row(wiki_state.row_no, "backup", msg)
         except BaseException as ex:
-            self.app.handleException(ex)
-        
+            self.napp.handle_exception(ex)
