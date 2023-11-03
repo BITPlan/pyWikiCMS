@@ -127,7 +127,7 @@ class WikiGrid:
             if "Installed software" in tables:
                 software = tables["Installed software"]
                 software_map, _dup = LOD.getLookup(
-                    software, "Product", with_duplicates=False
+                    software, "Product", withDuplicates=False
                 )
                 mw_version = software_map["MediaWiki"]["Version"]
         except Exception as ex:
@@ -135,7 +135,6 @@ class WikiGrid:
         return mw_version
     
     async def perform_wiki_checks(self, _msg):
-        self.progressbar.reset()    
         self.future, result_coro = self.bth.execute_in_background(self.run_wiki_checks, progress_bar=self.progressbar)
         await result_coro()
         
@@ -144,6 +143,7 @@ class WikiGrid:
         perform the selected wiki checks
         """
         try:
+            progress_bar.reset()
             for wiki_state in self.wikistates_by_row_no.values():
                 for wiki_check in self.wiki_checks:
                     if wiki_check.checked:
@@ -162,12 +162,11 @@ class WikiGrid:
         try:
             wiki_state.wiki_client = WikiClient.ofWikiUser(wiki_state.wiki_user)
             try:
-                wiki_state.smw_client = SMWClient(wiki_state.wiki_client.getSite())
-                ask_query = """{{#ask: [[Modification date::+]]
-|format=count
-}}"""
-                result=list(wiki_state.smw_client.query(ask_query))
-                pass
+                wiki_state.wiki_client.login()
+                stats=wiki_state.wiki_client.get_site_statistics()
+                pages=stats["pages"]
+                self.lod_grid.update_row(wiki_state.row_no, "login", f"✅")
+                self.lod_grid.update_row(wiki_state.row_no, "pages", f"✅{pages}")
             except Exception as ex:
                 self.lod_grid.update_row(wiki_state.row_no, "login", f"❌ {str(ex)}")
                 self.lod_grid.update_row(wiki_state.row_no, "pages", "❌")
