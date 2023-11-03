@@ -4,7 +4,7 @@ Created on 2021-01-01
 @author: wf
 '''
 from frontend.family import LocalWiki, WikiFamily
-from tests.basetest import Basetest
+from ngwidgets.basetest import Basetest
 
 class TestFamily(Basetest):
     '''

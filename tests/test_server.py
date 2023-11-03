@@ -3,9 +3,8 @@ Created on 2021-01-06
 
 @author: wf
 '''
-import unittest
 from frontend.server import Server
-from tests.basetest import Basetest
+from ngwidgets.basetest import Basetest
 
 class TestServer(Basetest):
     '''

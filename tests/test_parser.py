@@ -3,11 +3,10 @@ Created on 2021-03-14
 
 @author: wf
 '''
-import unittest
 import xml.sax
 import lxml.etree as etree
 from io import StringIO
-from tests.basetest import Basetest
+from ngwidgets.basetest import Basetest
 
 class InsertSections(xml.sax.handler.ContentHandler):
     '''

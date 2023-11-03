@@ -6,7 +6,7 @@ Created on 2020-12-27
 import unittest
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
-from tests.basetest import Basetest
+from ngwidgets.basetest import Basetest
 
 class TestFrontend(Basetest):
     '''

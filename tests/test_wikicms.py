@@ -3,12 +3,11 @@ Created on 27.07.2020
 
 @author: wf
 '''
-import unittest
 import os
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 #from wikibot.smw import SMWClient
-from tests.basetest import Basetest
+from ngwidgets.basetest import Basetest
 
 class TestWikiCMS(Basetest):
     '''

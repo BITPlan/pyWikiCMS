@@ -3,35 +3,27 @@ Created on 2020-07-11
 
 @author: wf
 '''
-import unittest
 import warnings
-import os
 from frontend.server import Server
+from frontend.webserver import WebServer
 from tests.test_wikicms import TestWikiCMS
 import tempfile
-from tests.basetest import Basetest
+from ngwidgets.webserver_test import WebserverTest
+from frontend.cmsmain import WebserverCmd
 
-class TestWebServer(Basetest):
-    ''' see https://www.patricksoftwareblog.com/unit-testing-a-flask-application/ '''
-
-    def setUp(self):
-        '''
-        prepare everything needed for the tests
-        '''
-        Basetest.setUp(self)
+class TestWebServer(WebserverTest):
+    """
+    test the pyWikiCms Server
+    """
+    
+    def setUp(self,debug=False, profile=True):
+        server_class=WebServer
+        cmd_class=WebserverCmd
+        WebserverTest.setUp(self, server_class, cmd_class, debug=debug, profile=profile)       
         self.server=TestWebServer.initServer()
-        import frontend.webserver 
-        app=frontend.webserver.app
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['DEBUG'] = False
-        self.app=app
-        self.client = app.test_client()
-       
         # make sure tests run in travis
-        sites=['or','cr','sharks','www']
-        frontend.webserver.wcw.enableSites(sites)
-        self.wcw=frontend.webserver.wcw
+        sites=['or','cr','sharks','www']        
+        self.ws.enableSites(sites)
         pass
     
     @staticmethod
@@ -89,29 +81,28 @@ class TestWebServer(Basetest):
             print(path)
         self.assertTrue("/tmp" in path)
     
-    def testSplit(self):
-        '''
-        test splitting the path into site an path
-        '''
-        paths=['admin/','or/test']
-        expected=[('admin','/'),('or','/test')]
-        for i,testpath in enumerate(paths):
-            site,path=AppWrap.splitPath(testpath)
-            if self.debug:
-                print("%s:%s" % (site,path))
-            esite,epath=expected[i]
-            self.assertEqual(esite,site)
-            self.assertEqual(epath,path)
-            
-    def getHtml(self,path):
-        response=self.client.get(path)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data is not None)
-        html=response.data.decode()
-        if self.debug:
-            print(html)
-        return html
+    def test_extract_site_and_path(self):
+        """
+        Test splitting the path into site and path.
+        """
+        # Test paths and their expected results.
+        paths = ['admin/', 'or/test']
+        expected_results = [('admin', '/'), ('or', '/test')]
 
+        for index, test_path in enumerate(paths):
+            # Extract site and path using the Webserver method.
+            site, path = WebServer.extract_site_and_path(test_path)
+
+            # If debugging is enabled, print the results.
+            if getattr(self, 'debug', False):
+                print(f"Site: {site}, Path: {path}")
+
+            # Get the expected site and path.
+            expected_site, expected_path = expected_results[index]
+
+            # Assert that the results match the expectations.
+            self.assertEqual(expected_site, site)
+            self.assertEqual(expected_path, path)
     def testWebServer(self):
         ''' 
         test the WebServer
@@ -139,41 +130,3 @@ class TestWebServer(Basetest):
             print(html)
         self.assertTrue("reveal.min.css" in html)
         self.assertTrue("Reveal.initialize({" in html)
-    
-    def createPackage(self,packageFolder,templateFolder,moduleName,moduleCode,templateCode):
-        moduleFolder="%s/%s" % (packageFolder,moduleName)
-        os.makedirs(moduleFolder,exist_ok=True)
-        absTemplateFolder="%s/%s" % (moduleFolder,templateFolder)
-        os.makedirs(absTemplateFolder,exist_ok=True)
-        modulePath="%s/__init__.py" % moduleFolder 
-        with open(modulePath,"w") as moduleFile:
-            moduleFile.write(moduleCode)
-        templatePath="%s/test.html" % (absTemplateFolder)
-        with open(templatePath,"w") as templateFile:
-            templateFile.write(templateCode)
-        
-    def testIssue14Templates(self):
-        '''
-        test template handling
-        '''
-        # work around CI environment problem
-        # https://github.com/pallets/jinja/issues/1365
-        if self.inPublicCI():
-            return
-        packageFolder='%s/www.wikicms' % tempfile.gettempdir()
-        templateFolder='templates'
-        moduleName='bitplan_webfrontend'
-        moduleCode="""
-def test():
-    return "test result"
-        """
-        templateCode="""
-{{ msg }}     
-"""
-        self.createPackage(packageFolder, templateFolder, moduleName, moduleCode, templateCode)
-        frontend=self.server.enableFrontend('www',self.wcw,debug=False)
-        #self.assertEqual(templateFolder,frontend.site.templateFolder)
-        self.assertEqual(moduleName,frontend.site.packageName)       
-        html,error=frontend.renderTemplate("test.html",msg="Hello world!")
-        self.assertIsNone(error)
-        self.assertTrue("Hello world!" in html)
