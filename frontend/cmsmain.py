@@ -4,7 +4,7 @@ Created on 2022-11-24
 @author: wf
 '''
 from ngwidgets.cmd import WebserverCmd
-from frontend.webserver import WebServer
+from frontend.webserver import CmsWebServer
 from argparse import ArgumentParser
 import sys
 
@@ -12,15 +12,7 @@ class CmsMain(WebserverCmd):
     """
     ContentManagement System Main Program
     """
-    
-    def __init__(self):
-        """
-        constructor
-        """
-        config=WebServer.get_config()
-        WebserverCmd.__init__(self, config, WebServer, DEBUG)
-        pass
-    
+        
     def getArgParser(self,description:str,version_msg)->ArgumentParser:
         """
         override the default argparser call
@@ -33,7 +25,7 @@ def main(argv:list=None):
     """
     main call
     """
-    cmd=CmsMain()
+    cmd=CmsMain(config=CmsWebServer.get_config(),webserver_cls=CmsWebServer)
     exit_code=cmd.cmd_main(argv)
     return exit_code
         

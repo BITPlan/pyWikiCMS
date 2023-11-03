@@ -14,7 +14,7 @@ from ngwidgets.users import Users
 from ngwidgets.login import Login
 from fastapi.responses import RedirectResponse
 
-class WebServer(InputWebserver):
+class CmsWebServer(InputWebserver):
     """
     WebServer class that manages the server 
     
@@ -26,11 +26,11 @@ class WebServer(InputWebserver):
         return config
 
     def __init__(self):
-        '''
+        """
         constructor
         
-        '''
-        InputWebserver.__init__(self,config=WebServer.get_config())
+        """
+        InputWebserver.__init__(self,config=CmsWebServer.get_config())
         users=Users("~/.wikicms/")
         self.login=Login(self,users)
         self.server = Server()
