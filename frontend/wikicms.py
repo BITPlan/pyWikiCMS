@@ -8,8 +8,8 @@ from wikibot3rd.smw import SMWClient
 from frontend.site import Site
 from bs4 import BeautifulSoup
 import traceback
-import requests
-from flask import Response, render_template
+from http.client import HTTPConnection
+from urllib.parse import urlparse
 
 class Frontend(object):
     '''
@@ -108,20 +108,41 @@ class Frontend(object):
         result=path.startswith("/images/")
         return result
     
-    def proxy(self,path:str)->str:
-        '''
-        proxy a request
-        see https://stackoverflow.com/a/50231825/1497139
+    def proxy(self, path: str) -> str:
+        """
+        Proxy a request.
+        See https://stackoverflow.com/a/50231825/1497139
         
         Args:
-            path(str): the path to proxy
+            path (str): the path to proxy
+            
         Returns:
-            the proxied result Request
-        '''
-        wikiUser=self.wiki.wikiUser
-        url="%s%s%s" % (wikiUser.url,wikiUser.scriptPath,path)
-        r = requests.get(url)
-        return Response(r.content)
+            the proxied result as a string
+        """
+        wikiUser = self.wiki.wikiUser
+        url = f"{wikiUser.url}{wikiUser.scriptPath}{path}"
+
+        # Parse the URL to get domain and path
+        parsed_url = urlparse(url)
+        connection = HTTPConnection(parsed_url.netloc)
+
+        # Make the GET request
+        connection.request("GET", parsed_url.path + "?" + parsed_url.query)
+
+        # Get the response
+        response = connection.getresponse()
+
+        # Read the content
+        content = response.read()
+
+        # Assuming you want to return the content as a byte string,
+        # otherwise you may need to decode it to a string depending on the expected return type
+        # content = content.decode()
+
+        # Close the connection
+        connection.close()
+
+        return content
     
     def filter(self,html):
         return self.doFilter(html,self.filterKeys)
@@ -251,28 +272,6 @@ class Frontend(object):
         except Exception as e:
             error=self.errMsg(e)
         return pageTitle,content,error
-    
-    def renderTemplate(self,template,**kwargs):
-        '''
-        render the given template with the given arguments
-        
-        Args:
-            template(str): the template file to be used
-            kwargs(): same arguments a for dict constructor
-            
-        Returns:
-            str: the rendered result
-        '''
-        # pass on keyword args
-        if self.appWrap is not None:
-            with self.appWrap.app.app_context():
-                result=render_template(template,**kwargs)
-        else:   
-            result=render_template(template,**kwargs)
-        if result is None:
-            return None,self.site.error
-        else:
-            return result,None
         
     def toReveal(self,html):
         '''
