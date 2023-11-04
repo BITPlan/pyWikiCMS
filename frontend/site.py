@@ -3,9 +3,6 @@ Created on 2020-12-31
 
 @author: wf
 '''
-#import jinja2
-import os
-import sys
 
 class Site(object):
     '''
@@ -37,38 +34,17 @@ class Site(object):
         '''
         self.wikiId=config['wikiId']
         self.defaultPage=config['defaultPage']
-        self.template=config['template']
-        if "packageName" in config:
-            self.packageName=config["packageName"]
-        else:
-            self.packageName=self.name
-        if "packageFolder" in config:
-            self.packageFolder=config["packageFolder"]
-        else:
-            self.packageFolder=self.name
         self.configured=True
             
-    def open(self,appWrap=None):
+    def open(self,ws=None):
         '''
         open this site
         
         Args:
-             appWrap(appWrap): optional fb4 Application Wrapper
+             ws: Nicegui Webserver
         '''
         if not self.configured:
-            raise Exception("need to configure site before opening it")
-        # https://stackoverflow.com/a/14276993/1497139
-        # http://code.nabla.net/doc/jinja2/api/jinja2/loaders/jinja2.loaders.PackageLoader.html
-        if self.debug:
-            print("adding %s to PYTHON PATH" % self.packageFolder)
-        sys.path.insert(1,self.packageFolder)
-        if appWrap is not None:
-            templatePath="%s/%s/templates" % (self.packageFolder,self.packageName)
-            if os.path.isdir(templatePath):
-                appWrap.addTemplatePath(templatePath)
-        # TODO: use a more elaborate loader concept if need be
-        # self.templateEnv = jinja2.Environment( loader=jinja2.PackageLoader(self.packageName))
-        
-        pass
+            raise Exception("need to configure site before opening it")      
+        self.ws=ws
         
     

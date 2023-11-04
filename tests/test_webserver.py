@@ -5,11 +5,10 @@ Created on 2020-07-11
 '''
 import warnings
 from frontend.server import Server
-from frontend.webserver import WebServer
+from frontend.webserver import CmsWebServer
 from tests.test_wikicms import TestWikiCMS
-import tempfile
 from ngwidgets.webserver_test import WebserverTest
-from frontend.cmsmain import WebserverCmd
+from frontend.cmsmain import CmsMain
 
 class TestWebServer(WebserverTest):
     """
@@ -17,12 +16,12 @@ class TestWebServer(WebserverTest):
     """
     
     def setUp(self,debug=False, profile=True):
-        server_class=WebServer
-        cmd_class=WebserverCmd
+        server_class=CmsWebServer
+        cmd_class=CmsMain
         WebserverTest.setUp(self, server_class, cmd_class, debug=debug, profile=profile)       
         self.server=TestWebServer.initServer()
         # make sure tests run in travis
-        sites=['or','cr','sharks','www']        
+        sites=['cr','sharks','www']        
         self.ws.enableSites(sites)
         pass
     
@@ -37,31 +36,19 @@ class TestWebServer(WebserverTest):
         server.logo="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
         server.frontendConfigs=[
             {
-             'site':'or',
-             'wikiId':'orclone', 
-             'template':'bootstrap.html',
-             'defaultPage':'Frontend'
-            },
-            {
              'site': 'cr',
              'wikiId':'cr', 
-             'template':'bootstrap.html',
              'defaultPage':'Main Page'
             },
             {
              'site': 'sharks',
              'wikiId':'wiki', 
-             'template':'bootstrap.html',
              'defaultPage':'Sharks'
             },
             {
              'site': 'www',
              'wikiId':'wiki', 
-             'template':'design.html',
              'defaultPage':'Welcome',
-             'packageFolder': '%s/www.wikicms' % tempfile.gettempdir(),
-             'packageName': 'bitplan_webfrontend',
-             'templateFolder': 'templates'
             }
         ]
         for frontendConfigs in server.frontendConfigs:
@@ -91,7 +78,7 @@ class TestWebServer(WebserverTest):
 
         for index, test_path in enumerate(paths):
             # Extract site and path using the Webserver method.
-            site, path = WebServer.extract_site_and_path(test_path)
+            site, path = CmsWebServer.extract_site_and_path(test_path)
 
             # If debugging is enabled, print the results.
             if getattr(self, 'debug', False):
@@ -103,6 +90,7 @@ class TestWebServer(WebserverTest):
             # Assert that the results match the expectations.
             self.assertEqual(expected_site, site)
             self.assertEqual(expected_path, path)
+            
     def testWebServer(self):
         ''' 
         test the WebServer

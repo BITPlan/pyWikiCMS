@@ -149,7 +149,7 @@ class Server(JSONAble):
         if self.frontendConfigs is None:
             raise Exception('No frontend configurations loaded yet')
         if siteName not in self.siteLookup:
-            raise Exception('frontend for site %s not configured yet' % siteName)
+            raise Exception(f'frontend for site {siteName} not configured yet')
         frontend = Frontend(siteName) 
         self.frontends[siteName]=frontend
         config=self.siteLookup[siteName]
