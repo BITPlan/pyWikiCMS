@@ -250,19 +250,22 @@ class Server(JSONAble):
         stateSymbol=self.stateSymbol(confExists)
         return stateSymbol
     
-    def asHtml(self)->str:
+    def asHtml(self,logo_size:int=64)->str:
         '''
         render me as HTML code
+        
+        Args:
+            logo_size(int): the logo_size to applyå
         '''
         server=self
         logo_html=""
         if server.logo is not None:
-            logo_html=f"""<td><img src='{server.logo }' alt='{server.name} logo' height=150></td>"""
+            logo_html=f"""<td><img src='{server.logo }' alt='{server.name} logo' height='{logo_size}' width='{logo_size}'></td>"""
         html=f"""<table>
 <tr>
-    <td><img src='{server.getPlatformLogo()}' alt='{server.platform} logo' height=150></td>
+    <td><img src='{server.getPlatformLogo()}' alt='{server.platform} logo' height='{logo_size}' width='{logo_size}'></td>
     {logo_html}
-    <td>Welcome to {server.name } ({ server.ip }) { server.purpose }<td>
+    <td><span>Welcome to {server.name } ({ server.ip }) { server.purpose }</span><td>
 </tr>
 </table>
 """

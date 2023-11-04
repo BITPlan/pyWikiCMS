@@ -39,8 +39,6 @@ class WikiState:
                 "#": self.row_no,
                 "wiki": link,
                 "version": self.wiki_user.version,
-                "since": "",
-                "until": "",
                 "pages": "",
                 "backup": "✅" if self.wiki_backup.exists() else "❌",
                 "git": "✅" if self.wiki_backup.hasGit() else "❌",
