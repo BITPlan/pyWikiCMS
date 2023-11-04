@@ -41,20 +41,49 @@ class Frontend(object):
         '''
         if self.debug:
             print(msg,flush=True)
+            
+    @staticmethod
+    def extract_site_and_path(path):
+        """
+        Splits the given path into the site component and the remaining path.
+
+        This static method assumes that the 'site' is the first element of the
+        path when split by "/", and the 'path' is the rest of the string after
+        the site.
+
+        Parameters:
+        path (str): The complete path to split.
+
+        Returns:
+        tuple: A tuple where the first element is the site and the second
+               element is the subsequent path.
+        """
+        # Check if the path is empty or does not contain a "/"
+        if not path or "/" not in path:
+            return "", path
+
+        # Split the path into parts using the "/" as a separator
+        parts = path.split("/")
+
+        # The first part is the site, the rest is joined back into a path
+        site = parts[0]
+        remaining_path = "/"+"/".join(parts[1:])
+
+        return site, remaining_path
         
-    def open(self,appWrap=None):
+    def open(self,ws=None):
         '''
         open the frontend
         
         Args:
-             appWrap(appWrap): optional fb4 Application Wrapper
+             ws: optional Nicegui webserver
         '''
-        self.appWrap=appWrap
+        self.ws=ws
         if self.wiki is None:
             self.wiki=WikiClient.ofWikiId(self.site.wikiId)
             self.wiki.login()
             self.smwclient=SMWClient(self.wiki.getSite())
-            self.site.open(appWrap)
+            self.site.open(ws)
         
     def errMsg(self,ex):
         if self.debug:

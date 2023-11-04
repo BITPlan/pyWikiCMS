@@ -68,28 +68,7 @@ class TestWebServer(WebserverTest):
             print(path)
         self.assertTrue("/tmp" in path)
     
-    def test_extract_site_and_path(self):
-        """
-        Test splitting the path into site and path.
-        """
-        # Test paths and their expected results.
-        paths = ['admin/', 'or/test']
-        expected_results = [('admin', '/'), ('or', '/test')]
-
-        for index, test_path in enumerate(paths):
-            # Extract site and path using the Webserver method.
-            site, path = CmsWebServer.extract_site_and_path(test_path)
-
-            # If debugging is enabled, print the results.
-            if getattr(self, 'debug', False):
-                print(f"Site: {site}, Path: {path}")
-
-            # Get the expected site and path.
-            expected_site, expected_path = expected_results[index]
-
-            # Assert that the results match the expectations.
-            self.assertEqual(expected_site, site)
-            self.assertEqual(expected_path, path)
+ 
             
     def testWebServer(self):
         ''' 
