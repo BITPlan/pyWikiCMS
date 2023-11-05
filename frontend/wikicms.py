@@ -341,10 +341,7 @@ class Frontend(object):
             page_title, content, error = self.getContent(path)
             frame=HtmlFrame(self,title=page_title)
             html=content
-            # frame = self.getFrame(pageTitle)
-            #  if frame is not None:
-            #    template = "%s.html" % frame
-            if frame == "reveal" and error is None:
+            if "<slideshow" in html and error is None:
                 content = self.toReveal(content)
                 html=content
             if error:

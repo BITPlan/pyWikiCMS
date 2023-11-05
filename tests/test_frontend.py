@@ -194,7 +194,7 @@ class TestFrontend(Basetest):
         frontend.open()
         cms_pages=frontend.get_cms_pages()
         debug=self.debug
-        debug=True
+        #debug=True
         if debug:
             print(json.dumps(cms_pages,indent=2))
         self.assertTrue("CMS/footer/de" in cms_pages)
