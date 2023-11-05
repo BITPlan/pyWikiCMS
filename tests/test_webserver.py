@@ -1,8 +1,8 @@
-'''
+"""
 Created on 2020-07-11
 
 @author: wf
-'''
+"""
 import warnings
 from frontend.server import Server
 from frontend.webserver import CmsWebServer
@@ -10,89 +10,79 @@ from tests.test_wikicms import TestWikiCMS
 from ngwidgets.webserver_test import WebserverTest
 from frontend.cmsmain import CmsMain
 
+
 class TestWebServer(WebserverTest):
     """
     test the pyWikiCms Server
     """
-    
-    def setUp(self,debug=False, profile=True):
-        server_class=CmsWebServer
-        cmd_class=CmsMain
-        WebserverTest.setUp(self, server_class, cmd_class, debug=debug, profile=profile)       
-        self.server=TestWebServer.initServer()
+
+    def setUp(self, debug=False, profile=True):
+        server_class = CmsWebServer
+        cmd_class = CmsMain
+        WebserverTest.setUp(self, server_class, cmd_class, debug=debug, profile=profile)
+        self.server = TestWebServer.initServer()
         # make sure tests run in travis
-        sites=['cr','sharks','www']        
+        sites = ["cr", "sharks", "www"]
         self.ws.enableSites(sites)
         pass
-    
+
     @staticmethod
     def initServer():
-        '''
+        """
         initialize the server
-        '''
+        """
         warnings.simplefilter("ignore", ResourceWarning)
-        Server.homePath="/tmp"
-        server=Server()
-        server.logo="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
-        server.frontendConfigs=[
+        Server.homePath = "/tmp"
+        server = Server()
+        server.logo = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
+        server.frontendConfigs = [
+            {"site": "cr", "wikiId": "cr", "defaultPage": "Main Page"},
+            {"site": "sharks", "wikiId": "wiki", "defaultPage": "Sharks"},
             {
-             'site': 'cr',
-             'wikiId':'cr', 
-             'defaultPage':'Main Page'
+                "site": "www",
+                "wikiId": "wiki",
+                "defaultPage": "Welcome",
             },
-            {
-             'site': 'sharks',
-             'wikiId':'wiki', 
-             'defaultPage':'Sharks'
-            },
-            {
-             'site': 'www',
-             'wikiId':'wiki', 
-             'defaultPage':'Welcome',
-            }
         ]
         for frontendConfigs in server.frontendConfigs:
             # make sure ini file is available
-            wikiId=frontendConfigs["wikiId"]
+            wikiId = frontendConfigs["wikiId"]
             TestWikiCMS.getSMW_WikiUser(wikiId)
         server.store()
         server.load()
         return server
-    
+
     def testConfig(self):
-        '''
+        """
         check config
-        '''
-        path=self.server.getStorePath()
+        """
+        path = self.server.getStorePath()
         if self.debug:
             print(path)
         self.assertTrue("/tmp" in path)
-    
- 
-            
+
     def testWebServer(self):
-        ''' 
+        """
         test the WebServer
-        '''
-        queries=['/','/or/test','/or/{Illegal}']
-        expected=[
-            "admin",
-            "Frontend",
-            "invalid char"
-        ]
-        #self.debug=True
-        for i,query in enumerate(queries):
-            html=self.getHtml(query)
-            ehtml=expected[i]
-            self.assertTrue(ehtml,ehtml in html)
-            
+        """
+        queries = ["/www/Joker","/", "/www/{Illegal}"]
+        expected = ["Joker","<title>pyWikiCMS</title>",  "invalid char"]
+        debug = self.debug
+        #debug = True
+        for i, query in enumerate(queries):
+            html = self.getHtml(query)
+            if debug:
+                print(f"{i+1}:{query}\n{html}")
+            ehtml = expected[i]
+            self.assertTrue(ehtml, ehtml in html)
+
     def testReveal(self):
-        '''
+        """
         test Issue 20
         https://github.com/BITPlan/pyWikiCMS/issues/20
         support reveal.js slideshow if frame is "reveal" #20
-        '''
-        html=self.getHtml("www/SMWConTalk2015-05")
+        """
+        html = self.getHtml("www/SMWConTalk2015-05")
         if self.debug:
             print(html)
         self.assertTrue("reveal.min.css" in html)

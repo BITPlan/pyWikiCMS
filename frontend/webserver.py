@@ -7,12 +7,12 @@ from nicegui import app,ui, Client
 from ngwidgets.input_webserver import InputWebserver
 from frontend.server import Server
 from ngwidgets.webserver import WebserverConfig
-from ngwidgets.background import BackgroundTaskHandler
 from frontend.version import Version
 from frontend.wikigrid import WikiGrid
 from ngwidgets.users import Users
 from ngwidgets.login import Login
-from fastapi.responses import RedirectResponse
+from fastapi import HTTPException
+from fastapi.responses import HTMLResponse,RedirectResponse
 
 class CmsWebServer(InputWebserver):
     """
@@ -55,6 +55,45 @@ class CmsWebServer(InputWebserver):
             if not self.login.authenticated():
                 return RedirectResponse('/login')
             return await self.wikis()
+        
+        @app.get('/{frontend_name}/{page_path}')
+        def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
+            """
+            Handles a GET request to render the path of the given frontend.
+        
+            Args:
+                frontend_name: The name of the frontend to be rendered.
+                page_path: The specific path within the frontend to be rendered.
+        
+            Returns:
+                An HTMLResponse containing the rendered page content.
+        
+            """
+            return self.render_path(frontend_name, page_path)
+            
+    def render_path(self,frontend_name:str,page_path:str):
+        """
+        Renders the content for a specific path of the given frontend.
+    
+        Args:
+            frontend_name: The name of the frontend to be rendered.
+            page_path: The specific path within the frontend to be rendered.
+    
+        Returns:
+            An HTMLResponse containing the rendered page content or an error page if something goes wrong.
+    
+        Raises:
+            SomeException: If an error occurs during page content retrieval or rendering.
+    
+        """
+        frontend=self.server.frontends.get(frontend_name,None)
+        if frontend is None:
+            raise HTTPException(status_code=404, detail=f"frontend {frontend_name} is not available")
+        pagetitle,content,error=frontend.getContent(page_path)
+        html=content
+        if error:
+            html=(f"error getting {pagetitle} for {frontend_name}:<br>{error}")
+        return HTMLResponse(html)
           
     def enableSites(self, siteNames):
         '''
@@ -70,7 +109,7 @@ class CmsWebServer(InputWebserver):
   
     async def home(self, _client:Client):
         """
-        Generates the home page with a pdf view
+        Generates the home page with an overview of available wikis
         """
         self.setup_menu()
         with ui.element("div").classes("w-full h-full"):
