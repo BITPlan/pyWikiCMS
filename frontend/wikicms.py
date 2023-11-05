@@ -8,8 +8,7 @@ from wikibot3rd.smw import SMWClient
 from frontend.site import Site
 from bs4 import BeautifulSoup
 import traceback
-from http.client import HTTPConnection
-from urllib.parse import urlparse
+import requests
 
 class Frontend(object):
     '''
@@ -149,29 +148,12 @@ class Frontend(object):
             the proxied result as a string
         """
         wikiUser = self.wiki.wikiUser
-        url = f"{wikiUser.url}{wikiUser.scriptPath}{path}"
-
-        # Parse the URL to get domain and path
-        parsed_url = urlparse(url)
-        connection = HTTPConnection(parsed_url.netloc)
-
-        # Make the GET request
-        connection.request("GET", parsed_url.path + "?" + parsed_url.query)
+        url = f"{wikiUser.url}{wikiUser.scriptPath}{path}"   
 
         # Get the response
-        response = connection.getresponse()
+        response = requests.get(url)
 
-        # Read the content
-        content = response.read()
-
-        # Assuming you want to return the content as a byte string,
-        # otherwise you may need to decode it to a string depending on the expected return type
-        # content = content.decode()
-
-        # Close the connection
-        connection.close()
-
-        return content
+        return response
     
     def filter(self,html):
         return self.doFilter(html,self.filterKeys)
