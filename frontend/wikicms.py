@@ -19,17 +19,19 @@ class Frontend(object):
     Wiki Content Management System Frontend
     """
 
-    def __init__(self, site_name: str,parser:str="lxml",debug: bool = False, filterKeys=None):
+    def __init__(self, site_name: str,parser:str="lxml",proxy_prefixes=["/images/","/videos"],debug: bool = False, filterKeys=None):
         """
         Constructor
         Args:
             site_name(str): the name of the site this frontend is for
             parser(str): the beautiful soup parser to use e.g. html.parser
+            proxy_prefixes(list): the list of prefixes that need direct proxy access
             debug: (bool): True if debugging should be on
             filterKeys: (list): a list of keys for filters to be applied e.g. editsection
         """
         self.name=site_name
         self.parser=parser
+        self.proxy_prefixes=proxy_prefixes
         self.site = Site(site_name)
         self.debug = debug
         self.wiki = None
@@ -154,8 +156,10 @@ class Frontend(object):
         Returns:
             True if this path needs to be proxied
         """
-        result = path.startswith("/images/")
-        return result
+        needs_proxy=False
+        for prefix in self.proxy_prefixes:
+            needs_proxy=needs_proxy or path.startswith(prefix)
+        return needs_proxy
 
     def proxy(self, path: str) -> str:
         """
@@ -191,7 +195,7 @@ class Frontend(object):
         prefix(str): the prefix to replace e.g. "/", "/images", "/thumbs"
         delim(str): if not None the delimiter for multiple values
         """
-        siteprefix = "/%s%s" % (self.site.name, prefix)
+        siteprefix = f"/{self.site.name}{prefix}"
         if attribute in node.attrs:
             attrval = node.attrs[attribute]
             if delim is not None:
@@ -208,10 +212,16 @@ class Frontend(object):
             if delim is not None:
                 node.attrs[attribute] = delim.join(newvals)
 
-    def fixImages(self, soup):
+    def fix_images_and_videos(self, soup):
+        """
+        fix image and video entries in the source code
+        """
         for img in soup.findAll("img"):
             self.fixNode(img, "src", "/")
             self.fixNode(img, "srcset", "/", ", ")
+        for video in soup.findAll("video"):
+            for source in video.findAll("source"):
+                self.fixNode(source,"src","/")
 
     def fixHtml(self, soup):
         """
@@ -220,7 +230,7 @@ class Frontend(object):
         Args:
             soup(BeautifulSoup): the html parser
         """
-        self.fixImages(soup)
+        self.fix_images_and_videos(soup)
         # fix absolute hrefs
         for a in soup.findAll("a"):
             self.fixNode(a, "href", "/")

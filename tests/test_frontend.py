@@ -35,9 +35,9 @@ class TestFrontend(Basetest):
             self.assertEqual(expected, pageTitle)
         pass
     
-    def checkProxiedImage(self,frontend_name:str,url:str,expected_size:int):
+    def checkProxiedContent(self,frontend_name:str,url:str,expected_size:int):
         """
-        check access of a proxied image at a given frontend and url for an expected size
+        check access of a proxied content at a given frontend and url for an expected size
         """
         
         frontend = self.server.enableFrontend(frontend_name)
@@ -52,7 +52,7 @@ class TestFrontend(Basetest):
         test the proxy handling
         """
         url = "/images/wiki/thumb/6/62/IMG_0736_Shark.png/400px-IMG_0736_Shark.png"
-        self.checkProxiedImage("sharks", url, 79499)
+        self.checkProxiedContent("sharks", url, 79499)
  
     def testIssue18(self):
         """
@@ -60,7 +60,7 @@ class TestFrontend(Basetest):
         image proxying should work #18
         """
         url = "/images/wiki/thumb/4/42/1738-006.jpg/400px-1738-006.jpg"
-        self.checkProxiedImage("www", url, 33742)
+        self.checkProxiedContent("www", url, 33742)
       
 
     def testIssue14(self):
@@ -132,6 +132,14 @@ class TestFrontend(Basetest):
         self.assertEqual("Issue17", pageTitle)
         if self.debug:
             print(content)
+            
+    def testIssue28_video_support(self):
+        """
+        https://github.com/BITPlan/pyWikiCMS/issues/28
+        """
+        url="/videos/HDV_0878.webm"
+        expected_size=2939840
+        self.checkProxiedContent("www", url, expected_size)
 
     def testToReveal(self):
         """
