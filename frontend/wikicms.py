@@ -6,30 +6,35 @@ Created on 2020-07-27
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.smw import SMWClient
 from frontend.site import Site
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
+import re
 import traceback
 import requests
-
+from fastapi import Response
+from fastapi.responses import HTMLResponse
+from frontend.frame import HtmlFrame
 
 class Frontend(object):
     """
     Wiki Content Management System Frontend
     """
 
-    def __init__(self, siteName: str, debug: bool = False, filterKeys=None):
+    def __init__(self, site_name: str,parser:str="lxml",debug: bool = False, filterKeys=None):
         """
         Constructor
         Args:
-            siteName(str): the name of the site this frontend is for
+            site_name(str): the name of the site this frontend is for
+            parser(str): the beautiful soup parser to use e.g. html.parser
             debug: (bool): True if debugging should be on
             filterKeys: (list): a list of keys for filters to be applied e.g. editsection
         """
-
-        self.site = Site(siteName)
+        self.name=site_name
+        self.parser=parser
+        self.site = Site(site_name)
         self.debug = debug
         self.wiki = None
         if filterKeys is None:
-            self.filterKeys = ["editsection", "parser-output"]
+            self.filterKeys = ["editsection", "parser-output","parser-output"]
         else:
             self.filterKeys = []
 
@@ -85,6 +90,20 @@ class Frontend(object):
             self.wiki.login()
             self.smwclient = SMWClient(self.wiki.getSite())
             self.site.open(ws)
+            self.cms_pages=self.get_cms_pages()
+            
+    def get_cms_pages(self)->dict:
+        """
+        get the Content Management elements for this site
+        """
+        cms_pages={}
+        ask_query="[[Category:CMS]]"
+        page_records=self.smwclient.query(ask_query, "cms pages")
+        for page_title in list(page_records):
+            page_title,html,error=self.getContent(page_title)
+            if not error:
+                cms_pages[page_title]=html
+        return cms_pages
 
     def errMsg(self, ex):
         if self.debug:
@@ -157,7 +176,10 @@ class Frontend(object):
 
         return response
 
-    def filter(self, html):
+    def filter(self, html:str)->str:
+        """
+        filter the given html
+        """
         return self.doFilter(html, self.filterKeys)
 
     def fixNode(self, node, attribute, prefix, delim=None):
@@ -204,61 +226,38 @@ class Frontend(object):
             self.fixNode(a, "href", "/")
         return soup
 
-    def unwrap(self, soup):
+    def unwrap(self, soup)->str:
+        """
+        unwrap the soup
+        """
         html = str(soup)
         html = html.replace("<html><body>", "")
         html = html.replace("</body></html>", "")
+        # Remove  empty paragraphs
+        html = re.sub(r'<p class="mw-empty-elt">\s*</p>', '', html)
+
+        # Replace multiple newline characters with a single newline character
+        html = re.sub(r'\n\s*\n', '\n', html)
         return html
 
     def doFilter(self, html, filterKeys):
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup
-        soup = BeautifulSoup(html, "lxml")
+        soup = BeautifulSoup(html, self.parser)
         if "parser-output" in filterKeys:
             parserdiv = soup.find("div", {"class": "mw-parser-output"})
             if parserdiv:
                 soup = parserdiv
+                inner_html = parserdiv.decode_contents()
+                # Parse the inner HTML string to create a new BeautifulSoup object
+                soup = BeautifulSoup(inner_html, self.parser)
                 pass
         # https://stackoverflow.com/questions/5041008/how-to-find-elements-by-class
         if "editsection" in filterKeys:
             for s in soup.select("span.mw-editsection"):
                 s.extract()
+        for comments in soup.findAll(text=lambda text: isinstance(text, Comment)):
+            comments.extract()
         return soup
-
-    def getFrame(self, pageTitle):
-        """
-        get the frame template to be used for the given pageTitle#
-
-        Args:
-            pageTitle(str): the pageTitle to get the Property:Frame for
-
-        Returns:
-            str: the frame or None
-        """
-        askQuery = (
-            """{{#ask: [[%s]]
-|mainlabel=-
-|?Frame=frame
-}}
-"""
-            % pageTitle
-        )
-        frame = None
-        frameResult = {}
-        try:
-            frameResult = self.smwclient.query(askQuery)
-        except Exception as ex:
-            if "invalid characters" in self.unwrap(ex):
-                pass
-            else:
-                raise ex
-        if pageTitle in frameResult:
-            frameRow = frameResult[pageTitle]
-            frame = frameRow["frame"]
-            # legacy java handling
-            if frame is not None:
-                frame = frame.replace(".rythm", "")
-            pass
-        return frame
 
     def getContent(self, pagePath: str):
         """get the content for the given pagePath
@@ -312,33 +311,34 @@ class Frontend(object):
         html = self.unwrap(soup)
         return html
 
-    def render(self, path: str, **kwargs) -> str:
+    def get_path_response(self, path: str) -> str:
         """
-        render the given path
+        get the repsonse for the the given path
 
         Args:
             path(str): the path to render the content for
-            kwargs(): optional keyword arguments
-
+  
         Returns:
-            str: the rendered result
+            Response: a FastAPI response
         """
         if self.needsProxy(path):
-            result = self.proxy(path)
+            html_response = self.proxy(path)
+            # Create a FastAPI response object
+            response=Response(content=html_response.content,
+                    status_code=html_response.status_code,
+                    headers=dict(html_response.headers))
         else:
-            pageTitle, content, error = self.getContent(path)
-            frame = self.getFrame(pageTitle)
-            if frame is not None:
-                template = "%s.html" % frame
-                if frame == "reveal" and error is None:
-                    content = self.toReveal(content)
-            else:
-                template = self.site.template
-            if not "title" in kwargs:
-                kwargs["title"] = pageTitle
-            if not "content" in kwargs:
-                kwargs["content"] = content
-            if not "error" in kwargs:
-                kwargs["error"] = error
-            result = self.renderTemplate(template, **kwargs)
-        return result
+            page_title, content, error = self.getContent(path)
+            frame=HtmlFrame(self,title=page_title)
+            html=content
+            # frame = self.getFrame(pageTitle)
+            #  if frame is not None:
+            #    template = "%s.html" % frame
+            if frame == "reveal" and error is None:
+                content = self.toReveal(content)
+                html=content
+            if error:
+                html=f"error getting {page_title} for {self.name}:<br>{error}"
+            framed_html=frame.frame(html)
+            response=HTMLResponse(framed_html)
+        return response

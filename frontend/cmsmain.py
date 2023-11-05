@@ -12,7 +12,7 @@ class CmsMain(WebserverCmd):
     """
     ContentManagement System Main Program
     """
-        
+
     def getArgParser(self,description:str,version_msg)->ArgumentParser:
         """
         override the default argparser call

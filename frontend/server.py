@@ -193,7 +193,7 @@ class Server(JSONAble):
         iniPath=self.homePath+"/.wikicms"
         if not os.path.isdir(iniPath):
             os.makedirs(iniPath)
-        storePath="%s/%s" % (iniPath,prefix)
+        storePath=f"{iniPath}/{prefix}"
         return storePath
          
     def store(self):
@@ -245,7 +245,7 @@ class Server(JSONAble):
         Returns:
             a state symbol
         '''
-        path="/etc/apache2/sites-%s/%s.conf" % (status,conf)
+        path=f"/etc/apache2/sites-{status}/{conf}.conf" 
         confExists=os.path.isfile(path)
         stateSymbol=self.stateSymbol(confExists)
         return stateSymbol

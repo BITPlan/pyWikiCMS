@@ -56,7 +56,7 @@ class CmsWebServer(InputWebserver):
                 return RedirectResponse('/login')
             return await self.wikis()
         
-        @app.get('/{frontend_name}/{page_path}')
+        @app.get('/{frontend_name}/{page_path:path}')
         def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
             """
             Handles a GET request to render the path of the given frontend.
@@ -89,11 +89,8 @@ class CmsWebServer(InputWebserver):
         frontend=self.server.frontends.get(frontend_name,None)
         if frontend is None:
             raise HTTPException(status_code=404, detail=f"frontend {frontend_name} is not available")
-        pagetitle,content,error=frontend.getContent(page_path)
-        html=content
-        if error:
-            html=(f"error getting {pagetitle} for {frontend_name}:<br>{error}")
-        return HTMLResponse(html)
+        response=frontend.get_path_response(f"/{page_path}")
+        return response
           
     def enableSites(self, siteNames):
         '''

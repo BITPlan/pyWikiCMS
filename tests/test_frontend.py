@@ -3,6 +3,7 @@ Created on 2020-12-27
 
 @author: wf
 """
+import json
 import unittest
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
@@ -176,6 +177,19 @@ class TestFrontend(Basetest):
         self.assertFalse("""srcset="/images""" in content)
         self.assertTrue("""srcset="/www/images""" in content)
         pass
+    
+    def test_cms_pages(self):
+        """
+        test the content management pages
+        """
+        frontend = self.server.enableFrontend("www")
+        frontend.open()
+        cms_pages=frontend.get_cms_pages()
+        debug=self.debug
+        debug=True
+        if debug:
+            print(json.dumps(cms_pages,indent=2))
+        self.assertTrue("CMS/footer/de" in cms_pages)
 
 
 if __name__ == "__main__":
