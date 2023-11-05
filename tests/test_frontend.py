@@ -33,31 +33,34 @@ class TestFrontend(Basetest):
             expected = expectedList[i]
             self.assertEqual(expected, pageTitle)
         pass
+    
+    def checkProxiedImage(self,frontend_name:str,url:str,expected_size:int):
+        """
+        check access of a proxied image at a given frontend and url for an expected size
+        """
+        
+        frontend = self.server.enableFrontend(frontend_name)
+        self.assertTrue(frontend.needsProxy(url))
+        imageResponse = frontend.proxy(url)
+        self.assertFalse(imageResponse is None)
+        self.assertEqual(200, imageResponse.status_code)
+        self.assertEqual(expected_size, len(imageResponse.content))
 
     def testProxy(self):
         """
         test the proxy handling
         """
-        frontend = self.server.enableFrontend("sharks")
         url = "/images/wiki/thumb/6/62/IMG_0736_Shark.png/400px-IMG_0736_Shark.png"
-        self.assertTrue(frontend.needsProxy(url))
-        imageResponse = frontend.proxy(url)
-        self.assertFalse(imageResponse is None)
-        self.assertEqual(200, imageResponse.status_code)
-        self.assertEqual(79499, len(imageResponse.content))
-
+        self.checkProxiedImage("sharks", url, 79499)
+ 
     def testIssue18(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/18
         image proxying should work #18
         """
-        frontend = self.server.enableFrontend("www")
         url = "/images/wiki/thumb/4/42/1738-006.jpg/400px-1738-006.jpg"
-        self.assertTrue(frontend.needsProxy(url))
-        imageResponse = frontend.render(url)
-        self.assertFalse(imageResponse is None)
-        self.assertEqual("200 OK", imageResponse.status)
-        self.assertEqual(33742, len(imageResponse.data))
+        self.checkProxiedImage("www", url, 33742)
+      
 
     def testIssue14(self):
         """
@@ -69,9 +72,12 @@ class TestFrontend(Basetest):
         pageTitle = "Feedback"
         frame = frontend.getFrame(pageTitle)
         self.assertEqual("Contact", frame)
-        html = frontend.getContent(pageTitle)
+        pageTitle,html,error = frontend.getContent(pageTitle)
         if self.debug:
             print(html)
+        self.assertIsNone(error)
+        self.assertEqual("Feedback",pageTitle)
+        self.assertTrue("</div" in html)
 
     def testIssue15(self):
         """
