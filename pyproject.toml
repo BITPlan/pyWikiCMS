@@ -17,7 +17,7 @@ readme = "README.md"
 license = {text = "Apache-2.0"} 
 dependencies = [
 	# https://github.com/WolfgangFahl/nicegui_widgets
-	"ngwidgets>=0.3.1",
+	"ngwidgets>=0.3.2",
     # https://pypi.org/project/pylodstorage/
     "pyLodStorage>=0.4.10",
     # https://pypi.org/project/SQLAlchemy/
