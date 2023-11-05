@@ -341,11 +341,12 @@ class Frontend(object):
             page_title, content, error = self.getContent(path)
             frame=HtmlFrame(self,title=page_title)
             html=content
-            if "<slideshow" in html and error is None:
-                content = self.toReveal(content)
-                html=content
             if error:
                 html=f"error getting {page_title} for {self.name}:<br>{error}"
+            else:
+                if "<slideshow" in html or "&lt;slideshow" in html:
+                    content = self.toReveal(content)
+                    html=content
             framed_html=frame.frame(html)
             response=HTMLResponse(framed_html)
         return response

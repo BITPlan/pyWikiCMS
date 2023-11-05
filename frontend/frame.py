@@ -115,8 +115,11 @@ class HtmlFrame:
         Returns:
             str: Complete HTML document as a string with the provided content framed.
         """
+        header_key=f"CMS/header/{self.lang}"
+        header_html=self.frontend.cms_pages.get(header_key,"")
         html = f"""{self.header()}
 {self.hamburger_menu()}  
+{header_html}
       <div class="container">
 {content}
       </div><!-- /.container -->
