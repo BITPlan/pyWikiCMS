@@ -21,7 +21,8 @@ class TestClickstreams(Basetest):
         Basetest.setUp(self, debug=debug, profile=profile)
         home_directory = os.path.expanduser("~")
         self.root_path = os.path.join(home_directory, '.clickstream')
-        self.rdf_file = os.path.join(self.root_path, 'clickstream_data.ttl')
+        self.rdf_format="nt" # turtle/ttl
+        self.rdf_file = os.path.join(self.root_path, f'clicks_2023-11-07')
         self.manager = ClickstreamManager(self.root_path)
         
     def testReadingLogs(self):
@@ -43,11 +44,10 @@ class TestClickstreams(Basetest):
         rdf_file = self.rdf_file
         
         # Export to RDF
-        self.manager.export_to_rdf(rdf_file=rdf_file, rdf_namespace=rdf_namespace)
+        self.manager.export_to_rdf(rdf_file=rdf_file, rdf_format=self.rdf_format,batch_size=10000)
 
         # Reload the RDF graph from the file
-        g = Graph()
-        g.parse(rdf_file, format='turtle')
+        g = self.manager.reload_graph(self.rdf_file, self.rdf_format)
 
         # Define a SPARQL query to get the most frequent referrers
         # Adjust the namespace to match the rdf_namespace
