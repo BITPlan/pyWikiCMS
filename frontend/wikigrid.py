@@ -3,49 +3,54 @@ Created on 2022-12-03
 
 @author: wf
 """
-import os
 import glob
+import os
 import time
 from pathlib import Path
-from wikibot3rd.wikiuser import WikiUser
-from wikibot3rd.wikiclient import WikiClient
-from wikibot3rd.smw import SMWClient
-from frontend.html_table import HtmlTables
+
 from lodstorage.lod import LOD
-from frontend.family import WikiFamily, WikiBackup
-from nicegui import app,ui
-from ngwidgets.widgets import Link
-from ngwidgets.lod_grid import ListOfDictsGrid
 from ngwidgets.background import BackgroundTaskHandler
-from ngwidgets.progress import Progressbar,NiceguiProgressbar
+from ngwidgets.lod_grid import ListOfDictsGrid
+from ngwidgets.progress import NiceguiProgressbar, Progressbar
+from ngwidgets.widgets import Link
+from nicegui import app, ui
+from wikibot3rd.smw import SMWClient
+from wikibot3rd.wikiclient import WikiClient
+from wikibot3rd.wikiuser import WikiUser
+
+from frontend.family import WikiBackup, WikiFamily
+from frontend.html_table import HtmlTables
+
 
 class WikiState:
     """
     the state of a wiki
     """
-    def __init__(self,row_index,wiki_user):
+
+    def __init__(self, row_index, wiki_user):
         """
         constructor
         """
-        self.row_no=row_index+1
-        self.wiki_user=wiki_user
+        self.row_no = row_index + 1
+        self.wiki_user = wiki_user
         self.wiki_backup = WikiBackup(wiki_user)
-        
+
     def as_dict(self):
         url = f"{self.wiki_user.url}{self.wiki_user.scriptPath}"
         link = Link.create(url=url, text=self.wiki_user.wikiId, target="_blank")
-    
-        record={
-                "#": self.row_no,
-                "wiki": link,
-                "version": self.wiki_user.version,
-                "pages": "",
-                "backup": "✅" if self.wiki_backup.exists() else "❌",
-                "git": "✅" if self.wiki_backup.hasGit() else "❌",
-                "age": "",
+
+        record = {
+            "#": self.row_no,
+            "wiki": link,
+            "version": self.wiki_user.version,
+            "pages": "",
+            "backup": "✅" if self.wiki_backup.exists() else "❌",
+            "git": "✅" if self.wiki_backup.hasGit() else "❌",
+            "age": "",
         }
         return record
-    
+
+
 class WikiCheck:
     """
     A check for a Mediawiki.
@@ -53,7 +58,7 @@ class WikiCheck:
 
     def __init__(self, name, func, checked=True):
         self.name = name
-        self.func = func # the check function to be performed on a WikiState
+        self.func = func  # the check function to be performed on a WikiState
         self.checked = checked
         self.checkbox = None
 
@@ -64,17 +69,18 @@ class WikiCheck:
         self.checkbox = ui.checkbox(self.name).bind_value(self, "checked")
         return self.checkbox
 
+
 class WikiGrid:
     """
     A grid of Wikis.
     """
 
-    def __init__(self,napp):
+    def __init__(self, napp):
         # back reference to nicegui app
-        self.napp=napp
-        self.bth=BackgroundTaskHandler()
+        self.napp = napp
+        self.bth = BackgroundTaskHandler()
         app.on_shutdown(self.bth.cleanup())
-   
+
         self.wiki_users = WikiUser.getWikiUsers()
         self.wiki_clients = {}
         self.smw_clients = {}
@@ -82,22 +88,24 @@ class WikiGrid:
             self.wiki_users.values(), key=lambda w: w.wikiId
         )
         self.lod = []
-        self.wikistates_by_row_no={}
+        self.wikistates_by_row_no = {}
         for index, wiki_user in enumerate(self.sorted_wiki_users):
-            wiki_state=WikiState(index,wiki_user)   
-            record=wiki_state.as_dict()      
+            wiki_state = WikiState(index, wiki_user)
+            record = wiki_state.as_dict()
             self.lod.append(record)
-            self.wikistates_by_row_no[wiki_state.row_no]=wiki_state
-        
+            self.wikistates_by_row_no[wiki_state.row_no] = wiki_state
+
     def setup(self):
         self.add_checkboxes()
-        self.progressbar = NiceguiProgressbar(len(self.wikistates_by_row_no),"work on wikis","steps")
+        self.progressbar = NiceguiProgressbar(
+            len(self.wikistates_by_row_no), "work on wikis", "steps"
+        )
         self.as_grid()
         self.lod_grid.update()
-    
+
     def as_grid(self):
-        self.lod_grid=ListOfDictsGrid(lod=self.lod)
-        self.lod_grid.ag_grid._props['html_columns']= [0, 1, 2]
+        self.lod_grid = ListOfDictsGrid(lod=self.lod)
+        self.lod_grid.ag_grid._props["html_columns"] = [0, 1, 2]
         return self.lod_grid
 
     def add_checkboxes(self):
@@ -131,12 +139,14 @@ class WikiGrid:
         except Exception as ex:
             mw_version = f"error: {str(ex)}"
         return mw_version
-    
+
     async def perform_wiki_checks(self, _msg):
-        self.future, result_coro = self.bth.execute_in_background(self.run_wiki_checks, progress_bar=self.progressbar)
+        self.future, result_coro = self.bth.execute_in_background(
+            self.run_wiki_checks, progress_bar=self.progressbar
+        )
         await result_coro()
-        
-    def run_wiki_checks(self,progress_bar:Progressbar=None):
+
+    def run_wiki_checks(self, progress_bar: Progressbar = None):
         """
         perform the selected wiki checks
         """
@@ -161,8 +171,8 @@ class WikiGrid:
             wiki_state.wiki_client = WikiClient.ofWikiUser(wiki_state.wiki_user)
             try:
                 wiki_state.wiki_client.login()
-                stats=wiki_state.wiki_client.get_site_statistics()
-                pages=stats["pages"]
+                stats = wiki_state.wiki_client.get_site_statistics()
+                pages = stats["pages"]
                 self.lod_grid.update_row(wiki_state.row_no, "login", f"✅")
                 self.lod_grid.update_row(wiki_state.row_no, "pages", f"✅{pages}")
             except Exception as ex:
@@ -177,7 +187,7 @@ class WikiGrid:
         Check the MediaWiki version for a specific WikiState.
         """
         try:
-            wiki_url=wiki_state.wiki_user.getWikiUrl()
+            wiki_url = wiki_state.wiki_user.getWikiUrl()
             mw_version = self.check_version(wiki_url)
             if not mw_version.startswith("MediaWiki"):
                 mw_version = f"MediaWiki {mw_version}"
@@ -185,9 +195,13 @@ class WikiGrid:
             if row:
                 ex_version = row["version"]
                 if ex_version == mw_version:
-                    self.lod_grid.update_row(wiki_state.row_no, "version", f"{mw_version}✅")
+                    self.lod_grid.update_row(
+                        wiki_state.row_no, "version", f"{mw_version}✅"
+                    )
                 else:
-                    self.lod_grid.update_row(wiki_state.row_no, "version", f"{ex_version}!={mw_version}❌")
+                    self.lod_grid.update_row(
+                        wiki_state.row_no, "version", f"{ex_version}!={mw_version}❌"
+                    )
         except BaseException as ex:
             self.napp.handle_exception(ex)
 
@@ -208,7 +222,9 @@ class WikiGrid:
                         latest_file = max(wiki_files, key=os.path.getctime)
                         st = os.stat(latest_file)
                         age_days = round((time.time() - st.st_mtime) / 86400)
-                        self.lod_grid.update_row(wiki_state.row_no, "age", f"{age_days}")
+                        self.lod_grid.update_row(
+                            wiki_state.row_no, "age", f"{age_days}"
+                        )
                 else:
                     msg = "❌"
                     self.lod_grid.update_row(wiki_state.row_no, "backup", msg)

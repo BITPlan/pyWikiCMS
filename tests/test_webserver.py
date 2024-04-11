@@ -4,11 +4,13 @@ Created on 2020-07-11
 @author: wf
 """
 import warnings
+
+from ngwidgets.webserver_test import WebserverTest
+
+from frontend.cmsmain import CmsMain
 from frontend.server import Server
 from frontend.webserver import CmsWebServer
 from tests.test_wikicms import TestWikiCMS
-from ngwidgets.webserver_test import WebserverTest
-from frontend.cmsmain import CmsMain
 
 
 class TestWebServer(WebserverTest):
@@ -65,10 +67,10 @@ class TestWebServer(WebserverTest):
         """
         test the WebServer
         """
-        queries = ["/www/Joker","/", "/www/{Illegal}"]
-        expected = ["Joker","<title>pyWikiCMS</title>",  "invalid char"]
+        queries = ["/www/Joker", "/", "/www/{Illegal}"]
+        expected = ["Joker", "<title>pyWikiCMS</title>", "invalid char"]
         debug = self.debug
-        #debug = True
+        # debug = True
         for i, query in enumerate(queries):
             html = self.getHtml(query)
             if debug:

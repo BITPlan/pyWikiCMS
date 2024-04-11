@@ -3,23 +3,33 @@ Created on 2020-07-27
 
 @author: wf
 """
-from wikibot3rd.wikiclient import WikiClient
-from wikibot3rd.smw import SMWClient
-from frontend.site import Site
-from bs4 import BeautifulSoup, Comment
 import re
 import traceback
+
 import requests
+from bs4 import BeautifulSoup, Comment
 from fastapi import Response
 from fastapi.responses import HTMLResponse
+from wikibot3rd.smw import SMWClient
+from wikibot3rd.wikiclient import WikiClient
+
 from frontend.frame import HtmlFrame
+from frontend.site import Site
+
 
 class Frontend(object):
     """
     Wiki Content Management System Frontend
     """
 
-    def __init__(self, site_name: str,parser:str="lxml",proxy_prefixes=["/images/","/videos"],debug: bool = False, filterKeys=None):
+    def __init__(
+        self,
+        site_name: str,
+        parser: str = "lxml",
+        proxy_prefixes=["/images/", "/videos"],
+        debug: bool = False,
+        filterKeys=None,
+    ):
         """
         Constructor
         Args:
@@ -29,14 +39,14 @@ class Frontend(object):
             debug: (bool): True if debugging should be on
             filterKeys: (list): a list of keys for filters to be applied e.g. editsection
         """
-        self.name=site_name
-        self.parser=parser
-        self.proxy_prefixes=proxy_prefixes
+        self.name = site_name
+        self.parser = parser
+        self.proxy_prefixes = proxy_prefixes
         self.site = Site(site_name)
         self.debug = debug
         self.wiki = None
         if filterKeys is None:
-            self.filterKeys = ["editsection", "parser-output","parser-output"]
+            self.filterKeys = ["editsection", "parser-output", "parser-output"]
         else:
             self.filterKeys = []
 
@@ -92,19 +102,19 @@ class Frontend(object):
             self.wiki.login()
             self.smwclient = SMWClient(self.wiki.getSite())
             self.site.open(ws)
-            self.cms_pages=self.get_cms_pages()
-            
-    def get_cms_pages(self)->dict:
+            self.cms_pages = self.get_cms_pages()
+
+    def get_cms_pages(self) -> dict:
         """
         get the Content Management elements for this site
         """
-        cms_pages={}
-        ask_query="[[Category:CMS]]"
-        page_records=self.smwclient.query(ask_query, "cms pages")
+        cms_pages = {}
+        ask_query = "[[Category:CMS]]"
+        page_records = self.smwclient.query(ask_query, "cms pages")
         for page_title in list(page_records):
-            page_title,html,error=self.getContent(page_title)
+            page_title, html, error = self.getContent(page_title)
             if not error:
-                cms_pages[page_title]=html
+                cms_pages[page_title] = html
         return cms_pages
 
     def errMsg(self, ex):
@@ -156,9 +166,9 @@ class Frontend(object):
         Returns:
             True if this path needs to be proxied
         """
-        needs_proxy=False
+        needs_proxy = False
         for prefix in self.proxy_prefixes:
-            needs_proxy=needs_proxy or path.startswith(prefix)
+            needs_proxy = needs_proxy or path.startswith(prefix)
         return needs_proxy
 
     def proxy(self, path: str) -> str:
@@ -180,7 +190,7 @@ class Frontend(object):
 
         return response
 
-    def filter(self, html:str)->str:
+    def filter(self, html: str) -> str:
         """
         filter the given html
         """
@@ -221,7 +231,7 @@ class Frontend(object):
             self.fixNode(img, "srcset", "/", ", ")
         for video in soup.findAll("video"):
             for source in video.findAll("source"):
-                self.fixNode(source,"src","/")
+                self.fixNode(source, "src", "/")
 
     def fixHtml(self, soup):
         """
@@ -236,7 +246,7 @@ class Frontend(object):
             self.fixNode(a, "href", "/")
         return soup
 
-    def unwrap(self, soup)->str:
+    def unwrap(self, soup) -> str:
         """
         unwrap the soup
         """
@@ -244,10 +254,10 @@ class Frontend(object):
         html = html.replace("<html><body>", "")
         html = html.replace("</body></html>", "")
         # Remove  empty paragraphs
-        html = re.sub(r'<p class="mw-empty-elt">\s*</p>', '', html)
+        html = re.sub(r'<p class="mw-empty-elt">\s*</p>', "", html)
 
         # Replace multiple newline characters with a single newline character
-        html = re.sub(r'\n\s*\n', '\n', html)
+        html = re.sub(r"\n\s*\n", "\n", html)
         return html
 
     def doFilter(self, html, filterKeys):
@@ -327,26 +337,28 @@ class Frontend(object):
 
         Args:
             path(str): the path to render the content for
-  
+
         Returns:
             Response: a FastAPI response
         """
         if self.needsProxy(path):
             html_response = self.proxy(path)
             # Create a FastAPI response object
-            response=Response(content=html_response.content,
-                    status_code=html_response.status_code,
-                    headers=dict(html_response.headers))
+            response = Response(
+                content=html_response.content,
+                status_code=html_response.status_code,
+                headers=dict(html_response.headers),
+            )
         else:
             page_title, content, error = self.getContent(path)
-            frame=HtmlFrame(self,title=page_title)
-            html=content
+            frame = HtmlFrame(self, title=page_title)
+            html = content
             if error:
-                html=f"error getting {page_title} for {self.name}:<br>{error}"
+                html = f"error getting {page_title} for {self.name}:<br>{error}"
             else:
                 if "<slideshow" in html or "&lt;slideshow" in html:
                     content = self.toReveal(content)
-                    html=content
-            framed_html=frame.frame(html)
-            response=HTMLResponse(framed_html)
+                    html = content
+            framed_html = frame.frame(html)
+            response = HTMLResponse(framed_html)
         return response

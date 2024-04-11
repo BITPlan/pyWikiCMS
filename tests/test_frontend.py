@@ -5,9 +5,11 @@ Created on 2020-12-27
 """
 import json
 import unittest
+
+from ngwidgets.basetest import Basetest
+
 from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
-from ngwidgets.basetest import Basetest
 
 
 class TestFrontend(Basetest):
@@ -34,12 +36,12 @@ class TestFrontend(Basetest):
             expected = expectedList[i]
             self.assertEqual(expected, pageTitle)
         pass
-    
-    def checkProxiedContent(self,frontend_name:str,url:str,expected_size:int):
+
+    def checkProxiedContent(self, frontend_name: str, url: str, expected_size: int):
         """
         check access of a proxied content at a given frontend and url for an expected size
         """
-        
+
         frontend = self.server.enableFrontend(frontend_name)
         self.assertTrue(frontend.needsProxy(url))
         imageResponse = frontend.proxy(url)
@@ -53,7 +55,7 @@ class TestFrontend(Basetest):
         """
         url = "/images/wiki/thumb/6/62/IMG_0736_Shark.png/400px-IMG_0736_Shark.png"
         self.checkProxiedContent("sharks", url, 79499)
- 
+
     def testIssue18(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/18
@@ -61,7 +63,6 @@ class TestFrontend(Basetest):
         """
         url = "/images/wiki/thumb/4/42/1738-006.jpg/400px-1738-006.jpg"
         self.checkProxiedContent("www", url, 33742)
-      
 
     def testIssue14(self):
         """
@@ -73,11 +74,11 @@ class TestFrontend(Basetest):
         pageTitle = "Feedback"
         frame = frontend.getFrame(pageTitle)
         self.assertEqual("Contact", frame)
-        pageTitle,html,error = frontend.getContent(pageTitle)
+        pageTitle, html, error = frontend.getContent(pageTitle)
         if self.debug:
             print(html)
         self.assertIsNone(error)
-        self.assertEqual("Feedback",pageTitle)
+        self.assertEqual("Feedback", pageTitle)
         self.assertTrue("</div" in html)
 
     def testIssue15(self):
@@ -132,13 +133,13 @@ class TestFrontend(Basetest):
         self.assertEqual("Issue17", pageTitle)
         if self.debug:
             print(content)
-            
+
     def testIssue28_video_support(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/28
         """
-        url="/videos/HDV_0878.webm"
-        expected_size=2939840
+        url = "/videos/HDV_0878.webm"
+        expected_size = 2939840
         self.checkProxiedContent("www", url, expected_size)
 
     def testToReveal(self):
@@ -185,18 +186,18 @@ class TestFrontend(Basetest):
         self.assertFalse("""srcset="/images""" in content)
         self.assertTrue("""srcset="/www/images""" in content)
         pass
-    
+
     def test_cms_pages(self):
         """
         test the content management pages
         """
         frontend = self.server.enableFrontend("www")
         frontend.open()
-        cms_pages=frontend.get_cms_pages()
-        debug=self.debug
-        #debug=True
+        cms_pages = frontend.get_cms_pages()
+        debug = self.debug
+        # debug=True
         if debug:
-            print(json.dumps(cms_pages,indent=2))
+            print(json.dumps(cms_pages, indent=2))
         self.assertTrue("CMS/footer/de" in cms_pages)
 
 

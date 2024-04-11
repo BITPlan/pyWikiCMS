@@ -7,7 +7,7 @@ class HtmlFrame:
         title (str): Title of the HTML document.
     """
 
-    def __init__(self, frontend,title: str, lang: str = "en") -> None:
+    def __init__(self, frontend, title: str, lang: str = "en") -> None:
         """
         Initialize HtmlFrame with a specified language and title.
 
@@ -15,7 +15,7 @@ class HtmlFrame:
             title (str): Title for the HTML document.
             lang (str, optional): Language of the HTML document. Defaults to "en".
         """
-        self.frontend=frontend
+        self.frontend = frontend
         self.lang = lang
         self.title = title
 
@@ -76,8 +76,8 @@ class HtmlFrame:
         Returns:
             str: Header part of an HTML document as a string.
         """
-        style_key=f"CMS/style"
-        style_html=self.frontend.cms_pages.get(style_key,"")
+        style_key = f"CMS/style"
+        style_html = self.frontend.cms_pages.get(style_key, "")
         html = f"""<!doctype html>
 <html lang="{self.lang}">
 <head>
@@ -97,8 +97,8 @@ class HtmlFrame:
         Returns:
             str: Footer part of an HTML document as a string.
         """
-        footer_key=f"CMS/footer/{self.lang}"
-        footer_html=self.frontend.cms_pages.get(footer_key,"")
+        footer_key = f"CMS/footer/{self.lang}"
+        footer_html = self.frontend.cms_pages.get(footer_key, "")
         html = f"""{footer_html}
   </body>
 </html>
@@ -115,8 +115,8 @@ class HtmlFrame:
         Returns:
             str: Complete HTML document as a string with the provided content framed.
         """
-        header_key=f"CMS/header/{self.lang}"
-        header_html=self.frontend.cms_pages.get(header_key,"")
+        header_key = f"CMS/header/{self.lang}"
+        header_html = self.frontend.cms_pages.get(header_key, "")
         html = f"""{self.header()}
 {self.hamburger_menu()}  
 {header_html}

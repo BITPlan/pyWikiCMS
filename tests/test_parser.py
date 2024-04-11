@@ -1,36 +1,40 @@
-'''
+"""
 Created on 2021-03-14
 
 @author: wf
-'''
+"""
 import xml.sax
-import lxml.etree as etree
 from io import StringIO
+
+import lxml.etree as etree
 from ngwidgets.basetest import Basetest
 
+
 class InsertSections(xml.sax.handler.ContentHandler):
-    '''
+    """
     ContentHandler for test
-    '''
-    def __init__(self,debug=False):
-        self.debug=debug
+    """
+
+    def __init__(self, debug=False):
+        self.debug = debug
         pass
-    
+
     def startElement(self, name, attrs):
         if self.debug:
-            print (name,attrs)
+            print(name, attrs)
 
     def endElement(self, name):
         pass
 
+
 class TestParser(Basetest):
-    '''
+    """
     test different parser approaches
-    '''
+    """
 
     def setUp(self):
         Basetest.setUp(self)
-        self.html="""
+        self.html = """
         <!DOCTYPE html>
         <html>
           <body>
@@ -43,19 +47,19 @@ class TestParser(Basetest):
             </body>
         </html>"""
         pass
-   
+
     def testSax(self):
-        '''
+        """
         test sax parser
-        '''
+        """
         handler = InsertSections(debug=False)
-        xml.sax.parseString(self.html,handler)
+        xml.sax.parseString(self.html, handler)
         pass
-    
+
     def testLxml(self):
-        '''
+        """
         test html parser
-        '''
-        #parser=etree.HTMLParser()
-        tree=etree.parse(StringIO(self.html))
+        """
+        # parser=etree.HTMLParser()
+        tree = etree.parse(StringIO(self.html))
         self.assertTrue(tree is not None)

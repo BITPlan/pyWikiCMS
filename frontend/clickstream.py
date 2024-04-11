@@ -3,16 +3,17 @@ Created on 2023-06-11
 
 @author: wf
 """
-from tqdm import tqdm
-from dataclasses import dataclass
-from datetime import datetime
 import glob
 import json
 import os
 import traceback
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, List, Optional
-from rdflib import Graph, URIRef, Literal, Namespace
+
+from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, XSD
+from tqdm import tqdm
 
 
 class DateParse:
@@ -28,9 +29,11 @@ class DateParse:
         """
         return datetime.strptime(date_str, "%b %d, %Y %I:%M:%S %p")
 
+
 @dataclass
 class PageHit:
     """Represents a single page hit with path and timestamp."""
+
     path: str
     timeStamp: datetime
 
@@ -43,6 +46,7 @@ class PageHit:
 @dataclass
 class UserAgent:
     """Represents a user agent with syntax errors, ambiguity and other attributes."""
+
     hasSyntaxError: bool
     hasAmbiguity: bool
     ambiguityCount: int
@@ -68,6 +72,7 @@ class UserAgent:
 @dataclass
 class ClickStream:
     """Represents a clickstream with associated page hits and user agent data."""
+
     url: str
     ip: str
     domain: str
@@ -164,7 +169,7 @@ class ClickstreamManager(object):
         root_path: str,
         rdf_namespace="http://cms.bitplan.com/clickstream#",
         show_progress: bool = True,
-        verbose:bool=True
+        verbose: bool = True,
     ):
         """
         Constructor
@@ -177,7 +182,7 @@ class ClickstreamManager(object):
         self.rdf_namespace = rdf_namespace
         self.clickstream_logs: List[ClickstreamLog] = []
         self.show_progress = show_progress
-        self.verbose=verbose
+        self.verbose = verbose
 
     def get_progress(self, iterable, desc="Processing"):
         """
@@ -188,9 +193,7 @@ class ClickstreamManager(object):
         else:
             return iterable
 
-    def load_clickstream_logs(
-        self, limit: Optional[int] = None
-    ) -> None:
+    def load_clickstream_logs(self, limit: Optional[int] = None) -> None:
         """
         Load all clickstream logs from the directory
         """
@@ -229,7 +232,9 @@ class ClickstreamManager(object):
             f"Imported {total_logs} clickstream logs with a total of {total_clickstreams} clickstreams."
         )
 
-    def serialize_batch(self, g: Graph, rdf_file: str, file_counter: int, rdf_format: str) -> None:
+    def serialize_batch(
+        self, g: Graph, rdf_file: str, file_counter: int, rdf_format: str
+    ) -> None:
         """
         Serializes a batch of RDF data to a file.
 
@@ -245,7 +250,9 @@ class ClickstreamManager(object):
         if self.verbose:
             print(f"Exported RDF to {batch_file}")
 
-    def add_stream_properties_to_graph(self, g: Graph, CS: Namespace, stream: Any, entity_counter: int) -> int:
+    def add_stream_properties_to_graph(
+        self, g: Graph, CS: Namespace, stream: Any, entity_counter: int
+    ) -> int:
         """
         Adds the properties of a clickstream to the RDF graph.
 
@@ -361,15 +368,15 @@ class ClickstreamManager(object):
             Graph: The RDF graph populated with data from the files.
         """
         # Ensure the pattern ends with a wildcard, append if necessary
-        if not rdf_file_pattern.endswith('*'):
-            rdf_file_pattern += '*'
+        if not rdf_file_pattern.endswith("*"):
+            rdf_file_pattern += "*"
 
         # Find all files matching the pattern
         rdf_files = glob.glob(rdf_file_pattern)
-        
+
         # Initialize a new RDF graph
         g = Graph()
-        
+
         # Use a progress bar if available or simply iterate over files
         try:
             iterator = self.get_progress(rdf_files, desc="Loading graph")
@@ -380,6 +387,6 @@ class ClickstreamManager(object):
         for rdf_file in iterator:
             # Parse each RDF file and add it to the graph
             g.parse(rdf_file, format=rdf_format)
-        
+
         # After loading all files, return the populated graph
         return g

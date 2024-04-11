@@ -4,11 +4,12 @@ Created on 27.07.2020
 @author: wf
 """
 import os
-from wikibot3rd.wikiclient import WikiClient
-from wikibot3rd.wikiuser import WikiUser
 
 # from wikibot.smw import SMWClient
 from ngwidgets.basetest import Basetest
+from wikibot3rd.wikiclient import WikiClient
+from wikibot3rd.wikiuser import WikiUser
+
 from frontend.wikicms import Frontend
 
 
@@ -105,7 +106,7 @@ class TestWikiCMS(Basetest):
         page = wikiclient.getPage(pageTitle)
         text = page.text()
         debug = self.debug
-        #debug = True
+        # debug = True
         if debug:
             print(text)
         self.assertTrue("Joker" in text)
