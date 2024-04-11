@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 
 from lodstorage.lod import LOD
-from ngwidgets.background import BackgroundTaskHandler
 from ngwidgets.lod_grid import ListOfDictsGrid
 from ngwidgets.progress import NiceguiProgressbar, Progressbar
 from ngwidgets.widgets import Link
@@ -75,12 +74,10 @@ class WikiGrid:
     A grid of Wikis.
     """
 
-    def __init__(self, napp):
-        # back reference to nicegui app
-        self.napp = napp
-        self.bth = BackgroundTaskHandler()
-        app.on_shutdown(self.bth.cleanup())
-
+    def __init__(self, solution):
+        # back reference to nicegui solution
+        self.solution = solution
+ 
         self.wiki_users = WikiUser.getWikiUsers()
         self.wiki_clients = {}
         self.smw_clients = {}
@@ -161,7 +158,7 @@ class WikiGrid:
                     # Update the progress bar
                     progress_bar.update(1)
         except BaseException as ex:
-            self.napp.handle_exception(ex)
+            self.solution.handle_exception(ex)
 
     def check_pages(self, wiki_state):
         """
@@ -180,7 +177,7 @@ class WikiGrid:
                 self.lod_grid.update_row(wiki_state.row_no, "pages", "❌")
                 return
         except BaseException as ex:
-            self.napp.handle_exception(ex)
+            self.solution.handle_exception(ex)
 
     def check_wiki_version(self, wiki_state):
         """
@@ -203,7 +200,7 @@ class WikiGrid:
                         wiki_state.row_no, "version", f"{ex_version}!={mw_version}❌"
                     )
         except BaseException as ex:
-            self.napp.handle_exception(ex)
+            self.solution.handle_exception(ex)
 
     def check_backup(self, wiki_state):
         """
@@ -229,4 +226,4 @@ class WikiGrid:
                     msg = "❌"
                     self.lod_grid.update_row(wiki_state.row_no, "backup", msg)
         except BaseException as ex:
-            self.napp.handle_exception(ex)
+            self.solution.handle_exception(ex)
