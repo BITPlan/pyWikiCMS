@@ -43,10 +43,10 @@ class WikiState:
             "wiki": link,
             "version": self.wiki_user.version,
             "pages": "",
-            "login": "",
             "backup": "✅" if self.wiki_backup.exists() else "❌",
             "git": "✅" if self.wiki_backup.hasGit() else "❌",
             "age": "",
+            "login": "",
         }
         return record
 
