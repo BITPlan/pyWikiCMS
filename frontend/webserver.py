@@ -132,6 +132,7 @@ class CmsSolution(WebSolution):
         """
         super().__init__(webserver, client)  # Call to the superclass constructor
         self.wiki_grid = WikiGrid(self)
+        self.server=webserver.server
         
     def configure_menu(self):
         """
