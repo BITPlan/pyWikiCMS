@@ -151,12 +151,12 @@ class WikiGrid:
         try:
             with self.solution.content_div:
                 progress_bar.reset()
-                for wiki_state in self.wikistates_by_row_no.values():
-                    for wiki_check in self.wiki_checks:
-                        if wiki_check.checked:
-                            wiki_check.func(wiki_state)
-                    self.lod_grid.update()
-                    if progress_bar:
+            for wiki_state in self.wikistates_by_row_no.values():
+                for wiki_check in self.wiki_checks:
+                    if wiki_check.checked:
+                        wiki_check.func(wiki_state)
+                    with self.solution.content_div:
+                        self.lod_grid.update()
                         # Update the progress bar
                         progress_bar.update(1)
         except BaseException as ex:
