@@ -12,7 +12,7 @@ from lodstorage.lod import LOD
 from ngwidgets.lod_grid import ListOfDictsGrid
 from ngwidgets.progress import NiceguiProgressbar, Progressbar
 from ngwidgets.widgets import Link
-from nicegui import app, ui
+from nicegui import ui, run
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
@@ -138,10 +138,7 @@ class WikiGrid:
         return mw_version
 
     async def perform_wiki_checks(self, _msg):
-        self.future, result_coro = self.bth.execute_in_background(
-            self.run_wiki_checks, progress_bar=self.progressbar
-        )
-        await result_coro()
+        await run.io_bound(self.run_wiki_checks)
 
     def run_wiki_checks(self, progress_bar: Progressbar = None):
         """

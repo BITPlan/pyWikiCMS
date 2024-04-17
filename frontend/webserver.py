@@ -5,10 +5,10 @@ Created on 2020-12-30
 """
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from ngwidgets.input_webserver import InputWebserver
+from ngwidgets.input_webserver import InputWebserver, InputWebSolution
 from ngwidgets.login import Login
 from ngwidgets.users import Users
-from ngwidgets.webserver import WebserverConfig, WebSolution
+from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
 
 from frontend.server import Server
@@ -116,7 +116,7 @@ class CmsWebServer(InputWebserver):
         InputWebserver.configure_run(self)
         self.enableSites(self.args.sites)
         
-class CmsSolution(WebSolution):
+class CmsSolution(InputWebSolution):
     """
     Content management solution
     """
