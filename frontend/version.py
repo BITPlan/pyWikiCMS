@@ -4,8 +4,9 @@ Created on 2022-12-03
 @author: wf
 """
 import frontend
+from dataclasses import dataclass
 
-
+@dataclass
 class Version(object):
     """
     Version handling for pyWikiCMS
@@ -15,12 +16,12 @@ class Version(object):
     description = "pyWikiCMS: python implementation of a Mediawiki based Content Management System"
     version = frontend.__version__
     date = "2022-11-16"
-    updated = "2023-11-05"
+    updated = "2024-04-17"
     authors = "Wolfgang Fahl"
     doc_url = "http://wiki.bitplan.com/index.php/PyWikiCMS"
     chat_url = "https://github.com/BITPlan/pyWikiCMS/discussions"
     cm_url = "https://github.com/BITPlan/pyWikiCMS"
-    license = f"""Copyright 2022-2023 contributors. All rights reserved.
+    license = f"""Copyright 2022-2024 contributors. All rights reserved.
   Licensed under the Apache License 2.0
   http://www.apache.org/licenses/LICENSE-2.0
   Distributed on an "AS IS" basis without warranties
