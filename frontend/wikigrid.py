@@ -140,20 +140,22 @@ class WikiGrid:
     async def perform_wiki_checks(self, _msg):
         await run.io_bound(self.run_wiki_checks)
 
-    def run_wiki_checks(self, progress_bar: Progressbar = None):
+    def run_wiki_checks(self):
         """
         perform the selected wiki checks
         """
+        progress_bar=self.progressbar
         try:
-            progress_bar.reset()
-            for wiki_state in self.wikistates_by_row_no.values():
-                for wiki_check in self.wiki_checks:
-                    if wiki_check.checked:
-                        wiki_check.func(wiki_state)
-                self.lod_grid.update()
-                if progress_bar:
-                    # Update the progress bar
-                    progress_bar.update(1)
+            with self.solution.content_div:
+                progress_bar.reset()
+                for wiki_state in self.wikistates_by_row_no.values():
+                    for wiki_check in self.wiki_checks:
+                        if wiki_check.checked:
+                            wiki_check.func(wiki_state)
+                    self.lod_grid.update()
+                    if progress_bar:
+                        # Update the progress bar
+                        progress_bar.update(1)
         except BaseException as ex:
             self.solution.handle_exception(ex)
 
