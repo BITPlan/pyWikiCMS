@@ -3,8 +3,10 @@ Created on 2022-12-03
 
 @author: wf
 """
-import frontend
 from dataclasses import dataclass
+
+import frontend
+
 
 @dataclass
 class Version(object):

@@ -15,6 +15,7 @@ from frontend.server import Server
 from frontend.version import Version
 from frontend.wikigrid import WikiGrid
 
+
 class CmsWebServer(InputWebserver):
     """
     WebServer class that manages the server
@@ -25,15 +26,14 @@ class CmsWebServer(InputWebserver):
     def get_config(cls) -> WebserverConfig:
         copy_right = "(c)2023-2024 Wolfgang Fahl"
         config = WebserverConfig(
-            copy_right=copy_right, 
-            version=Version(), 
+            copy_right=copy_right,
+            version=Version(),
             default_port=8252,
-            short_name="wikicms"
+            short_name="wikicms",
         )
         server_config = WebserverConfig.get(config)
         server_config.solution_class = CmsSolution
         return server_config
-
 
     def __init__(self):
         """
@@ -47,14 +47,14 @@ class CmsWebServer(InputWebserver):
         self.server.load()
         self.enabledSites = ["admin"]
 
-        #@ui.page("/login")
-        #async def login(client: Client):
+        # @ui.page("/login")
+        # async def login(client: Client):
         #    return await self.page(
         #        client,CmsSolution.login
         #    )
 
-        #@ui.page("/wikis")
-        #async def wikis(client: Client):
+        # @ui.page("/wikis")
+        # async def wikis(client: Client):
         #    if not self.login.authenticated():
         #        return RedirectResponse("/login")
         #    return await self.wikis()
@@ -115,12 +115,13 @@ class CmsWebServer(InputWebserver):
         """
         InputWebserver.configure_run(self)
         self.enableSites(self.args.sites)
-        
+
+
 class CmsSolution(InputWebSolution):
     """
     Content management solution
     """
-    
+
     def __init__(self, webserver: CmsWebServer, client: Client):
         """
         Initialize the solution
@@ -132,22 +133,24 @@ class CmsSolution(InputWebSolution):
         """
         super().__init__(webserver, client)  # Call to the superclass constructor
         self.wiki_grid = WikiGrid(self)
-        self.server=webserver.server
-        
+        self.server = webserver.server
+
     def configure_menu(self):
         """
         configure specific menu entries
         """
         username = app.storage.user.get("username", "?")
         ui.label(username)
-        
+
     async def home(self):
         """
         provide the main content page
 
         """
+
         def show():
             with self.content_div:
                 self.server_html = ui.html(self.server.asHtml())
                 self.wiki_grid.setup()
+
         await self.setup_content_div(show)

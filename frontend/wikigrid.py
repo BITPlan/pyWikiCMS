@@ -12,7 +12,7 @@ from lodstorage.lod import LOD
 from ngwidgets.lod_grid import ListOfDictsGrid
 from ngwidgets.progress import NiceguiProgressbar, Progressbar
 from ngwidgets.widgets import Link
-from nicegui import ui, run
+from nicegui import run, ui
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
@@ -43,6 +43,7 @@ class WikiState:
             "wiki": link,
             "version": self.wiki_user.version,
             "pages": "",
+            "login": "",
             "backup": "✅" if self.wiki_backup.exists() else "❌",
             "git": "✅" if self.wiki_backup.hasGit() else "❌",
             "age": "",
@@ -77,7 +78,7 @@ class WikiGrid:
     def __init__(self, solution):
         # back reference to nicegui solution
         self.solution = solution
- 
+
         self.wiki_users = WikiUser.getWikiUsers()
         self.wiki_clients = {}
         self.smw_clients = {}
@@ -144,7 +145,9 @@ class WikiGrid:
         """
         perform the selected wiki checks
         """
-        progress_bar=self.progressbar
+        with self.solution.content_div:
+            ui.notify(f"Checking {len(self.wikistates_by_row_no)} wikis ...")
+        progress_bar = self.progressbar
         try:
             with self.solution.content_div:
                 progress_bar.reset()
@@ -169,11 +172,11 @@ class WikiGrid:
                 wiki_state.wiki_client.login()
                 stats = wiki_state.wiki_client.get_site_statistics()
                 pages = stats["pages"]
-                self.lod_grid.update_row(wiki_state.row_no, "login", f"✅")
-                self.lod_grid.update_row(wiki_state.row_no, "pages", f"✅{pages}")
+                self.lod_grid.update_cell(wiki_state.row_no, "login", f"✅")
+                self.lod_grid.update_cell(wiki_state.row_no, "pages", f"✅{pages}")
             except Exception as ex:
-                self.lod_grid.update_row(wiki_state.row_no, "login", f"❌ {str(ex)}")
-                self.lod_grid.update_row(wiki_state.row_no, "pages", "❌")
+                self.lod_grid.update_cell(wiki_state.row_no, "login", f"❌ {str(ex)}")
+                self.lod_grid.update_cell(wiki_state.row_no, "pages", "❌")
                 return
         except BaseException as ex:
             self.solution.handle_exception(ex)
@@ -191,11 +194,11 @@ class WikiGrid:
             if row:
                 ex_version = row["version"]
                 if ex_version == mw_version:
-                    self.lod_grid.update_row(
+                    self.lod_grid.update_cell(
                         wiki_state.row_no, "version", f"{mw_version}✅"
                     )
                 else:
-                    self.lod_grid.update_row(
+                    self.lod_grid.update_cell(
                         wiki_state.row_no, "version", f"{ex_version}!={mw_version}❌"
                     )
         except BaseException as ex:
@@ -212,17 +215,17 @@ class WikiGrid:
                 if os.path.isdir(backup_path):
                     wiki_files = glob.glob(f"{backup_path}/*.wiki")
                     msg = f"{len(wiki_files):6} ✅"
-                    self.lod_grid.update_row(wiki_state.row_no, "backup", msg)
+                    self.lod_grid.update_cell(wiki_state.row_no, "backup", msg)
                     # https://stackoverflow.com/a/39327156/1497139
                     if wiki_files:
                         latest_file = max(wiki_files, key=os.path.getctime)
                         st = os.stat(latest_file)
                         age_days = round((time.time() - st.st_mtime) / 86400)
-                        self.lod_grid.update_row(
+                        self.lod_grid.update_cell(
                             wiki_state.row_no, "age", f"{age_days}"
                         )
                 else:
                     msg = "❌"
-                    self.lod_grid.update_row(wiki_state.row_no, "backup", msg)
+                    self.lod_grid.update_cell(wiki_state.row_no, "backup", msg)
         except BaseException as ex:
             self.solution.handle_exception(ex)
