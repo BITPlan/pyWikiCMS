@@ -14,7 +14,7 @@ maintainers = [
   { name = "Wolfgang Fahl", email = "wf@bitplan.com" },
 ]
 readme = "README.md"
-license = {text = "Apache-2.0"} 
+license = {text = "Apache-2.0"}
 dependencies = [
 	# https://github.com/WolfgangFahl/nicegui_widgets
 	"ngwidgets>=0.14.2",
@@ -68,9 +68,11 @@ test = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = [
-  "frontend",
-]
+only-include = ["frontend"]
+
+[tool.hatch.build.targets.wheel.sources]
+"frontend" = "frontend"
+
 
 [project.scripts]
 wikicms = "frontend.cmsmain:main"
