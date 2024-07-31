@@ -1,0 +1,817 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>frontend package &mdash; pyWikiCMS  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="setup module" href="setup.html" />
+    <link rel="prev" title="Welcome to pyWikiCMS’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> pyWikiCMS
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">frontend package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-frontend.family">frontend.family module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-frontend.server">frontend.server module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-frontend.site">frontend.site module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-frontend.webserver">frontend.webserver module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-frontend.widgets">frontend.widgets module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-frontend.wikicms">frontend.wikicms module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-frontend">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">tests package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyWikiCMS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>frontend package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/frontend.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="frontend-package">
+<h1>frontend package<a class="headerlink" href="#frontend-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-frontend.family">
+<span id="frontend-family-module"></span><h2>frontend.family module<a class="headerlink" href="#module-frontend.family" title="Permalink to this headline">¶</a></h2>
+<p>Created on 2021-01-01</p>
+<p>&#64;author: wf</p>
+<dl class="py class">
+<dt id="frontend.family.LocalWiki">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.family.</code><code class="sig-name descname">LocalWiki</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">siteName</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">family</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">localSettings</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/family.html#LocalWiki"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.family.LocalWiki" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>a local Wiki</p>
+<dl class="py method">
+<dt id="frontend.family.LocalWiki.getLogo">
+<code class="sig-name descname">getLogo</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/family.html#LocalWiki.getLogo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.family.LocalWiki.getLogo" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the local path to the logo file of this wiki</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the logo path if logo is defined as file else None</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.family.LocalWiki.getSetting">
+<code class="sig-name descname">getSetting</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">varName</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/family.html#LocalWiki.getSetting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.family.LocalWiki.getSetting" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the setting of the given variableName from the LocalSettings.php</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>varName</strong> (<em>str</em>) – the name of the variable to return</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the value of the variable</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.family.LocalWiki.getStatusCode">
+<code class="sig-name descname">getStatusCode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">0.2</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/family.html#LocalWiki.getStatusCode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.family.LocalWiki.getStatusCode" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the status Code for my url</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>float</em>) – the maximum time to wait for a response</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>html statusCode or -1 if there was a timeout</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frontend.family.WikiFamily">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.family.</code><code class="sig-name descname">WikiFamily</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sitedir</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'/var/www/mediawiki/sites'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/family.html#WikiFamily"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.family.WikiFamily" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>the wiki family found in the given site dir</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-frontend.server">
+<span id="frontend-server-module"></span><h2>frontend.server module<a class="headerlink" href="#module-frontend.server" title="Permalink to this headline">¶</a></h2>
+<p>Created on 2021-01-06</p>
+<p>&#64;author: wf</p>
+<dl class="py class">
+<dt id="frontend.server.Server">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.server.</code><code class="sig-name descname">Server</code><a class="reference internal" href="_modules/frontend/server.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">lodstorage.jsonable.JSONAble</span></code></p>
+<p>a server that might serve multiple wikis for a wikiFarm</p>
+<dl class="py method">
+<dt id="frontend.server.Server.checkApacheConfiguration">
+<code class="sig-name descname">checkApacheConfiguration</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">conf</span></em>, <em class="sig-param"><span class="n">status</span><span class="o">=</span><span class="default_value">'enabled'</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/server.html#Server.checkApacheConfiguration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.checkApacheConfiguration" title="Permalink to this definition">¶</a></dt>
+<dd><p>check the given apache configuration and return an indicator symbol</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>conf</strong> (<em>str</em>) – the name of the apache configuration</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a state symbol</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.enableFrontend">
+<code class="sig-name descname">enableFrontend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">siteName</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/server.html#Server.enableFrontend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.enableFrontend" title="Permalink to this definition">¶</a></dt>
+<dd><p>enable the given frontend</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>siteName</strong> (<em>str</em>) – the siteName of the frontend to enable</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the configured frontend</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#frontend.wikicms.Frontend" title="frontend.wikicms.Frontend">Frontend</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.getFrontend">
+<code class="sig-name descname">getFrontend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wikiId</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/server.html#Server.getFrontend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.getFrontend" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the frontend for the given wikiid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>wikiId</strong> (<em>str</em>) – the wikiId to get the frontend for</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the frontend for this wikiId</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#frontend.wikicms.Frontend" title="frontend.wikicms.Frontend">Frontend</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.getPlatformLogo">
+<code class="sig-name descname">getPlatformLogo</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/server.html#Server.getPlatformLogo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.getPlatformLogo" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the logo url for the platform this server runs on</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the url of the logo for the current operating system platform</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.getStorePath">
+<code class="sig-name descname">getStorePath</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'serverConfig'</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/server.html#Server.getStorePath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.getStorePath" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the path where my store files are located
+:returns: path to .wikicms in the homedirectory of the current user</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="frontend.server.Server.homePath">
+<code class="sig-name descname">homePath</code><em class="property"> = None</em><a class="headerlink" href="#frontend.server.Server.homePath" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.load">
+<code class="sig-name descname">load</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/server.html#Server.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>load my front end configurations</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.reinit">
+<code class="sig-name descname">reinit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/server.html#Server.reinit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.reinit" title="Permalink to this definition">¶</a></dt>
+<dd><p>reinitialize me</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.render">
+<code class="sig-name descname">render</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/server.html#Server.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.render" title="Permalink to this definition">¶</a></dt>
+<dd><p>render me</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.sqlBackupState">
+<code class="sig-name descname">sqlBackupState</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dbName</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/server.html#Server.sqlBackupState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.sqlBackupState" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the backup state of the given sql backup</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dbName</strong> (<em>str</em>) – the name of the database to check</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>backup State</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.sqlBackupStateAsHtml">
+<code class="sig-name descname">sqlBackupStateAsHtml</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dbName</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/server.html#Server.sqlBackupStateAsHtml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.sqlBackupStateAsHtml" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the backup state of the given sql backup</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dbName</strong> (<em>str</em>) – the name of the database to check</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>backup State html representation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>html</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.stateSymbol">
+<code class="sig-name descname">stateSymbol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">b</span><span class="p">:</span> <span class="n">bool</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/server.html#Server.stateSymbol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.stateSymbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the symbol for the given boolean state b</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>b</strong> (<em>bool</em>) – the state to return a symbol for</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>✅ for True and ❌ for false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.server.Server.store">
+<code class="sig-name descname">store</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/server.html#Server.store"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.server.Server.store" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-frontend.site">
+<span id="frontend-site-module"></span><h2>frontend.site module<a class="headerlink" href="#module-frontend.site" title="Permalink to this headline">¶</a></h2>
+<p>Created on 2020-12-31</p>
+<p>&#64;author: wf</p>
+<dl class="py class">
+<dt id="frontend.site.Site">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.site.</code><code class="sig-name descname">Site</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">defaultPage</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'Main Page'</span></em>, <em class="sig-param"><span class="n">lang</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'en'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/site.html#Site"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.site.Site" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>migrated from:
+<a class="reference external" href="https://github.com/BITPlan/com.bitplan.wikifrontend/blob/master/src/main/java/com/bitplan/wikifrontend/Site.java">https://github.com/BITPlan/com.bitplan.wikifrontend/blob/master/src/main/java/com/bitplan/wikifrontend/Site.java</a></p>
+<dl class="py method">
+<dt id="frontend.site.Site.configure">
+<code class="sig-name descname">configure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n">dict</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/site.html#Site.configure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.site.Site.configure" title="Permalink to this definition">¶</a></dt>
+<dd><p>configure me from the given configuration
+:param config: the configuration to use
+:type config: dict</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-frontend.webserver">
+<span id="frontend-webserver-module"></span><h2>frontend.webserver module<a class="headerlink" href="#module-frontend.webserver" title="Permalink to this headline">¶</a></h2>
+<p>Created on 2020-12-30</p>
+<p>&#64;author: wf</p>
+<dl class="py class">
+<dt id="frontend.webserver.WikiCMSWeb">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.webserver.</code><code class="sig-name descname">WikiCMSWeb</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">'0.0.0.0'</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">8251</span></em>, <em class="sig-param"><span class="n">debug</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">fb4.app.AppWrap</span></code></p>
+<p>Wrapper for Flask Web Application</p>
+<dl class="py method">
+<dt id="frontend.webserver.WikiCMSWeb.adminMenuList">
+<code class="sig-name descname">adminMenuList</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">activeItem</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb.adminMenuList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb.adminMenuList" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the list of menu items for the admin menu
+:param activeItem: the active  menu item
+:type activeItem: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the list of menu items</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.webserver.WikiCMSWeb.enableSites">
+<code class="sig-name descname">enableSites</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">siteNames</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb.enableSites"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb.enableSites" title="Permalink to this definition">¶</a></dt>
+<dd><p>enable the sites given in the sites list
+:param siteNames: a list of strings with wikiIds to be enabled
+:type siteNames: list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.webserver.WikiCMSWeb.family">
+<code class="sig-name descname">family</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb.family"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb.family" title="Permalink to this definition">¶</a></dt>
+<dd><p>show a html representation of the family of wikis on this server (if any)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a html table of all wikis in the family</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.webserver.WikiCMSWeb.frontends">
+<code class="sig-name descname">frontends</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb.frontends"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb.frontends" title="Permalink to this definition">¶</a></dt>
+<dd><p>render the frontends view</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the html for the admin view</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.webserver.WikiCMSWeb.logo">
+<code class="sig-name descname">logo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">siteName</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb.logo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb.logo" title="Permalink to this definition">¶</a></dt>
+<dd><p>render the Logo for the given siteName</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>siteName</strong> (<em>str</em>) – the name of the site e.g. wiki.bitplan.com</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the rendered Logo for the given Site</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.webserver.WikiCMSWeb.splitPath">
+<em class="property">static </em><code class="sig-name descname">splitPath</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb.splitPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb.splitPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>split the given path
+:param path: the path to split
+:type path: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the site of the path an the actual path</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str,str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.webserver.WikiCMSWeb.wikis">
+<code class="sig-name descname">wikis</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb.wikis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb.wikis" title="Permalink to this definition">¶</a></dt>
+<dd><p>render the wikis table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the html code for the table of wikis</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.webserver.WikiCMSWeb.wrap">
+<code class="sig-name descname">wrap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">siteName</span></em>, <em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#WikiCMSWeb.wrap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.WikiCMSWeb.wrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrap the given path for the given site
+:param siteName: the name of the site to wrap
+:type siteName: str
+:param path: the path to wrap
+:type path: path</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="frontend.webserver.family">
+<code class="sig-prename descclassname">frontend.webserver.</code><code class="sig-name descname">family</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#family"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.family" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="frontend.webserver.frontends">
+<code class="sig-prename descclassname">frontend.webserver.</code><code class="sig-name descname">frontends</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#frontends"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.frontends" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="frontend.webserver.root">
+<code class="sig-prename descclassname">frontend.webserver.</code><code class="sig-name descname">root</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#root"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.root" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="frontend.webserver.wikiLogo">
+<code class="sig-prename descclassname">frontend.webserver.</code><code class="sig-name descname">wikiLogo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">siteName</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#wikiLogo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.wikiLogo" title="Permalink to this definition">¶</a></dt>
+<dd><p>render the Logo for the given siteName</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>siteName</strong> (<em>str</em>) – the name of the site e.g. wiki.bitplan.com</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the rendered Logo for the given Site</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="frontend.webserver.wikis">
+<code class="sig-prename descclassname">frontend.webserver.</code><code class="sig-name descname">wikis</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#wikis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.wikis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="frontend.webserver.wrap">
+<code class="sig-prename descclassname">frontend.webserver.</code><code class="sig-name descname">wrap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/webserver.html#wrap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.webserver.wrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrap the url request for the given path</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – the path to wrap - the path should start with /&lt;wikiId&gt;/ followed by the actual path in the wiki</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-frontend.widgets">
+<span id="frontend-widgets-module"></span><h2>frontend.widgets module<a class="headerlink" href="#module-frontend.widgets" title="Permalink to this headline">¶</a></h2>
+<p>Created on 2021-01-04</p>
+<p>&#64;author: wf</p>
+<dl class="py class">
+<dt id="frontend.widgets.Image">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.widgets.</code><code class="sig-name descname">Image</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span></em>, <em class="sig-param"><span class="n">alt</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/widgets.html#Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.widgets.Image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frontend.widgets.Widget" title="frontend.widgets.Widget"><code class="xref py py-class docutils literal notranslate"><span class="pre">frontend.widgets.Widget</span></code></a></p>
+<p>a HTML Image</p>
+<dl class="py method">
+<dt id="frontend.widgets.Image.render">
+<code class="sig-name descname">render</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/widgets.html#Image.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.widgets.Image.render" title="Permalink to this definition">¶</a></dt>
+<dd><p>render me</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>html code for Image</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frontend.widgets.Link">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.widgets.</code><code class="sig-name descname">Link</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span></em>, <em class="sig-param"><span class="n">title</span></em>, <em class="sig-param"><span class="n">tooltip</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/widgets.html#Link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.widgets.Link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frontend.widgets.Widget" title="frontend.widgets.Widget"><code class="xref py py-class docutils literal notranslate"><span class="pre">frontend.widgets.Widget</span></code></a></p>
+<p>a HTML link</p>
+<dl class="py method">
+<dt id="frontend.widgets.Link.render">
+<code class="sig-name descname">render</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/widgets.html#Link.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.widgets.Link.render" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frontend.widgets.MenuItem">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.widgets.</code><code class="sig-name descname">MenuItem</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">title</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">active</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/widgets.html#MenuItem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.widgets.MenuItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#frontend.widgets.Widget" title="frontend.widgets.Widget"><code class="xref py py-class docutils literal notranslate"><span class="pre">frontend.widgets.Widget</span></code></a></p>
+<p>a menu item</p>
+<dl class="py method">
+<dt id="frontend.widgets.MenuItem.render">
+<code class="sig-name descname">render</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/widgets.html#MenuItem.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.widgets.MenuItem.render" title="Permalink to this definition">¶</a></dt>
+<dd><p>render me</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>html code for MenuItem</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="frontend.widgets.Widget">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.widgets.</code><code class="sig-name descname">Widget</code><a class="reference internal" href="_modules/frontend/widgets.html#Widget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.widgets.Widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>a HTML widget</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-frontend.wikicms">
+<span id="frontend-wikicms-module"></span><h2>frontend.wikicms module<a class="headerlink" href="#module-frontend.wikicms" title="Permalink to this headline">¶</a></h2>
+<p>Created on 2020-07-27</p>
+<p>&#64;author: wf</p>
+<dl class="py class">
+<dt id="frontend.wikicms.Frontend">
+<em class="property">class </em><code class="sig-prename descclassname">frontend.wikicms.</code><code class="sig-name descname">Frontend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">siteName</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">debug</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/wikicms.html#Frontend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Wiki Content Management System Frontend</p>
+<dl class="py method">
+<dt id="frontend.wikicms.Frontend.checkPath">
+<code class="sig-name descname">checkPath</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pagePath</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/wikicms.html#Frontend.checkPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend.checkPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>check the given pathPath</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pagePath</strong> (<em>str</em>) – the page Path to check</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None or an error message with the illegal chars being used</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.wikicms.Frontend.errMsg">
+<code class="sig-name descname">errMsg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ex</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/wikicms.html#Frontend.errMsg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend.errMsg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="frontend.wikicms.Frontend.getContent">
+<code class="sig-name descname">getContent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pagePath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/wikicms.html#Frontend.getContent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend.getContent" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the content for the given pagePath
+:param pagePath: the page Pageh
+:type pagePath: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the HTML content for the given path</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.wikicms.Frontend.log">
+<code class="sig-name descname">log</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msg</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/wikicms.html#Frontend.log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>log the given message if debugging is true</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>msg</strong> (<em>str</em>) – the message to log</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.wikicms.Frontend.needsProxy">
+<code class="sig-name descname">needsProxy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/frontend/wikicms.html#Frontend.needsProxy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend.needsProxy" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – the path to check</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if this path needs to be proxied</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.wikicms.Frontend.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/wikicms.html#Frontend.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>open the frontend</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.wikicms.Frontend.proxy">
+<code class="sig-name descname">proxy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/frontend/wikicms.html#Frontend.proxy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend.proxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>proxy a request
+see <a class="reference external" href="https://stackoverflow.com/a/50231825/1497139">https://stackoverflow.com/a/50231825/1497139</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – the path to proxy</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the proxied result Request</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="frontend.wikicms.Frontend.wikiPage">
+<code class="sig-name descname">wikiPage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pagePath</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/frontend/wikicms.html#Frontend.wikiPage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#frontend.wikicms.Frontend.wikiPage" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the wikiPage for the given pagePath</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pagePath</strong> (<em>str</em>) – the page path</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the pageTitle</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-frontend">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-frontend" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="setup.html" class="btn btn-neutral float-right" title="setup module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to pyWikiCMS’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2021, Wolfgang Fahl
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

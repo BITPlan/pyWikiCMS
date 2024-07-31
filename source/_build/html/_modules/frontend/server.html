@@ -1,0 +1,415 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>frontend.server &mdash; pyWikiCMS  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> pyWikiCMS
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../frontend.html">frontend package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">setup module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tests.html">tests package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pyWikiCMS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>frontend.server</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for frontend.server</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on 2021-01-06</span>
+
+<span class="sd">@author: wf</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">platform</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">render_template</span>
+<span class="kn">from</span> <span class="nn">lodstorage.jsonable</span> <span class="kn">import</span> <span class="n">JSONAble</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">frontend.wikicms</span> <span class="kn">import</span> <span class="n">Frontend</span>
+
+<div class="viewcode-block" id="Server"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">JSONAble</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    a server that might serve multiple wikis for a wikiFarm</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">homePath</span><span class="o">=</span><span class="kc">None</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>       
+
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Constructor</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            storePath(str): the path to load my configuration from (if any)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontendConfigs</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logo</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">purpose</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reinit</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="Server.reinit"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.reinit">[docs]</a>    <span class="k">def</span> <span class="nf">reinit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        reinitialize me</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">platform</span><span class="o">=</span><span class="n">platform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uname</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">uname</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uname</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">getfqdn</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">gethostbyname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hostname</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontends</span><span class="o">=</span><span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">siteLookup</span><span class="o">=</span><span class="p">{}</span>
+        <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;sqlBackupPath&quot;</span><span class="p">:</span><span class="s2">&quot;/var/backup/sqlbackup&quot;</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">defaults</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">key</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">value</span>
+        <span class="k">if</span> <span class="n">Server</span><span class="o">.</span><span class="n">homePath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">homePath</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">homePath</span><span class="o">=</span><span class="n">Server</span><span class="o">.</span><span class="n">homePath</span></div>
+            
+<div class="viewcode-block" id="Server.sqlBackupStateAsHtml"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.sqlBackupStateAsHtml">[docs]</a>    <span class="k">def</span> <span class="nf">sqlBackupStateAsHtml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dbName</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        get the backup state of the given sql backup</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">           dbName(str): the name of the database to check</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            html: backup State html representation</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">backupState</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sqlBackupState</span><span class="p">(</span><span class="n">dbName</span><span class="p">)</span>
+        <span class="n">mbSize</span><span class="o">=</span><span class="n">backupState</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">1024</span><span class="o">/</span><span class="mi">1024</span>
+        <span class="n">mdate</span><span class="o">=</span><span class="n">backupState</span><span class="p">[</span><span class="s1">&#39;mdate&#39;</span><span class="p">]</span>
+        <span class="n">isoDate</span><span class="o">=</span><span class="n">mdate</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">mdate</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">html</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> - </span><span class="si">%4d</span><span class="s2"> MB&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateSymbol</span><span class="p">(</span><span class="n">backupState</span><span class="p">[</span><span class="s1">&#39;exists&#39;</span><span class="p">]),</span><span class="n">isoDate</span><span class="p">,</span><span class="n">mbSize</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">html</span></div>
+            
+<div class="viewcode-block" id="Server.sqlBackupState"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.sqlBackupState">[docs]</a>    <span class="k">def</span> <span class="nf">sqlBackupState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dbName</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        get the backup state of the given sql backup</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">           dbName(str): the name of the database to check</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: backup State</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">fullBackup</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/today/</span><span class="si">%s</span><span class="s2">_full.sql&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sqlBackupPath</span><span class="p">,</span><span class="n">dbName</span><span class="p">)</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">mdate</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">exists</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fullBackup</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">exists</span><span class="p">:</span>
+            <span class="n">stat</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">fullBackup</span><span class="p">)</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">stat</span><span class="o">.</span><span class="n">st_size</span>
+            <span class="n">mtime</span><span class="o">=</span><span class="n">stat</span><span class="o">.</span><span class="n">st_mtime</span>
+            <span class="n">mdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">mtime</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span><span class="n">size</span><span class="p">,</span><span class="s1">&#39;exists&#39;</span><span class="p">:</span><span class="n">exists</span><span class="p">,</span><span class="s1">&#39;mdate&#39;</span><span class="p">:</span><span class="n">mdate</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+            
+<div class="viewcode-block" id="Server.enableFrontend"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.enableFrontend">[docs]</a>    <span class="k">def</span> <span class="nf">enableFrontend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">siteName</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        enable the given frontend</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            siteName(str): the siteName of the frontend to enable</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Frontend: the configured frontend</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontendConfigs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No frontend configurations loaded yet&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">siteName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">siteLookup</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;frontend for site </span><span class="si">%s</span><span class="s1"> not configured yet&#39;</span> <span class="o">%</span> <span class="n">siteName</span><span class="p">)</span>
+        <span class="n">frontend</span> <span class="o">=</span> <span class="n">Frontend</span><span class="p">(</span><span class="n">siteName</span><span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">frontends</span><span class="p">[</span><span class="n">siteName</span><span class="p">]</span><span class="o">=</span><span class="n">frontend</span>
+        <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">siteLookup</span><span class="p">[</span><span class="n">siteName</span><span class="p">]</span>
+        <span class="n">frontend</span><span class="o">.</span><span class="n">site</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">frontend</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">frontend</span>
+        <span class="k">pass</span></div>
+        
+<div class="viewcode-block" id="Server.getFrontend"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.getFrontend">[docs]</a>    <span class="k">def</span> <span class="nf">getFrontend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">wikiId</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        get the frontend for the given wikiid</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            wikiId(str): the wikiId to get the frontend for</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Frontend: the frontend for this wikiId</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontends</span><span class="p">[</span><span class="n">wikiId</span><span class="p">]</span></div>
+            
+<div class="viewcode-block" id="Server.load"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        load my front end configurations</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">storePath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getStorePath</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">storePath</span><span class="o">+</span><span class="s2">&quot;.json&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">restoreFromJsonFile</span><span class="p">(</span><span class="n">storePath</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reinit</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontendConfigs</span><span class="p">:</span>
+                <span class="n">siteName</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">siteLookup</span><span class="p">[</span><span class="n">siteName</span><span class="p">]</span><span class="o">=</span><span class="n">config</span>
+        <span class="k">pass</span></div>
+        
+<div class="viewcode-block" id="Server.getStorePath"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.getStorePath">[docs]</a>    <span class="k">def</span> <span class="nf">getStorePath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">prefix</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;serverConfig&quot;</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        get the path where my store files are located</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            path to .wikicms in the homedirectory of the current user</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">iniPath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">homePath</span><span class="o">+</span><span class="s2">&quot;/.wikicms&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">iniPath</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">iniPath</span><span class="p">)</span>
+        <span class="n">storePath</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">iniPath</span><span class="p">,</span><span class="n">prefix</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">storePath</span></div>
+         
+<div class="viewcode-block" id="Server.store"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.store">[docs]</a>    <span class="k">def</span> <span class="nf">store</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">frontends</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">storePath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getStorePath</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">storeToJsonFile</span><span class="p">(</span><span class="n">storePath</span><span class="p">,</span><span class="s2">&quot;frontendConfigs&quot;</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="Server.getPlatformLogo"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.getPlatformLogo">[docs]</a>    <span class="k">def</span> <span class="nf">getPlatformLogo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        get the logo url for the platform this server runs on</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the url of the logo for the current operating system platform</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">logos</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;aix&#39;</span><span class="p">:</span> <span class="s2">&quot;https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/IBM_AIX_logo.svg/200px-IBM_AIX_logo.svg.png&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;cygwin&#39;</span><span class="p">:</span> <span class="s2">&quot;https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Cygwin_logo.svg/200px-Cygwin_logo.svg.png&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;darwin&#39;</span><span class="p">:</span>  <span class="s2">&quot;https://upload.wikimedia.org/wikipedia/de/thumb/b/b1/MacOS-Logo.svg/200px-MacOS-Logo.svg.png&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;linux&#39;</span><span class="p">:</span>   <span class="s2">&quot;https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;win32&#39;</span><span class="p">:</span>   <span class="s2">&quot;https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Windows_logo_-_2012.svg/200px-Windows_logo_-_2012.svg.png&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;unknown&#39;</span><span class="p">:</span> <span class="s2">&quot;https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Blue_question_mark.jpg/240px-Blue_question_mark.jpg&quot;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">platform</span> <span class="ow">in</span> <span class="n">logos</span><span class="p">:</span>
+            <span class="n">logo</span><span class="o">=</span><span class="n">logos</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">platform</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logo</span><span class="o">=</span><span class="n">logos</span><span class="p">[</span><span class="s1">&#39;unknown&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">logo</span></div>
+    
+<div class="viewcode-block" id="Server.stateSymbol"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.stateSymbol">[docs]</a>    <span class="k">def</span> <span class="nf">stateSymbol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">b</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        return the symbol for the given boolean state b</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            b(bool): the state to return a symbol for</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            ✅ for True and ❌ for false</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;✅&quot;</span> <span class="k">if</span> <span class="n">b</span> <span class="k">else</span> <span class="s2">&quot;❌&quot;</span>
+        <span class="k">return</span> <span class="n">symbol</span></div>
+    
+<div class="viewcode-block" id="Server.checkApacheConfiguration"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.checkApacheConfiguration">[docs]</a>    <span class="k">def</span> <span class="nf">checkApacheConfiguration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">conf</span><span class="p">,</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;enabled&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        check the given apache configuration and return an indicator symbol</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            conf(str): the name of the apache configuration</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            a state symbol</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">path</span><span class="o">=</span><span class="s2">&quot;/etc/apache2/sites-</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">.conf&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">status</span><span class="p">,</span><span class="n">conf</span><span class="p">)</span>
+        <span class="n">confExists</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">stateSymbol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stateSymbol</span><span class="p">(</span><span class="n">confExists</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stateSymbol</span></div>
+    
+<div class="viewcode-block" id="Server.render"><a class="viewcode-back" href="../../frontend.html#frontend.server.Server.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        render me </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">html</span><span class="o">=</span><span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;server.html&#39;</span><span class="p">,</span><span class="n">server</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">html</span></div></div>
+        
+        
+        
+    
+        
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2021, Wolfgang Fahl
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
