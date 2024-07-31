@@ -1,8 +1,8 @@
 # pyWikiCMS
 Python based MediaWiki Content Management System frontend
 
-[![Documentation Status](https://readthedocs.org/projects/pywikicms/badge/?version=latest)](https://pywikicms.readthedocs.io/en/latest/?badge=latest)
 [![pypi](https://img.shields.io/pypi/pyversions/pyWikiCMS)](https://pypi.org/project/pyWikiCMS/)
+[![PyPI Status](https://img.shields.io/pypi/v/pyWikiCMS.svg)](https://pypi.python.org/pypi/pyWikiCMS/)
 [![Github Actions Build](https://github.com/BITPlan/pyWikiCMS/actions/workflows/build.yml/badge.svg)](https://github.com/BITPlan/pyWikiCMS/actions/workflows/build.yml)
 [![GitHub issues](https://img.shields.io/github/issues/BITPlan/pyWikiCMS.svg)](https://github.com/BITPlan/pyWikiCMS/issues)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/BITPlan/pyWikiCMS.svg)](https://github.com/BITPlan/pyWikiCMS/issues/?q=is%3Aissue+is%3Aclosed)
