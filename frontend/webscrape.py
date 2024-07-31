@@ -22,12 +22,12 @@ class WebScrape(object):
         self.debug = debug
         self.showHtml = showHtml
 
-    def getSoup(self, url, showHtml):
+    def getSoup(self, url, showHtml:bool):
         """
         get the beautiful Soup parser
 
         Args:
-           showHtml(boolean): True if the html code should be pretty printed and shown
+           showHtml(bool): True if the html code should be pretty printed and shown
         """
         req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
         html = urlopen(req).read()

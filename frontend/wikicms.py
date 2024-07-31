@@ -50,18 +50,18 @@ class Frontend(object):
         else:
             self.filterKeys = []
 
-    def log(self, msg):
+    def log(self, msg:str):
         """
         log the given message if debugging is true
 
         Args:
-            msg(str): the message to log
+            msg (str): the message to log
         """
         if self.debug:
             print(msg, flush=True)
 
     @staticmethod
-    def extract_site_and_path(path):
+    def extract_site_and_path(path:str):
         """
         Splits the given path into the site component and the remaining path.
 
@@ -124,14 +124,15 @@ class Frontend(object):
             msg = repr(ex)
         return msg
 
-    def wikiPage(self, pagePath):
+    def wikiPage(self, pagePath: str) -> str:
         """
-        get the wikiPage for the given pagePath
+        Get the wiki page for the given page path.
 
         Args:
-            pagePath(str): the page path
+            pagePath (str): The path of the page.
+
         Returns:
-            str: the pageTitle
+            str: The title of the page.
         """
         if "/index.php/" in pagePath:
             wikipage = pagePath.replace("/index.php/", "")
@@ -141,12 +142,12 @@ class Frontend(object):
             wikipage = pagePath
         return wikipage
 
-    def checkPath(self, pagePath):
+    def checkPath(self, pagePath:str)->str:
         """
         check the given pathPath
 
         Args:
-            pagePath(str): the page Path to check
+            pagePath (str): the page Path to check
 
         Returns:
             str: None or an error message with the illegal chars being used
@@ -159,12 +160,13 @@ class Frontend(object):
                 error = "invalid char %s in given pagePath " % (illegalChar)
         return error
 
-    def needsProxy(self, path: str) -> bool:
+    def needsProxy(self, path:str) -> bool:
         """
         Args:
-            path(str): the path to check
+            path (str): the path to check
+
         Returns:
-            True if this path needs to be proxied
+            bool: True if this path needs to be proxied
         """
         needs_proxy = False
         for prefix in self.proxy_prefixes:
@@ -200,10 +202,10 @@ class Frontend(object):
         """
         fix the given node
 
-        node(BeautifulSoup): the node
-        attribute(str): the name of the attribute e.g. "href", "src"
-        prefix(str): the prefix to replace e.g. "/", "/images", "/thumbs"
-        delim(str): if not None the delimiter for multiple values
+        node (BeautifulSoup): the node
+        attribute (str): the name of the attribute e.g. "href", "src"
+        prefix (str): the prefix to replace e.g. "/", "/images", "/thumbs"
+        delim (str): if not None the delimiter for multiple values
         """
         siteprefix = f"/{self.site.name}{prefix}"
         if attribute in node.attrs:

@@ -167,7 +167,7 @@ class ClickstreamManager(object):
     def __init__(
         self,
         root_path: str,
-        rdf_namespace="http://cms.bitplan.com/clickstream#",
+        rdf_namespace:str ="http://cms.bitplan.com/clickstream#",
         show_progress: bool = True,
         verbose: bool = True,
     ):
@@ -175,8 +175,10 @@ class ClickstreamManager(object):
         Constructor
 
         Args:
-            rdf_namespace(str): The base namespace URI for the RDF export.
-            verbose(bool): If True, print the output message.
+            root_path (str): the root path
+            rdf_namespace (str): The base namespace URI for the RDF export.
+            show_progress (bool): If True, show progress.
+            verbose (bool): If True, print the output message.
         """
         self.root_path = root_path
         self.rdf_namespace = rdf_namespace
