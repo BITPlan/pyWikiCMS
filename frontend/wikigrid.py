@@ -192,7 +192,7 @@ class WikiGrid:
                 mw_version = f"MediaWiki {mw_version}"
             row = self.lod_grid.get_row_for_key(wiki_state.row_no)
             if row:
-                ex_version = row["version"]
+                ex_version = wiki_state.wiki_user.version
                 if ex_version == mw_version:
                     self.lod_grid.update_cell(
                         wiki_state.row_no, "version", f"{mw_version}✅"
