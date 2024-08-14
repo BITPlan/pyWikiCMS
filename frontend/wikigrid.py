@@ -53,7 +53,7 @@ class WikiState:
 
 class WikiCheck:
     """
-    A check for a Mediawiki.
+    Check to be performed on  a Mediawiki.
     """
 
     def __init__(self, name, func, checked=True):
