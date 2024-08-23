@@ -17,15 +17,15 @@ readme = "README.md"
 license = {text = "Apache-2.0"}
 dependencies = [
 	# https://github.com/WolfgangFahl/nicegui_widgets
-	"ngwidgets>=0.14.2",
+	"ngwidgets>=0.17.2",
     # https://pypi.org/project/pylodstorage/
-    "pyLodStorage>=0.10.3",
+    "pyLodStorage>=0.12.2",
     # https://pypi.org/project/SQLAlchemy/
     "SQLAlchemy>=2.0.22",
     # https://pypi.org/project/SQLAlchemy-Utils/
     "SQLAlchemy-Utils>=0.41.1",
     # https://pypi.org/project/py-3rdparty-mediawiki/
-    'py-3rdparty-mediawiki>=0.10.0',
+    'py-3rdparty-mediawiki>=0.12.1',
     # Beautiful Soup HTML parser
 	# https://pypi.org/project/beautifulsoup4/
 	'beautifulsoup4>=4.9.3',
