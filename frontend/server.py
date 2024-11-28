@@ -10,7 +10,6 @@ from pathlib import Path
 from sys import platform
 
 from lodstorage.jsonable import JSONAble
-from sqlalchemy_utils import database_exists
 
 from frontend.wikicms import Frontend
 
@@ -84,27 +83,40 @@ class Server(JSONAble):
         url = "mysql+pymysql://%s:%s@%s/%s" % (username, password, hostname, dbname)
         return url
 
-    def sqlDatabaseExist(
-        self,
-        dburl: str,
-    ) -> bool:
+    def sqlDatabaseExist(self, dbname: str, username: str, password: str, hostname: str = None) -> bool:
         """
-        check if the database with the given name exists
-
+        Check if the database with the given name exists.
 
         Args:
-            dburl(str): rfd 1738 formatted database url e.g. mysql://dt_admin:dt2016@localhost:3308/dreamteam_db
+            dbname (str): The name of the database.
+            username (str): The username.
+            password (str): The password.
+            hostname (str): The hostname. Defaults to the class's hostname.
 
         Returns:
-            True if the database exists, else False
+            bool: True if the database exists, else False.
         """
-        dbExists = False
+        if hostname is None:
+            hostname = self.hostname
+        
+        connection = None
         try:
-            dbExists = database_exists(dburl)
-        except Exception:
-            # bad luck
-            pass
-        return dbExists
+            connection = pymysql.connect(
+                host=hostname,
+                user=username,
+                password=password,
+                database="information_schema",
+                connect_timeout=5,
+            )
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT SCHEMA_NAME FROM SCHEMATA WHERE SCHEMA_NAME = %s", (dbname,))
+                result = cursor.fetchone()
+            return result is not None
+        except pymysql.MySQLError:
+            return False
+        finally:
+            if connection:
+                connection.close()
 
     def sqlBackupStateAsHtml(self, dbName):
         """
