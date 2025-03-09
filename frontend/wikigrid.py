@@ -8,18 +8,17 @@ import os
 import time
 from pathlib import Path
 
-from lodstorage.lod import LOD
-from ngwidgets.lod_grid import ListOfDictsGrid
-from ngwidgets.progress import NiceguiProgressbar, Progressbar
+from frontend.mediawiki_site import MediaWikiSite
+from ngwidgets.lod_grid import ListOfDictsGrid, GridConfig
+from ngwidgets.progress import NiceguiProgressbar
 from ngwidgets.widgets import Link
-from nicegui import run, ui
-from wikibot3rd.smw import SMWClient
+from ngwidgets.task_runner import TaskRunner
+from nicegui import ui
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
+from wikibot3rd.wikipush import WikiPush
 
-from frontend.family import WikiBackup, WikiFamily
-from frontend.html_table import HtmlTables
-
+from frontend.family import WikiBackup
 
 class WikiState:
     """
@@ -33,6 +32,15 @@ class WikiState:
         self.row_no = row_index + 1
         self.wiki_user = wiki_user
         self.wiki_backup = WikiBackup(wiki_user)
+        self._wiki_client=None
+        self.task_runner=TaskRunner()
+
+    @property
+    def wiki_client(self)->WikiClient:
+        if not self._wiki_client:
+            self._wiki_client= WikiClient.ofWikiUser(self.wiki_user)
+        return self._wiki_client
+
 
     def as_dict(self):
         url = f"{self.wiki_user.url}{self.wiki_user.scriptPath}"
@@ -94,6 +102,9 @@ class WikiGrid:
             self.wikistates_by_row_no[wiki_state.row_no] = wiki_state
 
     def setup(self):
+        """
+        setup the ui
+        """
         self.add_checkboxes()
         self.progressbar = NiceguiProgressbar(
             len(self.wikistates_by_row_no), "work on wikis", "steps"
@@ -102,7 +113,16 @@ class WikiGrid:
         self.lod_grid.update()
 
     def as_grid(self):
-        self.lod_grid = ListOfDictsGrid(lod=self.lod)
+        # Configure grid with checkbox selection
+        grid_config = GridConfig(
+            key_col="#",
+            editable=False,
+            multiselect=True,
+            with_buttons=True,
+            button_names=["all", "fit"],
+            debug=False,
+        )
+        self.lod_grid = ListOfDictsGrid(lod=self.lod,config=grid_config)
         self.lod_grid.ag_grid._props["html_columns"] = [0, 1, 2]
         return self.lod_grid
 
@@ -110,55 +130,59 @@ class WikiGrid:
         """
         Add check boxes.
         """
-        self.wiki_checks = [
-            WikiCheck("version", self.check_wiki_version),
-            WikiCheck("backup", self.check_backup),
-            WikiCheck("pages", self.check_pages),
-        ]
-        for wiki_check in self.wiki_checks:
-            wiki_check.as_checkbox()
-        ui.button(text="Checks", on_click=self.perform_wiki_checks)
+        self.button_row=ui.row()
+        with self.button_row:
+            self.wiki_checks = [
+                WikiCheck("version", self.check_wiki_version),
+                WikiCheck("backup", self.check_backup),
+                WikiCheck("pages", self.check_pages),
+            ]
+            for wiki_check in self.wiki_checks:
+                wiki_check.as_checkbox()
+            ui.button(text="Checks", on_click=self.perform_wiki_checks)
 
-    def check_version(self, wiki_url):
-        """
-        Check the MediaWiki version.
-        """
-        version_url = f"{wiki_url}/index.php/Special:Version"
-        mw_version = "?"
-        try:
-            html_tables = HtmlTables(version_url)
-            tables = html_tables.get_tables("h2")
-            if "Installed software" in tables:
-                software = tables["Installed software"]
-                software_map, _dup = LOD.getLookup(
-                    software, "Product", withDuplicates=False
-                )
-                mw_version = software_map["MediaWiki"]["Version"]
-        except Exception as ex:
-            mw_version = f"error: {str(ex)}"
-        return mw_version
+    async def get_selected_lod(self):
+        lod_index=self.lod_grid.get_index(lenient=self.lod_grid.config.lenient,lod=self.lod)
+        lod = await self.lod_grid.get_selected_lod(lod_index=lod_index)
+        if len(lod)==0:
+            with self.button_row:
+                ui.notify("Please select at least one row")
+        return lod
 
     async def perform_wiki_checks(self, _msg):
-        await run.io_bound(self.run_wiki_checks)
+        """
+        react on the button for check having been clicked
+        """
+        self.select_lod=await self.get_selected_lod()
+        if self.select_lod:
+            with self.solution.content_div:
+                total=len(self.select_lod)
+                ui.notify(f"Checking {total} wikis ...")
+                progress_bar = self.progressbar
+                steps=0
+                for wiki_check in self.wiki_checks:
+                    if wiki_check.checked:
+                        steps+=total
+                progress_bar.total=steps
+                progress_bar.reset()
+                for row in self.select_lod:
+                    row_no=row["#"]
+                    wiki_state=self.wikistates_by_row_no.get(row_no)
+                    wiki_state.task_runner.run(lambda: self.run_wiki_check(row_no))
 
-    def run_wiki_checks(self):
+    async def run_wiki_check(self,row_no:int):
         """
         perform the selected wiki checks
         """
-        with self.solution.content_div:
-            ui.notify(f"Checking {len(self.wikistates_by_row_no)} wikis ...")
-        progress_bar = self.progressbar
         try:
-            with self.solution.content_div:
-                progress_bar.reset()
-            for wiki_state in self.wikistates_by_row_no.values():
-                for wiki_check in self.wiki_checks:
-                    if wiki_check.checked:
-                        wiki_check.func(wiki_state)
-                    with self.solution.content_div:
-                        self.lod_grid.update()
-                        # Update the progress bar
-                        progress_bar.update(1)
+            wiki_state=self.wikistates_by_row_no.get(row_no)
+            for wiki_check in self.wiki_checks:
+                if wiki_check.checked:
+                    wiki_check.func(wiki_state)
+                with self.solution.content_div:
+                    self.lod_grid.update()
+                    # Update the progress bar
+                    self.progressbar.update(1)
         except BaseException as ex:
             self.solution.handle_exception(ex)
 
@@ -167,9 +191,10 @@ class WikiGrid:
         Try login for wiki user and report success or failure.
         """
         try:
-            wiki_state.wiki_client = WikiClient.ofWikiUser(wiki_state.wiki_user)
             try:
-                wiki_state.wiki_client.login()
+                client=wiki_state.wiki_client
+                if client.needs_login:
+                    client.login()
                 stats = wiki_state.wiki_client.get_site_statistics()
                 pages = stats["pages"]
                 self.lod_grid.update_cell(wiki_state.row_no, "login", f"✅")
@@ -187,7 +212,10 @@ class WikiGrid:
         """
         try:
             wiki_url = wiki_state.wiki_user.getWikiUrl()
-            mw_version = self.check_version(wiki_url)
+            if not "index.php" in wiki_url:
+                wiki_url=f"{wiki_url}/index.php"
+            mw_site=MediaWikiSite(wiki_url)
+            mw_version = mw_site.check_version()
             if not mw_version.startswith("MediaWiki"):
                 mw_version = f"MediaWiki {mw_version}"
             row = self.lod_grid.get_row_for_key(wiki_state.row_no)

@@ -4,7 +4,6 @@ Created on 2020-12-27
 @author: wf
 """
 import json
-import unittest
 
 from ngwidgets.basetest import Basetest
 
@@ -156,7 +155,7 @@ class TestFrontend(Basetest):
 </p>
 <h2><span id="⌘⌘_Slide2"></span><span class="mw-headline" id=".E2.8C.98.E2.8C.98_Slide2">⌘⌘ Slide2</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=RevealTest&amp;action=edit&amp;section=2" title="Edit section: ⌘⌘ Slide2">edit</a><span class="mw-editsection-bracket">]</span></span></h2>
 <p>Content for slide 2
-</p>    
+</p>
                 </div>
             </body>
         <html>"""
@@ -199,8 +198,3 @@ class TestFrontend(Basetest):
         if debug:
             print(json.dumps(cms_pages, indent=2))
         self.assertTrue("CMS/footer/de" in cms_pages)
-
-
-if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()

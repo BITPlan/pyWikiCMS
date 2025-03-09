@@ -5,7 +5,6 @@ Created on 2022-10-25
 """
 from frontend.webscrape import WebScrape
 
-
 class HtmlTables(WebScrape):
     """
     HtmlTables extractor

@@ -4,11 +4,10 @@ Created on 2020-12-30
 @author: wf
 """
 from fastapi import HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from ngwidgets.input_webserver import InputWebserver, InputWebSolution
-from ngwidgets.login import Login
-from ngwidgets.users import Users
 from ngwidgets.webserver import WebserverConfig
+from ngwidgets.sso_users_solution import SsoSolution
 from nicegui import Client, app, ui
 
 from frontend.server import Server
@@ -24,7 +23,7 @@ class CmsWebServer(InputWebserver):
 
     @classmethod
     def get_config(cls) -> WebserverConfig:
-        copy_right = "(c)2023-2024 Wolfgang Fahl"
+        copy_right = "(c)2023-2025 Wolfgang Fahl"
         config = WebserverConfig(
             copy_right=copy_right,
             version=Version(),
@@ -41,23 +40,9 @@ class CmsWebServer(InputWebserver):
 
         """
         InputWebserver.__init__(self, config=CmsWebServer.get_config())
-        users = Users("~/.wikicms/")
-        self.login = Login(self, users)
         self.server = Server()
         self.server.load()
         self.enabledSites = ["admin"]
-
-        # @ui.page("/login")
-        # async def login(client: Client):
-        #    return await self.page(
-        #        client,CmsSolution.login
-        #    )
-
-        # @ui.page("/wikis")
-        # async def wikis(client: Client):
-        #    if not self.login.authenticated():
-        #        return RedirectResponse("/login")
-        #    return await self.wikis()
 
         @app.get("/{frontend_name}/{page_path:path}")
         def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
@@ -137,10 +122,11 @@ class CmsSolution(InputWebSolution):
 
     def configure_menu(self):
         """
-        configure specific menu entries
+        configure my menu
         """
-        username = app.storage.user.get("username", "?")
-        ui.label(username)
+        InputWebSolution.configure_menu(self)
+        self.sso_solution = SsoSolution(webserver=self.webserver)
+        self.sso_solution.configure_menu()
 
     async def home(self):
         """
