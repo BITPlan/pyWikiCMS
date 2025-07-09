@@ -72,7 +72,7 @@ class TestWebServer(WebserverTest):
         debug = self.debug
         # debug = True
         for i, query in enumerate(queries):
-            html = self.getHtml(query)
+            html = self.get_html(query)
             if debug:
                 print(f"{i+1}:{query}\n{html}")
             ehtml = expected[i]
@@ -84,7 +84,7 @@ class TestWebServer(WebserverTest):
         https://github.com/BITPlan/pyWikiCMS/issues/20
         support reveal.js slideshow if frame is "reveal" #20
         """
-        html = self.getHtml("www/SMWConTalk2015-05")
+        html = self.get_html("www/SMWConTalk2015-05")
         if self.debug:
             print(html)
         self.assertTrue("reveal.min.css" in html)

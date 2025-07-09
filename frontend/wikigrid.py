@@ -7,56 +7,11 @@ import glob
 import os
 import time
 from pathlib import Path
-
+from wikibot3rd.wikiuser import WikiUser
 from frontend.mediawiki_site import MediaWikiSite
 from ngwidgets.lod_grid import ListOfDictsGrid, GridConfig
 from ngwidgets.progress import NiceguiProgressbar
-from ngwidgets.widgets import Link
-from ngwidgets.task_runner import TaskRunner
 from nicegui import ui
-from wikibot3rd.wikiclient import WikiClient
-from wikibot3rd.wikiuser import WikiUser
-from wikibot3rd.wikipush import WikiPush
-
-from frontend.family import WikiBackup
-
-class WikiState:
-    """
-    the state of a wiki
-    """
-
-    def __init__(self, row_index, wiki_user):
-        """
-        constructor
-        """
-        self.row_no = row_index + 1
-        self.wiki_user = wiki_user
-        self.wiki_backup = WikiBackup(wiki_user)
-        self._wiki_client=None
-        self.task_runner=TaskRunner()
-
-    @property
-    def wiki_client(self)->WikiClient:
-        if not self._wiki_client:
-            self._wiki_client= WikiClient.ofWikiUser(self.wiki_user)
-        return self._wiki_client
-
-
-    def as_dict(self):
-        url = f"{self.wiki_user.url}{self.wiki_user.scriptPath}"
-        link = Link.create(url=url, text=self.wiki_user.wikiId, target="_blank")
-
-        record = {
-            "#": self.row_no,
-            "wiki": link,
-            "version": self.wiki_user.version,
-            "pages": "",
-            "backup": "✅" if self.wiki_backup.exists() else "❌",
-            "git": "✅" if self.wiki_backup.hasGit() else "❌",
-            "age": "",
-            "login": "",
-        }
-        return record
 
 
 class WikiCheck:
@@ -96,7 +51,7 @@ class WikiGrid:
         self.lod = []
         self.wikistates_by_row_no = {}
         for index, wiki_user in enumerate(self.sorted_wiki_users):
-            wiki_state = WikiState(index, wiki_user)
+            wiki_state = MediaWikiSite(wiki_user=wiki_user,row_index=index)
             record = wiki_state.as_dict()
             self.lod.append(record)
             self.wikistates_by_row_no[wiki_state.row_no] = wiki_state
@@ -186,16 +141,14 @@ class WikiGrid:
         except BaseException as ex:
             self.solution.handle_exception(ex)
 
-    def check_pages(self, wiki_state):
+    def check_pages(self, wiki_state:MediaWikiSite):
         """
         Try login for wiki user and report success or failure.
         """
         try:
             try:
                 client=wiki_state.wiki_client
-                if client.needs_login:
-                    client.login()
-                stats = wiki_state.wiki_client.get_site_statistics()
+                stats = client.get_site_statistics()
                 pages = stats["pages"]
                 self.lod_grid.update_cell(wiki_state.row_no, "login", f"✅")
                 self.lod_grid.update_cell(wiki_state.row_no, "pages", f"✅{pages}")
@@ -206,16 +159,12 @@ class WikiGrid:
         except BaseException as ex:
             self.solution.handle_exception(ex)
 
-    def check_wiki_version(self, wiki_state):
+    def check_wiki_version(self, wiki_state:MediaWikiSite):
         """
         Check the MediaWiki version for a specific WikiState.
         """
         try:
-            wiki_url = wiki_state.wiki_user.getWikiUrl()
-            if not "index.php" in wiki_url:
-                wiki_url=f"{wiki_url}/index.php"
-            mw_site=MediaWikiSite(wiki_url)
-            mw_version = mw_site.check_version()
+            mw_version = wiki_state.check_version()
             if not mw_version.startswith("MediaWiki"):
                 mw_version = f"MediaWiki {mw_version}"
             row = self.lod_grid.get_row_for_key(wiki_state.row_no)

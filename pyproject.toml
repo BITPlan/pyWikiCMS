@@ -21,7 +21,7 @@ dependencies = [
     # https://pypi.org/project/pyLodStorage/
 	"pyLodStorage>=0.14.2",
     # https://pypi.org/project/py-3rdparty-mediawiki/
-    'py-3rdparty-mediawiki>=0.15.1',
+    'py-3rdparty-mediawiki>=0.15.3',
     # Beautiful Soup HTML parser
     # https://pypi.org/project/beautifulsoup4/
     'beautifulsoup4>=4.9.3',
@@ -72,3 +72,4 @@ only-include = ["frontend"]
 
 [project.scripts]
 wikicms = "frontend.cmsmain:main"
+tsite = "frontend.tsite:main"

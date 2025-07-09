@@ -3,6 +3,7 @@ Created on 2025-03-09
 
 @author: wf
 """
+from wikibot3rd.wikiuser import WikiUser
 from ngwidgets.basetest import Basetest
 from frontend.mediawiki_site import MediaWikiSite
 
@@ -30,26 +31,28 @@ class TestMediawikiSite(Basetest):
         # List of wiki URLs and their expected versions
         # Format: (wiki_url, expected_version)
         wiki_test_cases = [
-            ("http://playground-mw.bitplan.com:9180/index.php","1."),
-            ("http://wiki.bitplan.com/index.php", "1.35.5"),
-            ("https://en.wikipedia.org/wiki", "1.4")
+            ("Thalia","1.39.10"),
+            ("wiki", "1.35.5"),
         ]
+        wiki_users = WikiUser.getWikiUsers()
 
         # Run tests for each wiki URL
-        for wiki_url, expected_version in wiki_test_cases:
-            with self.subTest(wiki_url=wiki_url):
-                # Create MediaWikiSite instance
-                wiki_site = MediaWikiSite(wiki_url,debug=self.debug)
+        for wiki_id, expected_version in wiki_test_cases:
+            with self.subTest(wiki_id=wiki_id):
+                if wiki_id in wiki_users:
+                    wiki_user=wiki_users.get(wiki_id)
+                    # Create MediaWikiSite instance
+                    wiki_site = MediaWikiSite(wiki_user,debug=self.debug)
 
-                # Get the actual version
-                actual_version = wiki_site.check_version()
+                    # Get the actual version
+                    actual_version = wiki_site.check_version()
 
-                # Check if the version meets expectations
-                # Using startswith to handle patch version differences
-                self.assertTrue(
-                    actual_version.startswith(expected_version),
-                    f"Expected version starting with {expected_version} but got {actual_version}"
-                )
+                    # Check if the version meets expectations
+                    # Using startswith to handle patch version differences
+                    self.assertTrue(
+                        actual_version.startswith(expected_version),
+                        f"Expected version starting with {expected_version} but got {actual_version}"
+                    )
 
-                if self.debug:
-                    print(f"{wiki_url}: {actual_version}")
+                    if self.debug:
+                        print(f"{wiki_user}: {actual_version}")
