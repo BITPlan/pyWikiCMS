@@ -54,16 +54,6 @@ class Site:
     def init_remote(self):
         self.remote = Remote(host=self.hostname, container=self.container)
 
-    def ssh_able(self) -> Optional[datetime]:
-        """
-        Returns current timestamp if SSH to server is possible, otherwise None.
-        """
-        result = self.remote.run("echo ok")
-        timestamp = None
-        if result.returncode == 0 and "ok" in result.stdout:
-            timestamp = datetime.now()
-        return timestamp
-
     def _resolve_ip(self) -> None:
         """Resolve IP address for the site name"""
         try:

@@ -41,6 +41,17 @@ class Stats:
         return stats_obj
 
     @property
+    def is_directory(self) -> bool:
+        """
+        Check if the file path represents a directory
+
+        Returns:
+            True if directory, False otherwise
+        """
+        is_directory=self.permissions_rights.startswith('d')
+        return is_directory
+
+    @property
     def mtime_iso(self) -> str:
         """
         Get modification time as ISO format string
@@ -99,6 +110,16 @@ class Remote:
             self.log.log("✅", "remote",remote_cmd)
         return result
 
+    def ssh_able(self) -> Optional[datetime]:
+        """
+        Returns current timestamp if SSH to server is possible, otherwise None.
+        """
+        result = self.run("echo ok")
+        timestamp = None
+        if result.returncode == 0 and "ok" in result.stdout:
+            timestamp = datetime.now()
+        return timestamp
+
     def get_file_stats(self, filepath: str) -> Optional[Stats]:
         """
         Get file statistics for the given filepath
@@ -115,3 +136,37 @@ class Remote:
         if result.returncode == 0:
             stats_obj = Stats.of_stats(result.stdout)
         return stats_obj
+
+    def listdir(self, dirpath: str) -> Optional[list[str]]:
+        """
+        List directory contents for the given directory path
+
+        Args:
+            dirpath: path to the directory to list
+
+        Returns:
+            List of filenames or None if directory doesn't exist
+        """
+        cmd = f"ls -1 {dirpath}"
+        result = self.run(cmd)
+        files = None
+        if result.returncode == 0:
+            files = result.stdout.splitlines()
+        return files
+
+    def readlines(self, filepath: str) -> Optional[list[str]]:
+        """
+        Read lines from the given filepath
+
+        Args:
+            filepath: path to the file to read
+
+        Returns:
+            List of lines or None if file doesn't exist
+        """
+        cmd = f"cat {filepath}"
+        result = self.run(cmd)
+        lines = None
+        if result.returncode == 0:
+            lines = result.stdout.splitlines()
+        return lines

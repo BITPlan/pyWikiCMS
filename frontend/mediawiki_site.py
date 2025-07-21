@@ -13,7 +13,7 @@ from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikipush import WikiPush
 from wikibot3rd.wikiuser import WikiUser
 
-from backend.family import WikiBackup
+from backend.backup import WikiBackup
 from frontend.html_table import HtmlTables
 
 

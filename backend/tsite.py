@@ -39,7 +39,7 @@ class TransferSite:
         """
         index=0
         for wiki in self.get_selected_wikis():
-            ssh_timestamp=wiki.ssh_able()
+            ssh_timestamp=wiki.remote.ssh_able()
             ok=Site.state_symbol(ssh_timestamp is not None)
             index+=1
             print(f"{index:02d}: {wiki.hostname:<26} {ok} {ssh_timestamp or ''}")

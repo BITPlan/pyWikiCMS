@@ -12,6 +12,7 @@ import socket
 from sys import platform
 from typing import Dict, Optional
 
+from backend.remote import Remote
 from backend.site import Site, WikiSite, FrontendSite
 from basemkit.persistent_log import Log
 from basemkit.shell import Shell
@@ -44,41 +45,19 @@ class Server:
     platform: str = field(default="", init=False, repr=False)
     ip: str = field(default="127.0.0.1", init=False, repr=False)
     debug: bool = field(default=False, init=False, repr=False)
-    shell: Shell = field(default=None, init=False, repr=False)
+    remote: Remote = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         """
         Initialize calculated fields
         """
-        self.shell = Shell()
-        self.log=Log()
+        self.remote=Remote(self.hostname)
 
     @classmethod
     def of_yaml(cls, yaml_path: str) -> "Server":
         """Load server configurations from YAML file."""
         server_configs = cls.load_from_yaml_file(yaml_path)
         return server_configs
-
-    def probe_remote_property(self, prop_name:str, command: str) -> str:
-        """
-        Probe a single property from the remote server.
-
-        Args:
-            prop_name(str): the name of the property to probe
-            command (str): The command to run on the remote server
-
-        Returns:
-            str: The command output or None if failed
-        """
-        ssh_cmd = f'ssh -o ConnectTimeout={self.timeout} {self.hostname} "{command}"'
-        result = self.shell.run(ssh_cmd, tee=False)
-        value=None
-        if result.returncode != 0:
-            self.log.log("❌", prop_name,ssh_cmd)
-        else:
-            self.log.log("✅", prop_name,ssh_cmd)
-            value=result.stdout.strip()
-        return value
 
     def probe_remote(self):
         """
