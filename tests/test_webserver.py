@@ -8,8 +8,8 @@ import warnings
 
 from ngwidgets.webserver_test import WebserverTest
 
-from frontend.cmsmain import CmsMain
 from backend.server import Server
+from frontend.cmsmain import CmsMain
 from frontend.webserver import CmsWebServer
 from tests.test_wikicms import TestWikiCMS
 

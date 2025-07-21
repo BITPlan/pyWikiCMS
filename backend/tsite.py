@@ -17,8 +17,6 @@ from basemkit.shell import Shell
 from profiwiki.version import Version
 from backend.server import Servers
 
-
-
 class TransferSite:
     """
     transfer a MediaWiki Site
@@ -28,6 +26,7 @@ class TransferSite:
         """
         constructor
         """
+        self.args=args
         self.source = args.source
         self.target = args.target
         self.sitename = args.sitename
@@ -51,7 +50,7 @@ class TransferSite:
 
     def checksite(self) -> bool:
         """
-        Prints reachability status of source and target.
+        Prints reachability status of sites
         Returns True if both are reachable, else False.
         """
         self.is_reachable(self.source)
@@ -60,8 +59,38 @@ class TransferSite:
 
     def checkapache(self):
         """
-        check the apache configurations for source and target
+        check the apache configurations
         """
+        pass
+
+
+    def get_selected_wikis(self):
+        """
+        Generator that yields selected wikis based on arguments
+
+        Yields:
+            tuple: (server_name, wiki_name, wiki) for each selected wiki
+        """
+        if self.args.all:
+            # Yield all wikis from all servers
+            for server_name, server in self.servers.servers.items():
+                for wiki_name, wiki in server.wikis.items():
+                    yield (server_name, wiki_name, wiki)
+        else:
+            # Yield source and target wikis if available
+            if self.source:
+                source_server = self.servers.servers.get(self.source)
+                if source_server:
+                    source_wiki = source_server.wikis.get(self.sitename)
+                    if source_wiki:
+                        yield (self.source, self.sitename, source_wiki)
+
+            if self.target and self.sitename:
+                target_server = self.servers.servers.get(self.target)
+                if target_server:
+                    target_wiki = target_server.wikis.get(self.sitename)
+                    if target_wiki:
+                        yield (self.target, self.sitename, target_wiki)
 
     def list_sites(self) -> None:
         """
@@ -101,6 +130,12 @@ class TransferSiteCmd(BaseCmd):
             "--list-sites",
             action="store_true",
             help="list available sites",
+        )
+        parser.add_argument(
+            "-a",
+            "--all",
+            action="store_true",
+            help="perform action on all sites",
         )
         parser.add_argument(
             "-sn", "--sitename", help="specify the site name (also used as conf name)"

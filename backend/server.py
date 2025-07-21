@@ -15,6 +15,7 @@ from basemkit.shell import Shell
 from basemkit.yamlable import lod_storable
 from basemkit.persistent_log import Log
 from backend.site import Site, WikiSite
+import pymysql
 
 @lod_storable
 class Server:
@@ -97,8 +98,6 @@ class Server:
             self.ip = self.probe_remote_property("ip","hostname -I | awk '{print $1}'")
 
             self.probe_apache_configs()
-
-
 
 
     def probe_apache_configs(self):

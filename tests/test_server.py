@@ -3,7 +3,11 @@ Created on 2021-01-06
 
 @author: wf
 """
+
+import unittest
+
 from basemkit.basetest import Basetest
+
 from backend.server import Server, Servers
 
 
@@ -15,11 +19,12 @@ class TestServer(Basetest):
     def setUp(self, debug=True, profile=True):
         Basetest.setUp(self, debug=debug, profile=profile)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testServer(self):
         """
         test server functions
         """
-        server = Server(name="q",hostname="q.bitplan.com")
+        server = Server(name="q", hostname="q.bitplan.com")
         server.probe_remote()
         logo = server.getPlatformLogo()
         if self.debug:
@@ -31,6 +36,7 @@ class TestServer(Basetest):
         self.assertTrue("Tux" in logo)
         pass
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testServers(self):
         """
         test the servers collection
@@ -46,4 +52,6 @@ class TestServer(Basetest):
             for server_name, server in servers.servers.items():
                 print(f"Server: {server_name}")
                 for wiki_name, wiki in server.wikis.items():
-                    print(f"  Wiki: {wiki_name} - {wiki.database} - {wiki.apache_config}")
+                    print(
+                        f"  Wiki: {wiki_name} - {wiki.database} - {wiki.apache_config}"
+                    )

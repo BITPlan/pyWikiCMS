@@ -14,8 +14,8 @@ from fastapi.responses import HTMLResponse
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
-from frontend.frame import HtmlFrame
 from backend.site import Site
+from frontend.frame import HtmlFrame
 
 
 class Frontend(object):

@@ -44,6 +44,3 @@ class WikiBackup(object):
             bool: True if the self.gitPath directory exists
         """
         return os.path.isdir(self.gitPath)
-
-
-

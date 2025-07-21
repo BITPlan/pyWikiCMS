@@ -132,7 +132,6 @@ class CmsSolution(InputWebSolution):
     async def home(self):
         """
         provide the main content page
-
         """
 
         def show():

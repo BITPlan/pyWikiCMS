@@ -1,5 +1,5 @@
 """
-Created on 27.07.2020
+Created on 2020-07-27
 
 @author: wf
 """
@@ -7,7 +7,7 @@ Created on 27.07.2020
 import os
 
 # from wikibot.smw import SMWClient
-from ngwidgets.basetest import Basetest
+from basemkit.basetest import Basetest
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 

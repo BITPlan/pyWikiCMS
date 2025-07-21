@@ -4,9 +4,9 @@ Created on 2021-01-01
 @author: wf
 """
 
-from ngwidgets.basetest import Basetest
+from basemkit.basetest import Basetest
 
-from frontend.family import LocalWiki, WikiFamily
+from backend.family import LocalWiki, WikiFamily
 
 
 class TestFamily(Basetest):
