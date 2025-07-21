@@ -15,6 +15,8 @@ from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from basemkit.shell import Shell
 from profiwiki.version import Version
+from backend.server import Servers
+
 
 
 class TransferSite:
@@ -31,6 +33,7 @@ class TransferSite:
         self.sitename = args.sitename
         self.shell = Shell()
         self.log = Log()
+        self.servers = Servers.of_config_path()
 
     def is_reachable(self, server: str, timeout: int = 5) -> bool:
         """
@@ -60,6 +63,16 @@ class TransferSite:
         check the apache configurations for source and target
         """
 
+    def list_sites(self) -> None:
+        """
+        List all available sites from all servers
+        """
+        print("Available sites:")
+        for server_name, server in self.servers.servers.items():
+            print(f"Server: {server_name}")
+            for wiki_name, wiki in server.wikis.items():
+                database_info = f" (DB: {wiki.database})" if wiki.database else ""
+                print(f"  - {wiki_name}{database_info}")
 
 class TransferSiteCmd(BaseCmd):
     """
@@ -102,6 +115,9 @@ class TransferSiteCmd(BaseCmd):
         if args.checksite:
             tsite.checksite()
             handled=True
+        if args.list_sites:
+            tsite.list_sites()
+            handled = True
         if args.checkapache:
             handled=tsite.checkapache()
         return handled

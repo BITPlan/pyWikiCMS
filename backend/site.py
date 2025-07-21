@@ -30,6 +30,8 @@ class WikiSite(Site):
     database: Optional[str] = None
     defaultPage: str = "Main Page"
     lang: str = "en"
+    # if container is set the wiki is provided by a docker container
+    container: str=None
 
     # LocalWiki properties
     family: Optional[object] = field(default=None, init=False)

@@ -64,12 +64,13 @@ test = [
 ]
 
 [tool.hatch.build.targets.wheel]
-only-include = ["frontend"]
+only-include = ["frontend","backend"]
 
 [tool.hatch.build.targets.wheel.sources]
 "frontend" = "frontend"
+"backend" = "backend"
 
 
 [project.scripts]
 wikicms = "frontend.cmsmain:main"
-tsite = "frontend.tsite:main"
+tsite = "backend.tsite:main"
