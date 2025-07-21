@@ -16,6 +16,10 @@ maintainers = [
 readme = "README.md"
 license = {text = "Apache-2.0"}
 dependencies = [
+	# https://pypi.org/project/pybasemkit/
+  	# https://github.com/WolfgangFahl/pybasemkit
+  	# Python base module kit: YAML/JSON I/O, structured logging, CLI tooling, shell execution, and remote pydevd debug support.
+ 	"pybasemkit>=0.0.5",
     # https://github.com/WolfgangFahl/nicegui_widgets
     "ngwidgets>=0.28.0",
     # https://pypi.org/project/pyLodStorage/
@@ -30,7 +34,9 @@ dependencies = [
     #https://pypi.org/project/pydevd/
     'pydevd',
     # https://pypi.org/project/rdflib/
-    'rdflib>=7.0.0'
+    'rdflib>=7.0.0',
+    # https://pypi.org/project/PyMySQL/
+    'PyMySQL>=1.1.1'
  ]
 
 requires-python = ">=3.10"
