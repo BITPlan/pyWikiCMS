@@ -6,15 +6,15 @@ Created on 2022-12-03
 
 import glob
 import os
-import time
 from pathlib import Path
-
-from ngwidgets.lod_grid import GridConfig, ListOfDictsGrid
-from ngwidgets.progress import NiceguiProgressbar
-from nicegui import ui
-from wikibot3rd.wikiuser import WikiUser
+import time
 
 from frontend.mediawiki_site import MediaWikiSite
+from ngwidgets.lod_grid import GridConfig, ListOfDictsGrid
+from ngwidgets.progress import NiceguiProgressbar
+from ngwidgets.task_runner import TaskRunner
+from nicegui import ui
+from wikibot3rd.wikiuser import WikiUser
 
 
 class WikiCheck:
@@ -52,6 +52,7 @@ class WikiGrid:
             self.wiki_users.values(), key=lambda w: w.wikiId
         )
         self.lod = []
+        self.task_runner = TaskRunner(timeout=40)
         self.wikistates_by_row_no = {}
         for index, wiki_user in enumerate(self.sorted_wiki_users):
             wiki_state = MediaWikiSite(wiki_user=wiki_user, row_index=index)
@@ -67,6 +68,7 @@ class WikiGrid:
         self.progressbar = NiceguiProgressbar(
             len(self.wikistates_by_row_no), "work on wikis", "steps"
         )
+        self.task_runner.progress = self.progressbar
         self.as_grid()
         self.lod_grid.update()
 
@@ -118,24 +120,36 @@ class WikiGrid:
             with self.solution.content_div:
                 total = len(self.select_lod)
                 ui.notify(f"Checking {total} wikis ...")
-                progress_bar = self.progressbar
-                steps = 0
-                for wiki_check in self.wiki_checks:
-                    if wiki_check.checked:
-                        steps += total
-                progress_bar.total = steps
-                progress_bar.reset()
-                for row in self.select_lod:
-                    row_no = row["#"]
-                    wiki_state = self.wikistates_by_row_no.get(row_no)
-                    wiki_state.task_runner.run(lambda: self.run_wiki_check(row_no))
+                # Use single task_runner
+                self.task_runner.run_blocking(self.run_all_wiki_checks)
 
-    async def run_wiki_check(self, row_no: int):
+    def run_all_wiki_checks(self):
         """
-        perform the selected wiki checks
+        Process all selected wikis sequentially
         """
         try:
-            wiki_state = self.wikistates_by_row_no.get(row_no)
+            # Calculate total steps
+            steps = 0
+            for wiki_check in self.wiki_checks:
+                if wiki_check.checked:
+                    steps += len(self.select_lod)
+            self.progressbar.total = steps
+            self.progressbar.reset()
+
+            # Process each wiki sequentially
+            for row in self.select_lod:
+                row_no = row["#"]
+                wiki_state = self.wikistates_by_row_no.get(row_no)
+                self.run_wiki_check(wiki_state)
+
+        except BaseException as ex:
+            self.solution.handle_exception(ex)
+
+    def run_wiki_check(self, wiki_state):
+        """
+        perform the selected wiki checks for a single wiki
+        """
+        try:
             for wiki_check in self.wiki_checks:
                 if wiki_check.checked:
                     wiki_check.func(wiki_state)
