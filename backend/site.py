@@ -9,7 +9,7 @@ import re
 import socket
 from typing import Optional
 
-from basekit.yamlable import lod_storable
+from basemkit.yamlable import lod_storable
 import requests
 
 
