@@ -6,15 +6,17 @@ Created on 2021-01-01
 
 import unittest
 
+from basemkit.basetest import Basetest
+
 from backend.server import Servers
 from backend.site import WikiSite
-from basemkit.basetest import Basetest
 
 
 class TestSite(Basetest):
     """
     test wiki
     """
+
     def setUp(self, debug=True, profile=True):
         Basetest.setUp(self, debug=debug, profile=profile)
         self.servers = Servers.of_config_path()
@@ -24,7 +26,7 @@ class TestSite(Basetest):
         """
         test fixing BITPlan wiki family style logo references with a site subpath
         """
-        wiki=self.servers.wikis_by_name.get("wiki.bitplan.com")
+        wiki = self.servers.wikis_by_name.get("wiki.bitplan.com")
         logoFile = wiki.getLogo()
         if self.debug:
             print(logoFile)
@@ -35,7 +37,7 @@ class TestSite(Basetest):
         """
         test getting the status code for the a wiki
         """
-        wiki=self.servers.wikis_by_name.get("wiki.bitplan.com")
+        wiki = self.servers.wikis_by_name.get("wiki.bitplan.com")
         statusCode = wiki.getStatusCode(5.0)
         self.assertEqual(200, statusCode)
 
@@ -44,7 +46,7 @@ class TestSite(Basetest):
         """
         get getting a setting from the local settings
         """
-        wiki=self.servers.wikis_by_name.get("wgt.bitplan.com")
+        wiki = self.servers.wikis_by_name.get("wgt.bitplan.com")
         wiki.settingLines = [
             """$wgLogo = "/images/wgt/thumb/3/35/Heureka-wgt.png/132px-Heureka-wgt.png";"""
         ]

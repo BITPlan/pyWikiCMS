@@ -46,12 +46,32 @@ class TransferSite:
             if self.args.debug:
                 wiki.remote.log.dump()
 
+    def checkfamily(self):
+        """
+        check the family probing
+        """
+        for server in self.get_selected_servers():
+            wikis=server.probe_wiki_family()
+
     def checkapache(self):
         """
         check the apache configurations
         """
         pass
 
+    def get_selected_servers(self):
+        """
+        Generator that yields selected servers based on arguments
+        """
+        if self.args.all:
+            # Yield all servers
+            for server in self.servers.servers.values():
+                yield server
+        else:
+            if self.source and self.source in self.servers.servers:
+                yield self.servers.servers.get(self.source)
+            if self.target and self.target in self.servers.servers:
+                yield self.servers.servers.get(self.target)
 
     def get_selected_wikis(self):
         """
@@ -98,6 +118,12 @@ class TransferSiteCmd(BaseCmd):
             help="check site state of source/target",
         )
         parser.add_argument(
+            "-cf",
+            "--checkfamiliy",
+            action="store_true",
+            help="check family state of source/target",
+        )
+        parser.add_argument(
             "-ca",
             "--checkapache",
             action="store_true",
@@ -126,6 +152,9 @@ class TransferSiteCmd(BaseCmd):
         tsite = TransferSite(args)
         if args.checksite:
             tsite.checksite()
+            handled=True
+        if args.checkfamily:
+            tsite.checkfamily()
             handled=True
         if args.list_sites:
             tsite.list_sites()

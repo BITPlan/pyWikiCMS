@@ -46,6 +46,8 @@ class TestServer(Basetest):
 
         # Probe all servers
         for server_name, server in servers.servers.items():
+            if self.debug:
+                print(f"probing {server_name}")
             server.probe_remote()
 
         if self.debug:
@@ -55,3 +57,15 @@ class TestServer(Basetest):
                     print(
                         f"  Wiki: {wiki_name} - {wiki.database} - {wiki.apache_config}"
                     )
+                server.remote.log.dump()
+
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
+    def testFamily(self):
+        """
+        test the servers collection
+        """
+        servers = Servers.of_config_path()
+        arche=servers.servers.get("arche")
+        arche.probe_wiki_family()
+
+

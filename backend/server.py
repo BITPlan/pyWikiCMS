@@ -15,7 +15,6 @@ from typing import Dict, Optional
 from backend.remote import Remote
 from backend.site import Site, WikiSite, FrontendSite
 from basemkit.persistent_log import Log
-from basemkit.shell import Shell
 from basemkit.yamlable import lod_storable
 import pymysql
 
@@ -46,11 +45,13 @@ class Server:
     ip: str = field(default="127.0.0.1", init=False, repr=False)
     debug: bool = field(default=False, init=False, repr=False)
     remote: Remote = field(default=None, init=False, repr=False)
+    log: Log = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         """
         Initialize calculated fields
         """
+        self.log=Log()
         self.remote=Remote(self.hostname)
 
     @classmethod
@@ -67,17 +68,17 @@ class Server:
             timeout (int): SSH connection timeout in seconds
         """
         # Check if SSH is reachable
-        ssh_test = self.probe_remote_property("pingable","echo ok")
-        self.pingable=ssh_test == "ok"
-        if self.pingable:
+        ssh_timestamp = self.remote.ssh_able()
+
+        if ssh_timestamp:
             # Get platform information
-            self.platform = self.probe_remote_property('platform',"python3 -c 'import sys; print(sys.platform)'")
+            self.platform = self.remote.get_output("python3 -c 'import sys; print(sys.platform)'")
 
             # Get hostname
-            self.hostname = self.probe_remote_property("hostname","hostname")
+            self.hostname = self.remote.get_output("hostname")
 
             # Get IP address from remote perspective
-            self.ip = self.probe_remote_property("ip","hostname -I | awk '{print $1}'")
+            self.ip = self.remote.get_output("hostname -I | awk '{print $1}'")
 
             self.probe_apache_configs()
 
@@ -86,7 +87,7 @@ class Server:
         """
         Probe and set Apache configuration for all sites
         """
-        apache_configs = self.probe_remote_property("apache-config", "sudo apachectl -S | grep namevhost")
+        apache_configs = self.remote.get_output("sudo apachectl -S | grep namevhost")
         if apache_configs:
             for line in apache_configs.split('\n'):
                 if line.strip():
@@ -116,27 +117,42 @@ class Server:
                 print(str(ex))
             self.ip = "127.0.0.1"
 
-    def configure_wiki_family(self, sitedir: str = "/var/www/mediawiki/sites") -> None:
+    def probe_wiki_family(self, sitedir: str = "/var/www/mediawiki/sites") -> list[WikiSite]:
         """
-        Configure this server as a wiki family by scanning sitedir for LocalSettings.php files
+        probe this server for a wiki
+        family by scanning sitedir for LocalSettings.php files
 
         Args:
             sitedir: path to the site definitions directory
+
+        Returns:
+            List of WikiSites found
         """
         self.sitedir = sitedir
-        if not os.path.isdir(sitedir):
-            return
+        wikisites = []
 
-        for site_name in os.listdir(sitedir):
-            local_settings_path = f"{sitedir}/{site_name}/LocalSettings.php"
-            if os.path.isfile(local_settings_path):
-                site = Site(
-                    name=site_name,
-                    database="",  # Will be populated from LocalSettings
-                    wikiId=site_name.split(".")[0]
-                )
-                site.configure_local_wiki(family=self, localSettings=local_settings_path)
-                self.wikis[site_name] = site
+        stats = self.remote.get_file_stats(sitedir)
+        if stats is None or not stats.is_directory:
+            return wikisites
+
+        site_files = self.remote.listdir(sitedir)
+        if site_files is None:
+            return wikisites
+
+        for site_file in site_files:
+            local_settings_path = f"{sitedir}/{site_file}/LocalSettings.php"
+            settings_stats = self.remote.get_file_stats(local_settings_path)
+
+            if settings_stats is not None and not settings_stats.is_directory:
+                site_name=site_file
+                if site_name not in self.wikis:
+                    self.log.log("⚠️", "configure_wiki_family", f"Site {site_name} found but not declared")
+                else:
+                    site=self.wikis.get(site_name)
+                    site.configure_local_wiki(family=self, localSettings=local_settings_path)
+                    wikisites.append(site)
+
+        return wikisites
 
     def sqlGetDatabaseUrl(
         self, dbname: str, username: str, password: str, hostname: str = None
@@ -308,6 +324,13 @@ class Servers:
     wikis_by_name: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
     wikis_by_id: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
     frontends_by_name: Dict[str,FrontendSite] = field(default_factory=dict, init=False, repr=False)
+    log: Log = field(default=None, init=False, repr=False)
+
+    def __post_init__(self):
+        """
+        Initialize calculated fields
+        """
+        self.log=Log()
 
     @classmethod
     def of_config_path(cls) -> "Servers":
@@ -343,7 +366,6 @@ class Servers:
             os.makedirs(config_path)
         return config_path
 
-
     def init(self) -> None:
         """
         Initialize wikis_by_name dictionary
@@ -366,4 +388,4 @@ class Servers:
                     frontend.wikisite=self.wikis_by_id.get(frontend.wikiId)
                 else:
                     msg=f"invalid frontend wikiId {frontend.wikiId}"
-                    frontend.remote.log.log("❌","frontend",msg)
+                    self.log.log("❌","frontend",msg)

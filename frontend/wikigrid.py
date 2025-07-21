@@ -6,15 +6,16 @@ Created on 2022-12-03
 
 import glob
 import os
-from pathlib import Path
 import time
+from pathlib import Path
 
-from frontend.mediawiki_site import MediaWikiSite
 from ngwidgets.lod_grid import GridConfig, ListOfDictsGrid
 from ngwidgets.progress import NiceguiProgressbar
 from ngwidgets.task_runner import TaskRunner
 from nicegui import ui
 from wikibot3rd.wikiuser import WikiUser
+
+from frontend.mediawiki_site import MediaWikiSite
 
 
 class WikiCheck:

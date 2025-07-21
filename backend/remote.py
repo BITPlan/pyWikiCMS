@@ -48,7 +48,7 @@ class Stats:
         Returns:
             True if directory, False otherwise
         """
-        is_directory=self.permissions_rights.startswith('d')
+        is_directory=self.permissions.startswith('d')
         return is_directory
 
     @property
@@ -109,6 +109,22 @@ class Remote:
         else:
             self.log.log("✅", "remote",remote_cmd)
         return result
+
+    def get_output(self, cmd: str) -> Optional[str]:
+        """
+        Run command and return stripped stdout or None if failed
+
+        Args:
+            cmd: command to run
+
+        Returns:
+            Stripped stdout or None if command failed
+        """
+        result = self.run(cmd)
+        output = None
+        if result.returncode == 0:
+            output = result.stdout.strip()
+        return output
 
     def ssh_able(self) -> Optional[datetime]:
         """

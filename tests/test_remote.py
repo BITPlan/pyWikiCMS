@@ -26,7 +26,11 @@ class TestRemote(Basetest):
         """
         test_cases = (
             ("r.bitplan.com", None, "/etc/apache2/sites-available/crm.conf"),
-            ("r.bitplan.com", "smartcrm-java", "/root/.jpa/Production/com.bitplan.smartCRM.xml")
+            (
+                "r.bitplan.com",
+                "smartcrm-java",
+                "/root/.jpa/Production/com.bitplan.smartCRM.xml",
+            ),
         )
 
         for host, container, filepath in test_cases:

@@ -7,14 +7,15 @@ Created on 2020-07-27
 import re
 import traceback
 
-from backend.site import WikiSite
+import requests
 from bs4 import BeautifulSoup, Comment
 from fastapi import Response
 from fastapi.responses import HTMLResponse
-from frontend.frame import HtmlFrame
-import requests
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
+
+from backend.site import WikiSite
+from frontend.frame import HtmlFrame
 
 
 class Frontend(object):
@@ -24,7 +25,7 @@ class Frontend(object):
 
     def __init__(
         self,
-        site:WikiSite,
+        site: WikiSite,
         parser: str = "lxml",
         proxy_prefixes=["/images/", "/videos"],
         debug: bool = False,

@@ -4,15 +4,16 @@ Created on 2020-12-30
 @author: wf
 """
 
-from backend.server import Servers
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
-from frontend.version import Version
-from frontend.wikigrid import WikiGrid
 from ngwidgets.input_webserver import InputWebserver, InputWebSolution
 from ngwidgets.sso_users_solution import SsoSolution
 from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
+
+from backend.server import Servers
+from frontend.version import Version
+from frontend.wikigrid import WikiGrid
 
 
 class CmsWebServer(InputWebserver):
@@ -89,9 +90,9 @@ class CmsWebServer(InputWebserver):
         if siteNames is None:
             return
         for siteName in siteNames:
-            frontend=self.servers.frontends_by_name.get(siteName)
+            frontend = self.servers.frontends_by_name.get(siteName)
             if frontend:
-                frontend.enabled=True
+                frontend.enabled = True
 
     def configure_run(self):
         """
@@ -118,7 +119,7 @@ class CmsSolution(InputWebSolution):
         super().__init__(webserver, client)  # Call to the superclass constructor
         self.wiki_grid = WikiGrid(self)
         self.servers = webserver.servers
-        self.server_html={}
+        self.server_html = {}
 
     def configure_menu(self):
         """

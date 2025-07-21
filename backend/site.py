@@ -8,9 +8,9 @@ from dataclasses import field, dataclass
 import re
 import socket
 from typing import Optional
-from datetime import datetime
-from basemkit.yamlable import lod_storable
+
 from backend.remote import Remote
+from basemkit.yamlable import lod_storable
 import requests
 
 
@@ -89,7 +89,7 @@ class WikiSite(Site):
         super().__post_init__()
         pass
 
-    def configure_local_wiki(self, family: object = None, localSettings: str = None) -> None:
+    def configure_local_wiki(self, family = None, localSettings: str = None) -> None:
         """
         Configure this site as a local wiki
 
@@ -106,8 +106,7 @@ class WikiSite(Site):
 
     def _load_settings(self) -> None:
         """Load settings from LocalSettings.php file"""
-        with open(self.localSettings) as settings_file:
-            self.settingLines = settings_file.readlines()
+        self.settingLines = self.family.remote.readlines(self.localSettings)
 
     def _configure_from_settings(self) -> None:
         """Configure site properties from loaded settings"""
@@ -121,7 +120,7 @@ class WikiSite(Site):
         self.scriptPath = self.getSetting("wgScriptPath") or ""
 
         if self.url:
-            self.url = f"{self.url}{self.scriptPath}/"
+            self.url = f"{self.url}{self.scriptPath}"
             self.statusCode = self.getStatusCode()
 
     def getStatusCode(self, timeout: float = 0.5) -> int:
