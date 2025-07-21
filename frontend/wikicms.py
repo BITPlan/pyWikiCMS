@@ -7,15 +7,14 @@ Created on 2020-07-27
 import re
 import traceback
 
-import requests
+from backend.site import WikiSite
 from bs4 import BeautifulSoup, Comment
 from fastapi import Response
 from fastapi.responses import HTMLResponse
+from frontend.frame import HtmlFrame
+import requests
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
-
-from backend.site import Site
-from frontend.frame import HtmlFrame
 
 
 class Frontend(object):
@@ -25,7 +24,7 @@ class Frontend(object):
 
     def __init__(
         self,
-        site_name: str,
+        site:WikiSite,
         parser: str = "lxml",
         proxy_prefixes=["/images/", "/videos"],
         debug: bool = False,
@@ -40,10 +39,10 @@ class Frontend(object):
             debug: (bool): True if debugging should be on
             filterKeys: (list): a list of keys for filters to be applied e.g. editsection
         """
-        self.name = site_name
         self.parser = parser
         self.proxy_prefixes = proxy_prefixes
-        self.site = Site(site_name)
+        self.site = site
+        self.name = self.site.name
         self.debug = debug
         self.wiki = None
         if filterKeys is None:
@@ -90,19 +89,15 @@ class Frontend(object):
 
         return site, remaining_path
 
-    def open(self, ws=None):
+    def open(self):
         """
         open the frontend
 
-        Args:
-             ws: optional Nicegui webserver
         """
-        self.ws = ws
         if self.wiki is None:
             self.wiki = WikiClient.ofWikiId(self.site.wikiId)
             self.wiki.login()
             self.smwclient = SMWClient(self.wiki.getSite())
-            self.site.open(ws)
             self.cms_pages = self.get_cms_pages()
 
     def get_cms_pages(self) -> dict:

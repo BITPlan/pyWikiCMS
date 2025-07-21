@@ -4,21 +4,20 @@ Created on 2020-12-30
 @author: wf
 """
 
+from backend.server import Servers
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
+from frontend.version import Version
+from frontend.wikigrid import WikiGrid
 from ngwidgets.input_webserver import InputWebserver, InputWebSolution
 from ngwidgets.sso_users_solution import SsoSolution
 from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
 
-from backend.server import Server
-from frontend.version import Version
-from frontend.wikigrid import WikiGrid
-
 
 class CmsWebServer(InputWebserver):
     """
-    WebServer class that manages the server
+    WebServer class that manages the servers
 
     """
 
@@ -41,9 +40,7 @@ class CmsWebServer(InputWebserver):
 
         """
         InputWebserver.__init__(self, config=CmsWebServer.get_config())
-        self.server = Server()
-        self.server.load()
-        self.enabledSites = ["admin"]
+        self.servers = Servers.of_config_path()
 
         @app.get("/{frontend_name}/{page_path:path}")
         def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
@@ -92,8 +89,9 @@ class CmsWebServer(InputWebserver):
         if siteNames is None:
             return
         for siteName in siteNames:
-            self.server.enableFrontend(siteName, self)
-            self.enabledSites.append(siteName)
+            frontend=self.servers.frontends_by_name.get(siteName)
+            if frontend:
+                frontend.enabled=True
 
     def configure_run(self):
         """
@@ -119,7 +117,8 @@ class CmsSolution(InputWebSolution):
         """
         super().__init__(webserver, client)  # Call to the superclass constructor
         self.wiki_grid = WikiGrid(self)
-        self.server = webserver.server
+        self.servers = webserver.servers
+        self.server_html={}
 
     def configure_menu(self):
         """
@@ -136,7 +135,8 @@ class CmsSolution(InputWebSolution):
 
         def show():
             with self.content_div:
-                self.server_html = ui.html(self.server.asHtml())
+                for server_name, server in self.servers.servers.items():
+                    self.server_html[server_name] = ui.html(server.asHtml())
                 self.wiki_grid.setup()
 
         await self.setup_content_div(show)

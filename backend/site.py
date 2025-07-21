@@ -33,6 +33,7 @@ class Site:
 
     def __post_init__(self):
         """
+        initialize
         """
         self._resolve_ip()
 
@@ -188,3 +189,16 @@ class WikiSite(Site):
             logo_file = f"{self.family.sitedir}/{self.name}{logo_path}"
             return logo_file
         return None
+
+
+@lod_storable
+class FrontendSite(Site):
+    """
+    a frontend site - backed by a WikiSite
+    """
+    wikiId:str = "wiki"
+    defaultPage: str = "Main Page"
+    enabled: bool=False;
+
+    # non persistent field
+    wikisite: WikiSite = field(default=False, init=False, repr=False)

@@ -3,19 +3,21 @@ Created on 2021-01-06
 
 @author: wf
 """
-import re
-import glob
 from dataclasses import field
 import datetime
+import glob
 import os
+import re
 import socket
 from sys import platform
 from typing import Dict, Optional
+
+from backend.site import Site, WikiSite, FrontendSite
+from basemkit.persistent_log import Log
 from basemkit.shell import Shell
 from basemkit.yamlable import lod_storable
-from basemkit.persistent_log import Log
-from backend.site import Site, WikiSite
 import pymysql
+
 
 @lod_storable
 class Server:
@@ -34,6 +36,7 @@ class Server:
     timeout:int=5 # 5 secs
     sites: Dict[str, Site] = field(default_factory=dict)
     wikis: Dict[str, WikiSite] = field(default_factory=dict)
+    frontends: Dict[str,FrontendSite]  = field(default_factory=dict)
 
     # Non-persistent calculated fields
     pingable: bool = field(default=False,init=False, repr=False)
@@ -300,7 +303,7 @@ class Server:
         render me as HTML code
 
         Args:
-            logo_size(int): the logo_size to applyå
+            logo_size(int): the logo_size to apply
         """
         server = self
         logo_html = ""
@@ -324,6 +327,8 @@ class Servers:
     servers: Dict[str, Server] = field(default_factory=dict)
     # Non-persistent calculated fields
     wikis_by_name: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
+    wikis_by_id: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
+    frontends_by_name: Dict[str,FrontendSite] = field(default_factory=dict, init=False, repr=False)
 
     @classmethod
     def of_config_path(cls) -> "Servers":
@@ -366,8 +371,20 @@ class Servers:
         from all servers' wikis and set remote
         """
         self.wikis_by_name.clear()
+        self.wikis_by_id.clear()
+        self.frontends_by_name.clear()
         for server in self.servers.values():
             for hostname, wiki in server.wikis.items():
                 self.wikis_by_name[hostname] = wiki
+                self.wikis_by_id[wiki.wikiId] =wiki
                 wiki.hostname=hostname
                 wiki.init_remote()
+            for hostname,frontend in server.frontends.items():
+                self.frontends_by_name[hostname]=frontend
+                frontend.hostname=hostname
+                frontend.init_remote()
+                if frontend.wikiId in self.wikis_by_id:
+                    frontend.wikisite=self.wikis_by_id.get(frontend.wikiId)
+                else:
+                    msg=f"invalid frontend wikiId {frontend.wikiId}"
+                    frontend.remote.log.log("❌","frontend",msg)
