@@ -3,6 +3,7 @@ Created on 2020-08-20
 
 @author: wf
 """
+
 from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
@@ -22,7 +23,7 @@ class WebScrape(object):
         self.debug = debug
         self.showHtml = showHtml
 
-    def getSoup(self, url, showHtml:bool):
+    def getSoup(self, url, showHtml: bool):
         """
         get the beautiful Soup parser
 

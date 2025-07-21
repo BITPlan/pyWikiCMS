@@ -3,12 +3,13 @@ Created on 2020-07-11
 
 @author: wf
 """
+
 import warnings
 
 from ngwidgets.webserver_test import WebserverTest
 
 from frontend.cmsmain import CmsMain
-from frontend.server import Server
+from backend.server import Server
 from frontend.webserver import CmsWebServer
 from tests.test_wikicms import TestWikiCMS
 

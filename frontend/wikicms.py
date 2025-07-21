@@ -3,6 +3,7 @@ Created on 2020-07-27
 
 @author: wf
 """
+
 import re
 import traceback
 
@@ -14,7 +15,7 @@ from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
 from frontend.frame import HtmlFrame
-from frontend.site import Site
+from backend.site import Site
 
 
 class Frontend(object):
@@ -50,7 +51,7 @@ class Frontend(object):
         else:
             self.filterKeys = []
 
-    def log(self, msg:str):
+    def log(self, msg: str):
         """
         log the given message if debugging is true
 
@@ -61,7 +62,7 @@ class Frontend(object):
             print(msg, flush=True)
 
     @staticmethod
-    def extract_site_and_path(path:str):
+    def extract_site_and_path(path: str):
         """
         Splits the given path into the site component and the remaining path.
 
@@ -142,7 +143,7 @@ class Frontend(object):
             wikipage = pagePath
         return wikipage
 
-    def checkPath(self, pagePath:str)->str:
+    def checkPath(self, pagePath: str) -> str:
         """
         check the given pathPath
 
@@ -160,7 +161,7 @@ class Frontend(object):
                 error = "invalid char %s in given pagePath " % (illegalChar)
         return error
 
-    def needsProxy(self, path:str) -> bool:
+    def needsProxy(self, path: str) -> bool:
         """
         Args:
             path (str): the path to check

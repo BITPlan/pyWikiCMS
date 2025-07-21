@@ -3,15 +3,18 @@ Created on 2022-12-03
 
 @author: wf
 """
+
 import glob
 import os
 import time
 from pathlib import Path
-from wikibot3rd.wikiuser import WikiUser
-from frontend.mediawiki_site import MediaWikiSite
-from ngwidgets.lod_grid import ListOfDictsGrid, GridConfig
+
+from ngwidgets.lod_grid import GridConfig, ListOfDictsGrid
 from ngwidgets.progress import NiceguiProgressbar
 from nicegui import ui
+from wikibot3rd.wikiuser import WikiUser
+
+from frontend.mediawiki_site import MediaWikiSite
 
 
 class WikiCheck:
@@ -51,7 +54,7 @@ class WikiGrid:
         self.lod = []
         self.wikistates_by_row_no = {}
         for index, wiki_user in enumerate(self.sorted_wiki_users):
-            wiki_state = MediaWikiSite(wiki_user=wiki_user,row_index=index)
+            wiki_state = MediaWikiSite(wiki_user=wiki_user, row_index=index)
             record = wiki_state.as_dict()
             self.lod.append(record)
             self.wikistates_by_row_no[wiki_state.row_no] = wiki_state
@@ -77,7 +80,7 @@ class WikiGrid:
             button_names=["all", "fit"],
             debug=False,
         )
-        self.lod_grid = ListOfDictsGrid(lod=self.lod,config=grid_config)
+        self.lod_grid = ListOfDictsGrid(lod=self.lod, config=grid_config)
         self.lod_grid.ag_grid._props["html_columns"] = [0, 1, 2]
         return self.lod_grid
 
@@ -85,7 +88,7 @@ class WikiGrid:
         """
         Add check boxes.
         """
-        self.button_row=ui.row()
+        self.button_row = ui.row()
         with self.button_row:
             self.wiki_checks = [
                 WikiCheck("version", self.check_wiki_version),
@@ -97,9 +100,11 @@ class WikiGrid:
             ui.button(text="Checks", on_click=self.perform_wiki_checks)
 
     async def get_selected_lod(self):
-        lod_index=self.lod_grid.get_index(lenient=self.lod_grid.config.lenient,lod=self.lod)
+        lod_index = self.lod_grid.get_index(
+            lenient=self.lod_grid.config.lenient, lod=self.lod
+        )
         lod = await self.lod_grid.get_selected_lod(lod_index=lod_index)
-        if len(lod)==0:
+        if len(lod) == 0:
             with self.button_row:
                 ui.notify("Please select at least one row")
         return lod
@@ -108,29 +113,29 @@ class WikiGrid:
         """
         react on the button for check having been clicked
         """
-        self.select_lod=await self.get_selected_lod()
+        self.select_lod = await self.get_selected_lod()
         if self.select_lod:
             with self.solution.content_div:
-                total=len(self.select_lod)
+                total = len(self.select_lod)
                 ui.notify(f"Checking {total} wikis ...")
                 progress_bar = self.progressbar
-                steps=0
+                steps = 0
                 for wiki_check in self.wiki_checks:
                     if wiki_check.checked:
-                        steps+=total
-                progress_bar.total=steps
+                        steps += total
+                progress_bar.total = steps
                 progress_bar.reset()
                 for row in self.select_lod:
-                    row_no=row["#"]
-                    wiki_state=self.wikistates_by_row_no.get(row_no)
+                    row_no = row["#"]
+                    wiki_state = self.wikistates_by_row_no.get(row_no)
                     wiki_state.task_runner.run(lambda: self.run_wiki_check(row_no))
 
-    async def run_wiki_check(self,row_no:int):
+    async def run_wiki_check(self, row_no: int):
         """
         perform the selected wiki checks
         """
         try:
-            wiki_state=self.wikistates_by_row_no.get(row_no)
+            wiki_state = self.wikistates_by_row_no.get(row_no)
             for wiki_check in self.wiki_checks:
                 if wiki_check.checked:
                     wiki_check.func(wiki_state)
@@ -141,13 +146,13 @@ class WikiGrid:
         except BaseException as ex:
             self.solution.handle_exception(ex)
 
-    def check_pages(self, wiki_state:MediaWikiSite):
+    def check_pages(self, wiki_state: MediaWikiSite):
         """
         Try login for wiki user and report success or failure.
         """
         try:
             try:
-                client=wiki_state.wiki_client
+                client = wiki_state.wiki_client
                 stats = client.get_site_statistics()
                 pages = stats["pages"]
                 self.lod_grid.update_cell(wiki_state.row_no, "login", f"✅")
@@ -159,7 +164,7 @@ class WikiGrid:
         except BaseException as ex:
             self.solution.handle_exception(ex)
 
-    def check_wiki_version(self, wiki_state:MediaWikiSite):
+    def check_wiki_version(self, wiki_state: MediaWikiSite):
         """
         Check the MediaWiki version for a specific WikiState.
         """

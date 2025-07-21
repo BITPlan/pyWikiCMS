@@ -3,14 +3,15 @@ Created on 2020-12-30
 
 @author: wf
 """
+
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
 from ngwidgets.input_webserver import InputWebserver, InputWebSolution
-from ngwidgets.webserver import WebserverConfig
 from ngwidgets.sso_users_solution import SsoSolution
+from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
 
-from frontend.server import Server
+from backend.server import Server
 from frontend.version import Version
 from frontend.wikigrid import WikiGrid
 

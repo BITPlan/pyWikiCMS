@@ -3,6 +3,7 @@ Created on 2023-06-11
 
 @author: wf
 """
+
 import glob
 import json
 import os
@@ -167,7 +168,7 @@ class ClickstreamManager(object):
     def __init__(
         self,
         root_path: str,
-        rdf_namespace:str ="http://cms.bitplan.com/clickstream#",
+        rdf_namespace: str = "http://cms.bitplan.com/clickstream#",
         show_progress: bool = True,
         verbose: bool = True,
     ):

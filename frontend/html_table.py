@@ -3,7 +3,9 @@ Created on 2022-10-25
 
 @author: wf
 """
+
 from frontend.webscrape import WebScrape
+
 
 class HtmlTables(WebScrape):
     """

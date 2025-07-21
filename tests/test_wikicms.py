@@ -3,6 +3,7 @@ Created on 27.07.2020
 
 @author: wf
 """
+
 import os
 
 # from wikibot.smw import SMWClient
