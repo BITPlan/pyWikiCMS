@@ -19,7 +19,12 @@ class Site:
     an Apache Site
     """
     name: str
+    # if container is set the site is provided by a docker container
+    container: Optional[str]=None
     apache_config: Optional[str] = None
+    ip: str = field(default="?", init=False)
+    url: Optional[str] = field(default=None, init=False)
+
 
 @lod_storable
 class WikiSite(Site):
@@ -30,15 +35,11 @@ class WikiSite(Site):
     database: Optional[str] = None
     defaultPage: str = "Main Page"
     lang: str = "en"
-    # if container is set the wiki is provided by a docker container
-    container: str=None
 
     # LocalWiki properties
     family: Optional[object] = field(default=None, init=False)
     localSettings: Optional[str] = field(default=None, init=False)
-    ip: str = field(default="?", init=False)
     logo: Optional[str] = field(default=None, init=False)
-    url: Optional[str] = field(default=None, init=False)
     dbUser: Optional[str] = field(default=None, init=False)
     dbPassword: Optional[str] = field(default=None, init=False)
     scriptPath: str = field(default="", init=False)
