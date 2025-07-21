@@ -8,14 +8,14 @@ to a dockerized environment
 @author: wf
 """
 
-import sys
 from argparse import ArgumentParser
+import sys
 
-from basemkit.base_cmd import BaseCmd
-from basemkit.persistent_log import Log
-from basemkit.shell import Shell
-from profiwiki.version import Version
 from backend.server import Servers
+from backend.site import Site
+from basemkit.base_cmd import BaseCmd
+from profiwiki.version import Version
+
 
 class TransferSite:
     """
@@ -30,32 +30,21 @@ class TransferSite:
         self.source = args.source
         self.target = args.target
         self.sitename = args.sitename
-        self.shell = Shell()
-        self.log = Log()
         self.servers = Servers.of_config_path()
 
-    def is_reachable(self, server: str, timeout: int = 5) -> bool:
-        """
-        Returns True if SSH to server is possible, otherwise False.
-        """
-        cmd = f"ssh -o ConnectTimeout={timeout} {server} echo ok"
-        result = self.shell.run(cmd, tee=False)
-        if result.returncode != 0:
-            self.log.log("❌", "ssh-check", server)
-            return False
-        if "ok" not in result.stdout:
-            self.log.log("⚠️", "ssh-check", server)
-        self.log.log("✅", "ssh-check", server)
-
-
-    def checksite(self) -> bool:
+    def checksite(self):
         """
         Prints reachability status of sites
         Returns True if both are reachable, else False.
         """
-        self.is_reachable(self.source)
-        self.is_reachable(self.target)
-        self.dump_log()
+        index=0
+        for wiki in self.get_selected_wikis():
+            ssh_timestamp=wiki.ssh_able()
+            ok=Site.state_symbol(ssh_timestamp is not None)
+            index+=1
+            print(f"{index:02d}: {wiki.hostname:<26} {ok} {ssh_timestamp or ''}")
+            if self.args.debug:
+                wiki.remote.log.dump()
 
     def checkapache(self):
         """
@@ -73,24 +62,13 @@ class TransferSite:
         """
         if self.args.all:
             # Yield all wikis from all servers
-            for server_name, server in self.servers.servers.items():
-                for wiki_name, wiki in server.wikis.items():
-                    yield (server_name, wiki_name, wiki)
+            for server in self.servers.servers.values():
+                for wiki in server.wikis.values():
+                    yield wiki
         else:
-            # Yield source and target wikis if available
-            if self.source:
-                source_server = self.servers.servers.get(self.source)
-                if source_server:
-                    source_wiki = source_server.wikis.get(self.sitename)
-                    if source_wiki:
-                        yield (self.source, self.sitename, source_wiki)
-
-            if self.target and self.sitename:
-                target_server = self.servers.servers.get(self.target)
-                if target_server:
-                    target_wiki = target_server.wikis.get(self.sitename)
-                    if target_wiki:
-                        yield (self.target, self.sitename, target_wiki)
+            if self.sitename:
+                wiki=self.servers.wikis_by_name.get(self.sitename)
+                yield wiki
 
     def list_sites(self) -> None:
         """
@@ -132,7 +110,6 @@ class TransferSiteCmd(BaseCmd):
             help="list available sites",
         )
         parser.add_argument(
-            "-a",
             "--all",
             action="store_true",
             help="perform action on all sites",

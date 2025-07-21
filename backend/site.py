@@ -8,8 +8,9 @@ from dataclasses import field, dataclass
 import re
 import socket
 from typing import Optional
-
+from datetime import datetime
 from basemkit.yamlable import lod_storable
+from backend.remote import Remote
 import requests
 
 
@@ -25,6 +26,49 @@ class Site:
     ip: str = field(default="?", init=False)
     url: Optional[str] = field(default=None, init=False)
 
+    # Non-persistent calculated fields
+    remote: Remote = field(default=None, init=False, repr=False)
+    hostname: str = field(default=None,init=False,repr=True)
+
+
+    def __post_init__(self):
+        """
+        """
+        self._resolve_ip()
+
+    @classmethod
+    def state_symbol(cls, b: bool) -> str:
+        """
+        return the symbol for the given boolean state b
+
+        Args:
+            b(bool): the state to return a symbol for
+
+        Returns:
+            ✅ for True and ❌ for false
+        """
+        symbol = "✅" if b else "❌"
+        return symbol
+
+    def init_remote(self):
+        self.remote = Remote(host=self.hostname, container=self.container)
+
+    def ssh_able(self) -> Optional[datetime]:
+        """
+        Returns current timestamp if SSH to server is possible, otherwise None.
+        """
+        result = self.remote.run("echo ok")
+        timestamp = None
+        if result.returncode == 0 and "ok" in result.stdout:
+            timestamp = datetime.now()
+        return timestamp
+
+    def _resolve_ip(self) -> None:
+        """Resolve IP address for the site name"""
+        try:
+            self.ip = socket.gethostbyname(self.name)
+        except Exception:
+            self.ip = "?"
 
 @lod_storable
 class WikiSite(Site):
@@ -50,8 +94,9 @@ class WikiSite(Site):
     debug: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self):
-        """Initialize LocalWiki functionality after dataclass creation"""
-        self._resolve_ip()
+        """Initialize"""
+        super().__post_init__()
+        pass
 
     def configure_local_wiki(self, family: object = None, localSettings: str = None) -> None:
         """
@@ -67,13 +112,6 @@ class WikiSite(Site):
         if self.localSettings:
             self._load_settings()
             self._configure_from_settings()
-
-    def _resolve_ip(self) -> None:
-        """Resolve IP address for the site name"""
-        try:
-            self.ip = socket.gethostbyname(self.name)
-        except Exception:
-            self.ip = "?"
 
     def _load_settings(self) -> None:
         """Load settings from LocalSettings.php file"""

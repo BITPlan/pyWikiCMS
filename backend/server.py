@@ -280,19 +280,6 @@ class Server:
             logo = logos["unknown"]
         return logo
 
-    def stateSymbol(self, b: bool) -> str:
-        """
-        return the symbol for the given boolean state b
-
-        Args:
-            b(bool): the state to return a symbol for
-
-        Returns:
-            ✅ for True and ❌ for false
-        """
-        symbol = "✅" if b else "❌"
-        return symbol
-
     def checkApacheConfiguration(self, conf, status="enabled") -> str:
         """
         check the given apache configuration and return an indicator symbol
@@ -375,9 +362,12 @@ class Servers:
 
     def init(self) -> None:
         """
-        Initialize wikis_by_name dictionary from all servers' wikis
+        Initialize wikis_by_name dictionary
+        from all servers' wikis and set remote
         """
         self.wikis_by_name.clear()
         for server in self.servers.values():
-            for wiki_name, wiki in server.wikis.items():
-                self.wikis_by_name[wiki_name] = wiki
+            for hostname, wiki in server.wikis.items():
+                self.wikis_by_name[hostname] = wiki
+                wiki.hostname=hostname
+                wiki.init_remote()

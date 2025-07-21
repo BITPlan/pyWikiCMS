@@ -88,7 +88,7 @@ class Remote:
         """
         run the given command remotely
         """
-        remote_cmd=f"ssh -o ConnectTimeout={self.timeout} {self.host} "
+        remote_cmd=f"ssh -o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host} "
         if self.container:
             remote_cmd+=f"docker exec {self.container} "
         remote_cmd+=f'"{cmd}"'
