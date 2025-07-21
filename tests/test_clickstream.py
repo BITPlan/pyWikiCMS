@@ -4,13 +4,14 @@ Created on 2023-11-06
 @author: wf
 """
 
+from datetime import datetime
 import os
+import unittest
 
-from ngwidgets.basetest import Basetest
+from basemkit.basetest import Basetest
+from frontend.clickstream import ClickstreamManager
 from rdflib import Graph, Namespace
 from rdflib.plugins.sparql import prepareQuery
-
-from frontend.clickstream import ClickstreamManager
 
 
 class TestClickstreams(Basetest):
@@ -25,10 +26,12 @@ class TestClickstreams(Basetest):
         Basetest.setUp(self, debug=debug, profile=profile)
         home_directory = os.path.expanduser("~")
         self.root_path = os.path.join(home_directory, ".clickstream")
-        self.rdf_format = "nt"  # turtle/ttl
-        self.rdf_file = os.path.join(self.root_path, f"clicks_2023-11-07")
+        self.rdf_format = "ttl"  # turtle/ttl
+        iso_date = datetime.now().strftime("%Y-%m-%d")
+        self.rdf_file = os.path.join(self.root_path, f"clicks_{iso_date}")
         self.manager = ClickstreamManager(self.root_path)
 
+    @unittest.skipIf(self.inPublicCI(), "Skip in public CI environment")
     def testReadingLogs(self):
         """
         test reading click stream logs
@@ -37,6 +40,7 @@ class TestClickstreams(Basetest):
         self.manager.load_clickstream_logs(limit=limit)
         self.assertEqual(limit, len(self.manager.clickstream_logs))
 
+    @unittest.skipIf(self.inPublicCI(), "Skip in public CI environment")
     def testRDFExportImportQuery(self):
         """
         Test exporting to RDF, re-importing, and querying for most frequent referrers.
