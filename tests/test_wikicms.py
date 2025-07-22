@@ -11,7 +11,7 @@ from basemkit.basetest import Basetest
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 
-from frontend.wikicms import Frontend
+from frontend.wikicms import WikiFrontend
 
 
 class TestWikiCMS(Basetest):
@@ -123,7 +123,7 @@ class TestWikiCMS(Basetest):
 
         for index, test_path in enumerate(paths):
             # Extract site and path using the Webserver method.
-            site, path = Frontend.extract_site_and_path(test_path)
+            site, path = WikiFrontend.extract_site_and_path(test_path)
 
             # If debugging is enabled, print the results.
             if getattr(self, "debug", False):

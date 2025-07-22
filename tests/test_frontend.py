@@ -6,9 +6,10 @@ Created on 2020-12-27
 
 import json
 
+from backend.server import Servers
+from frontend.wikicms import WikiFrontend
 from ngwidgets.basetest import Basetest
 
-from frontend.wikicms import Frontend
 from tests.test_webserver import TestWebServer
 
 
@@ -20,13 +21,15 @@ class TestFrontend(Basetest):
     def setUp(self):
         Basetest.setUp(self)
         self.server = TestWebServer.initServer()
+        self.servers=Servers.of_config_path()
         pass
 
     def testWikiPage(self):
         """
         test the route to page translation
         """
-        frontend = Frontend("cr")
+        frontendSite=self.servers.frontends_by_name.get("www")
+        frontend = WikiFrontend(frontendSite)
         routes = ["/index.php/File:Link.png"]
         expectedList = ["File:Link.png"]
         for i, route in enumerate(routes):
@@ -191,11 +194,12 @@ class TestFrontend(Basetest):
         """
         test the content management pages
         """
-        frontend = self.server.enableFrontend("www")
+        frontendSite=self.servers.frontends_by_name.get("www")
+        frontend = WikiFrontend(frontendSite,debug=True)
         frontend.open()
         cms_pages = frontend.get_cms_pages()
         debug = self.debug
-        # debug=True
+        #debug=True
         if debug:
             print(json.dumps(cms_pages, indent=2))
         self.assertTrue("CMS/footer/de" in cms_pages)

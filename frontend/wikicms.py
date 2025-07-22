@@ -3,7 +3,7 @@ Created on 2020-07-27
 
 @author: wf
 """
-
+import logging
 import re
 import traceback
 
@@ -14,18 +14,18 @@ from fastapi.responses import HTMLResponse
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
-from backend.site import WikiSite
+from backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 
 
-class Frontend(object):
+class WikiFrontend(object):
     """
     Wiki Content Management System Frontend
     """
 
     def __init__(
         self,
-        site: WikiSite,
+        frontend: FrontendSite,
         parser: str = "lxml",
         proxy_prefixes=["/images/", "/videos"],
         debug: bool = False,
@@ -34,16 +34,17 @@ class Frontend(object):
         """
         Constructor
         Args:
-            site_name(str): the name of the site this frontend is for
+            frontend(FrontendSite): the frontend
             parser(str): the beautiful soup parser to use e.g. html.parser
             proxy_prefixes(list): the list of prefixes that need direct proxy access
             debug: (bool): True if debugging should be on
             filterKeys: (list): a list of keys for filters to be applied e.g. editsection
         """
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.parser = parser
         self.proxy_prefixes = proxy_prefixes
-        self.site = site
-        self.name = self.site.name
+        self.frontend = frontend
+        self.name = self.frontend.name
         self.debug = debug
         self.wiki = None
         if filterKeys is None:
@@ -96,7 +97,7 @@ class Frontend(object):
 
         """
         if self.wiki is None:
-            self.wiki = WikiClient.ofWikiId(self.site.wikiId)
+            self.wiki = WikiClient.ofWikiId(self.frontend.wikiId)
             self.wiki.login()
             self.smwclient = SMWClient(self.wiki.getSite())
             self.cms_pages = self.get_cms_pages()
@@ -112,6 +113,8 @@ class Frontend(object):
             page_title, html, error = self.getContent(page_title)
             if not error:
                 cms_pages[page_title] = html
+            else:
+                self.logger.warn(error)
         return cms_pages
 
     def errMsg(self, ex):
@@ -204,7 +207,7 @@ class Frontend(object):
         prefix (str): the prefix to replace e.g. "/", "/images", "/thumbs"
         delim (str): if not None the delimiter for multiple values
         """
-        siteprefix = f"/{self.site.name}{prefix}"
+        siteprefix = f"/{self.frontend.name}{prefix}"
         if attribute in node.attrs:
             attrval = node.attrs[attribute]
             if delim is not None:
@@ -291,7 +294,7 @@ class Frontend(object):
         pageTitle = "?"
         try:
             if pagePath == "/":
-                pageTitle = self.site.defaultPage
+                pageTitle = self.frontend.defaultPage
             else:
                 error = self.checkPath(pagePath)
                 pageTitle = self.wikiPage(pagePath)

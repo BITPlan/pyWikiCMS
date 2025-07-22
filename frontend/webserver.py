@@ -14,7 +14,7 @@ from nicegui import Client, app, ui
 from backend.server import Servers
 from frontend.version import Version
 from frontend.wikigrid import WikiGrid
-
+from frontend.wikicms import WikiFrontend
 
 class CmsWebServer(InputWebserver):
     """
@@ -38,10 +38,15 @@ class CmsWebServer(InputWebserver):
     def __init__(self):
         """
         constructor
-
         """
         InputWebserver.__init__(self, config=CmsWebServer.get_config())
         self.servers = Servers.of_config_path()
+        self.wiki_frontends={}
+        for frontend in self.servers.frontends_by_name.values():
+            wiki_frontend=WikiFrontend(frontend)
+            wiki_frontend.open()
+            self.wiki_frontends[frontend.name]=wiki_frontend
+
 
         @app.get("/{frontend_name}/{page_path:path}")
         def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
@@ -73,12 +78,12 @@ class CmsWebServer(InputWebserver):
             SomeException: If an error occurs during page content retrieval or rendering.
 
         """
-        frontend = self.server.frontends.get(frontend_name, None)
-        if frontend is None:
+        wiki_frontend = self.wiki_frontends.get(frontend_name, None)
+        if wiki_frontend is None:
             raise HTTPException(
                 status_code=404, detail=f"frontend {frontend_name} is not available"
             )
-        response = frontend.get_path_response(f"/{page_path}")
+        response = wiki_frontend.get_path_response(f"/{page_path}")
         return response
 
     def enableSites(self, siteNames):
@@ -90,7 +95,7 @@ class CmsWebServer(InputWebserver):
         if siteNames is None:
             return
         for siteName in siteNames:
-            frontend = self.servers.frontends_by_name.get(siteName)
+            frontend = self.servers.frontends_by_hostname.get(siteName)
             if frontend:
                 frontend.enabled = True
 

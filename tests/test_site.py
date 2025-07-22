@@ -26,7 +26,7 @@ class TestSite(Basetest):
         """
         test fixing BITPlan wiki family style logo references with a site subpath
         """
-        wiki = self.servers.wikis_by_name.get("wiki.bitplan.com")
+        wiki = self.servers.wikis_by_hostname.get("wiki.bitplan.com")
         logoFile = wiki.getLogo()
         if self.debug:
             print(logoFile)
@@ -37,7 +37,7 @@ class TestSite(Basetest):
         """
         test getting the status code for the a wiki
         """
-        wiki = self.servers.wikis_by_name.get("wiki.bitplan.com")
+        wiki = self.servers.wikis_by_hostname.get("wiki.bitplan.com")
         statusCode = wiki.getStatusCode(5.0)
         self.assertEqual(200, statusCode)
 
@@ -46,7 +46,7 @@ class TestSite(Basetest):
         """
         get getting a setting from the local settings
         """
-        wiki = self.servers.wikis_by_name.get("wgt.bitplan.com")
+        wiki = self.servers.wikis_by_hostname.get("wgt.bitplan.com")
         wiki.settingLines = [
             """$wgLogo = "/images/wgt/thumb/3/35/Heureka-wgt.png/132px-Heureka-wgt.png";"""
         ]

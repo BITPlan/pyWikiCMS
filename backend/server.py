@@ -321,8 +321,9 @@ class Servers:
     """
     servers: Dict[str, Server] = field(default_factory=dict)
     # Non-persistent calculated fields
-    wikis_by_name: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
+    wikis_by_hostname: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
     wikis_by_id: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
+    frontends_by_hostname: Dict[str,FrontendSite] = field(default_factory=dict, init=False, repr=False)
     frontends_by_name: Dict[str,FrontendSite] = field(default_factory=dict, init=False, repr=False)
     log: Log = field(default=None, init=False, repr=False)
 
@@ -371,17 +372,19 @@ class Servers:
         Initialize wikis_by_name dictionary
         from all servers' wikis and set remote
         """
-        self.wikis_by_name.clear()
+        self.wikis_by_hostname.clear()
         self.wikis_by_id.clear()
+        self.frontends_by_hostname.clear()
         self.frontends_by_name.clear()
         for server in self.servers.values():
             for hostname, wiki in server.wikis.items():
-                self.wikis_by_name[hostname] = wiki
+                self.wikis_by_hostname[hostname] = wiki
                 self.wikis_by_id[wiki.wikiId] =wiki
                 wiki.hostname=hostname
                 wiki.init_remote()
             for hostname,frontend in server.frontends.items():
-                self.frontends_by_name[hostname]=frontend
+                self.frontends_by_hostname[hostname]=frontend
+                self.frontends_by_name[frontend.name]=frontend
                 frontend.hostname=hostname
                 frontend.init_remote()
                 if frontend.wikiId in self.wikis_by_id:

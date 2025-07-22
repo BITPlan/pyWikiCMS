@@ -6,11 +6,12 @@ Created on 2020-07-11
 
 import warnings
 
-from ngwidgets.webserver_test import WebserverTest
-
 from backend.server import Server
+from backend.site import FrontendSite
 from frontend.cmsmain import CmsMain
 from frontend.webserver import CmsWebServer
+from ngwidgets.webserver_test import WebserverTest
+
 from tests.test_wikicms import TestWikiCMS
 
 
@@ -36,33 +37,17 @@ class TestWebServer(WebserverTest):
         """
         warnings.simplefilter("ignore", ResourceWarning)
         Server.homePath = "/tmp"
-        server = Server()
+        server = Server(name="test",hostname="localhost")
         server.logo = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
-        server.frontendConfigs = [
-            {"site": "cr", "wikiId": "cr", "defaultPage": "Main Page"},
-            {"site": "sharks", "wikiId": "wiki", "defaultPage": "Sharks"},
-            {
-                "site": "www",
-                "wikiId": "wiki",
-                "defaultPage": "Welcome",
-            },
-        ]
-        for frontendConfigs in server.frontendConfigs:
+        server.frontends = {
+            "cr": FrontendSite(name="cr",wikiId="cr"),
+            "sharks": FrontendSite(name="sharks",wikiId="wiki",defaultPage="Sharks"),
+            "www": FrontendSite(name="www",wikiId="wiki",defaultPage= "Welcome")
+        }
+        for frontend in server.frontends.values():
             # make sure ini file is available
-            wikiId = frontendConfigs["wikiId"]
-            TestWikiCMS.getSMW_WikiUser(wikiId)
-        server.store()
-        server.load()
+            TestWikiCMS.getSMW_WikiUser(frontend.wikiId)
         return server
-
-    def testConfig(self):
-        """
-        check config
-        """
-        path = self.server.getStorePath()
-        if self.debug:
-            print(path)
-        self.assertTrue("/tmp" in path)
 
     def testWebServer(self):
         """
