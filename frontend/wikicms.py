@@ -334,6 +334,25 @@ class WikiFrontend(object):
         html = self.unwrap(soup)
         return html
 
+    def get_frame(self,page_title:str)->str:
+        """
+        get the frame property for the given page_title
+        """
+        frame=None
+        markup=self.wiki.get_wiki_markup(page_title)
+        # {{#set:frame=reveal}}
+        # {{UseFrame|Contact.rythm|
+        patterns = [
+            r'{{#set:frame=([^}]+)}}',    # {{#set:frame=reveal}}
+            r'{{UseFrame\|([^.]+)'        # {{UseFrame|Contact.rythm|
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, markup)
+            if match:
+                frame=match.group(1)
+        return frame
+
     def get_path_response(self, path: str) -> str:
         """
         get the repsonse for the the given path

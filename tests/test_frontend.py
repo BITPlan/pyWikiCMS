@@ -94,15 +94,21 @@ class TestFrontend(Basetest):
         """
         # see e.g. http://wiki.bitplan.com/index.php/Property:Frame
         frontend = self.get_frontend("www")
-        pageTitle = "Feedback"
-        frame = frontend.getFrame(pageTitle)
-        self.assertEqual("Contact", frame)
-        pageTitle, html, error = frontend.getContent(pageTitle)
-        if self.debug:
-            print(html)
-        self.assertIsNone(error)
-        self.assertEqual("Feedback", pageTitle)
-        self.assertTrue("</div" in html)
+        test_cases= [
+            ("SMWConTalk2015-05","reveal"),
+            ("Feedback","Contact")
+        ]
+        debug=self.debug
+        #debug=True
+        for test_page,expected_frame in test_cases:
+            frame = frontend.get_frame(test_page)
+            self.assertEqual(expected_frame, frame)
+            page_title, html, error = frontend.getContent(test_page)
+            if debug:
+                print(html)
+            self.assertIsNone(error)
+            self.assertEqual(page_title, test_page)
+            self.assertTrue("</div" in html or "<p>" in html)
 
     def testIssue15(self):
         """
@@ -111,14 +117,15 @@ class TestFrontend(Basetest):
         see https://github.com/BITPlan/pyWikiCMS/issues/15
 
         """
-        frontend = self.get_frontend("cr")
+        frontend = self.get_frontend("www")
         unfiltered = """<span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=...;action=edit&amp;section=T-1" title="Edit section: ">edit</a><span class="mw-editsection-bracket">]</span></span>"""
         filtered = frontend.doFilter(unfiltered, ["editsection"])
         if self.debug:
             print(filtered)
         self.assertFalse("""<span class="mw-editsection">""" in filtered)
-        pageTitle, content, error = frontend.getContent("Issue15")
-        self.assertEqual("Issue15", pageTitle)
+        issue_page="WikiCMS/Issue15"
+        pageTitle, content, error = frontend.getContent(issue_page)
+        self.assertEqual(issue_page, pageTitle)
         self.assertIsNone(error)
         if self.debug:
             print(content)
@@ -130,7 +137,7 @@ class TestFrontend(Basetest):
         editsection filter should keep other span's untouched #19
         """
         unfiltered = """<span class="mw-editsection">editsection</span><span class='image'>image section</span>"""
-        frontend = self.get_frontend("cr")
+        frontend = self.get_frontend("www")
         filtered = frontend.doFilter(unfiltered, ["editsection"])
         # print(filtered)
         self.assertTrue("""<span class="image">image section</span>""" in str(filtered))
@@ -141,7 +148,7 @@ class TestFrontend(Basetest):
 
         filter <html><body><div class="mw-parser-output">
         """
-        frontend = self.get_frontend("cr")
+        frontend = self.get_frontend("www")
         unfiltered = (
             """<html><body><div class="mw-parser-output">content</div></body></html>"""
         )
@@ -151,9 +158,10 @@ class TestFrontend(Basetest):
             print(filtered)
         self.assertFalse("<html>" in filtered)
         self.assertFalse("<body>" in filtered)
-        pageTitle, content, error = frontend.getContent("Issue17")
+        issue_page="WikiCMS/Issue17"
+        pageTitle, content, error = frontend.getContent(issue_page)
         self.assertIsNone(error)
-        self.assertEqual("Issue17", pageTitle)
+        self.assertEqual(issue_page, pageTitle)
         if self.debug:
             print(content)
 
