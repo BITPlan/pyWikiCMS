@@ -193,7 +193,9 @@ class TestFrontend(Basetest):
         <html>"""
         frontend = self.get_frontend("www")
         html = frontend.toReveal(wikihtml)
-        if self.debug:
+        debug=self.debug
+        debug=True
+        if debug:
             print(html)
 
     def testFixHtml(self):

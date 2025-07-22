@@ -17,6 +17,32 @@ from wikibot3rd.wikiclient import WikiClient
 from backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 
+class WikiFrontends:
+    """
+    wiki frontends
+    """
+
+    def __init__(self,servers):
+        """
+        constructor
+        """
+        self.servers=servers
+        self.wiki_frontends={}
+
+    def enableSites(self, siteNames):
+        """
+        enable the sites given in the sites list
+        Args:
+            siteNames(list): a list of strings with wikiIds to be enabled
+        """
+        if siteNames is None:
+            return
+        for siteName in siteNames:
+            frontend = self.servers.frontends_by_hostname.get(siteName)
+            if frontend:
+                wiki_frontend=WikiFrontend(frontend)
+                wiki_frontend.open()
+                self.wiki_frontends[frontend.name]=wiki_frontend
 
 class WikiFrontend(object):
     """

@@ -31,7 +31,7 @@ class TestWebServer(WebserverTest):
         pass
 
     @staticmethod
-    def initServer():
+    def getServer():
         """
         initialize the server
         """
@@ -55,7 +55,7 @@ class TestWebServer(WebserverTest):
         queries = ["/www/Joker", "/", "/www/{Illegal}"]
         expected = ["Joker", "<title>pyWikiCMS</title>", "invalid char"]
         debug = self.debug
-        # debug = True
+        debug = True
         for i, query in enumerate(queries):
             html = self.get_html(query)
             if debug:

@@ -4,17 +4,17 @@ Created on 2020-12-30
 @author: wf
 """
 
+from backend.server import Servers
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
+from frontend.version import Version
+from frontend.wikicms import WikiFrontend, WikiFrontends
+from frontend.wikigrid import WikiGrid
 from ngwidgets.input_webserver import InputWebserver, InputWebSolution
 from ngwidgets.sso_users_solution import SsoSolution
 from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
 
-from backend.server import Servers
-from frontend.version import Version
-from frontend.wikigrid import WikiGrid
-from frontend.wikicms import WikiFrontend
 
 class CmsWebServer(InputWebserver):
     """
@@ -41,7 +41,7 @@ class CmsWebServer(InputWebserver):
         """
         InputWebserver.__init__(self, config=CmsWebServer.get_config())
         self.servers = Servers.of_config_path()
-        self.wiki_frontends={}
+        self.wiki_frontends=WikiFrontends(self.servers)
 
         @app.get("/{frontend_name}/{page_path:path}")
         def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
@@ -73,7 +73,7 @@ class CmsWebServer(InputWebserver):
             SomeException: If an error occurs during page content retrieval or rendering.
 
         """
-        wiki_frontend = self.wiki_frontends.get(frontend_name, None)
+        wiki_frontend = self.wiki_frontends.wiki_frontends.get(frontend_name, None)
         if wiki_frontend is None:
             raise HTTPException(
                 status_code=404, detail=f"frontend {frontend_name} is not available"
@@ -81,27 +81,12 @@ class CmsWebServer(InputWebserver):
         response = wiki_frontend.get_path_response(f"/{page_path}")
         return response
 
-    def enableSites(self, siteNames):
-        """
-        enable the sites given in the sites list
-        Args:
-            siteNames(list): a list of strings with wikiIds to be enabled
-        """
-        if siteNames is None:
-            return
-        for siteName in siteNames:
-            frontend = self.servers.frontends_by_hostname.get(siteName)
-            if frontend:
-                wiki_frontend=WikiFrontend(frontend)
-                wiki_frontend.open()
-                self.wiki_frontends[frontend.name]=wiki_frontend
-
     def configure_run(self):
         """
         configure command line specific details
         """
         InputWebserver.configure_run(self)
-        self.enableSites(self.args.sites)
+        self.wiki_frontends.enableSites(self.args.sites)
 
 
 class CmsSolution(InputWebSolution):
