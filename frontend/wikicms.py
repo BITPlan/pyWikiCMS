@@ -17,32 +17,6 @@ from wikibot3rd.wikiclient import WikiClient
 from backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 
-class WikiFrontends:
-    """
-    wiki frontends
-    """
-
-    def __init__(self,servers):
-        """
-        constructor
-        """
-        self.servers=servers
-        self.wiki_frontends={}
-
-    def enableSites(self, siteNames):
-        """
-        enable the sites given in the sites list
-        Args:
-            siteNames(list): a list of strings with wikiIds to be enabled
-        """
-        if siteNames is None:
-            return
-        for siteName in siteNames:
-            frontend = self.servers.frontends_by_hostname.get(siteName)
-            if frontend:
-                wiki_frontend=WikiFrontend(frontend)
-                wiki_frontend.open()
-                self.wiki_frontends[frontend.name]=wiki_frontend
 
 class WikiFrontend(object):
     """
@@ -410,3 +384,44 @@ class WikiFrontend(object):
             framed_html = frame.frame(html)
             response = HTMLResponse(framed_html)
         return response
+
+class WikiFrontends:
+    """
+    wiki frontends
+    """
+
+    def __init__(self,servers):
+        """
+        constructor
+        """
+        self.servers=servers
+        self.wiki_frontends={}
+
+    def enableSites(self, siteNames):
+        """
+        enable the sites given in the sites list
+        Args:
+            siteNames(list): a list of strings with wikiIds to be enabled
+        """
+        if siteNames is None:
+            return
+        for siteName in siteNames:
+            self.get_frontend(siteName)
+
+    def get_frontend(self, name: str) -> WikiFrontend:
+        """
+        Get WikiFrontend from cache or create new one
+        """
+        # Check cache first
+        if name in self.wiki_frontends:
+            cached_frontend = self.wiki_frontends[name]
+            return cached_frontend
+
+        # Create new frontend if not cached
+        frontend = self.servers.frontends_by_name.get(name)
+        if frontend:
+            wiki_frontend = WikiFrontend(frontend)
+            wiki_frontend.open()
+            # Cache it
+            self.wiki_frontends[name] = wiki_frontend
+            return wiki_frontend

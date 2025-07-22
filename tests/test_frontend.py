@@ -7,7 +7,7 @@ Created on 2020-12-27
 import json
 
 from backend.server import Servers
-from frontend.wikicms import WikiFrontend
+from frontend.wikicms import WikiFrontend, WikiFrontends
 from ngwidgets.basetest import Basetest
 
 from tests.test_webserver import TestWebServer
@@ -20,30 +20,11 @@ class TestFrontend(Basetest):
 
     def setUp(self):
         Basetest.setUp(self)
-        self.server = TestWebServer.initServer()
+        self.server = TestWebServer.getServer()
         self.servers=Servers.of_config_path()
-        self.wiki_frontends={}
+        self.wiki_frontends=WikiFrontends(self.servers)
         pass
 
-    def get_frontend(self, name: str) -> WikiFrontend:
-        """
-        Get WikiFrontend from cache or create new one
-        """
-        # Check cache first
-        if name in self.wiki_frontends:
-            cached_frontend = self.wiki_frontends[name]
-            return cached_frontend
-
-        # Create new frontend if not cached
-        frontend = self.servers.frontends_by_name.get(name)
-        if frontend:
-            wiki_frontend = WikiFrontend(frontend)
-            wiki_frontend.open()
-            # Cache it
-            self.wiki_frontends[name] = wiki_frontend
-            return wiki_frontend
-
-        return None
 
     def testWikiPage(self):
         """
@@ -191,7 +172,7 @@ class TestFrontend(Basetest):
                 </div>
             </body>
         <html>"""
-        frontend = self.get_frontend("www")
+        frontend = self.wiki_frontends.get_frontend("www")
         html = frontend.toReveal(wikihtml)
         debug=self.debug
         debug=True
@@ -203,7 +184,7 @@ class TestFrontend(Basetest):
         test that hrefs, images src, srcset videos and objects are
         modified from local-absolute urls to ones with "www"
         """
-        frontend = self.get_frontend("www")
+        frontend = self.wiki_frontends.get_frontend("www")
         pageTitle, content, error = frontend.getContent("Welcome")
         if error is not None:
             print(error)

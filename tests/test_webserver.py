@@ -24,10 +24,10 @@ class TestWebServer(WebserverTest):
         server_class = CmsWebServer
         cmd_class = CmsMain
         WebserverTest.setUp(self, server_class, cmd_class, debug=debug, profile=profile)
-        self.server = TestWebServer.initServer()
+        self.server = TestWebServer.getServer()
         # make sure tests run in travis
         sites = list(self.server.frontends.keys())
-        self.ws.enableSites(sites)
+        self.ws.wiki_frontends.enableSites(sites)
         pass
 
     @staticmethod
