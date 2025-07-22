@@ -26,7 +26,7 @@ class TestWebServer(WebserverTest):
         WebserverTest.setUp(self, server_class, cmd_class, debug=debug, profile=profile)
         self.server = TestWebServer.initServer()
         # make sure tests run in travis
-        sites = ["cr", "sharks", "www"]
+        sites = list(self.server.frontends.keys())
         self.ws.enableSites(sites)
         pass
 
@@ -36,7 +36,6 @@ class TestWebServer(WebserverTest):
         initialize the server
         """
         warnings.simplefilter("ignore", ResourceWarning)
-        Server.homePath = "/tmp"
         server = Server(name="test",hostname="localhost")
         server.logo = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
         server.frontends = {

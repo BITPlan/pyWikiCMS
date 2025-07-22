@@ -101,6 +101,7 @@ class WikiFrontend(object):
             self.wiki.login()
             self.smwclient = SMWClient(self.wiki.getSite())
             self.cms_pages = self.get_cms_pages()
+            self.frontend.enabled = True
 
     def get_cms_pages(self) -> dict:
         """
@@ -311,7 +312,7 @@ class WikiFrontend(object):
             error = self.errMsg(e)
         return pageTitle, content, error
 
-    def toReveal(self, html):
+    def toReveal(self, html:str):
         """
         convert the given html to reveal
         """

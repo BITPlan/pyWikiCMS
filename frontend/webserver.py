@@ -42,11 +42,6 @@ class CmsWebServer(InputWebserver):
         InputWebserver.__init__(self, config=CmsWebServer.get_config())
         self.servers = Servers.of_config_path()
         self.wiki_frontends={}
-        for frontend in self.servers.frontends_by_name.values():
-            wiki_frontend=WikiFrontend(frontend)
-            wiki_frontend.open()
-            self.wiki_frontends[frontend.name]=wiki_frontend
-
 
         @app.get("/{frontend_name}/{page_path:path}")
         def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
@@ -97,7 +92,9 @@ class CmsWebServer(InputWebserver):
         for siteName in siteNames:
             frontend = self.servers.frontends_by_hostname.get(siteName)
             if frontend:
-                frontend.enabled = True
+                wiki_frontend=WikiFrontend(frontend)
+                wiki_frontend.open()
+                self.wiki_frontends[frontend.name]=wiki_frontend
 
     def configure_run(self):
         """

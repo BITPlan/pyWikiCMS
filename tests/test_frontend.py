@@ -22,7 +22,28 @@ class TestFrontend(Basetest):
         Basetest.setUp(self)
         self.server = TestWebServer.initServer()
         self.servers=Servers.of_config_path()
+        self.wiki_frontends={}
         pass
+
+    def get_frontend(self, name: str) -> WikiFrontend:
+        """
+        Get WikiFrontend from cache or create new one
+        """
+        # Check cache first
+        if name in self.wiki_frontends:
+            cached_frontend = self.wiki_frontends[name]
+            return cached_frontend
+
+        # Create new frontend if not cached
+        frontend = self.servers.frontends_by_name.get(name)
+        if frontend:
+            wiki_frontend = WikiFrontend(frontend)
+            wiki_frontend.open()
+            # Cache it
+            self.wiki_frontends[name] = wiki_frontend
+            return wiki_frontend
+
+        return None
 
     def testWikiPage(self):
         """
@@ -44,8 +65,7 @@ class TestFrontend(Basetest):
         """
         check access of a proxied content at a given frontend and url for an expected size
         """
-
-        frontend = self.server.enableFrontend(frontend_name)
+        frontend = self.get_frontend(frontend_name)
         self.assertTrue(frontend.needsProxy(url))
         imageResponse = frontend.proxy(url)
         self.assertFalse(imageResponse is None)
@@ -73,7 +93,7 @@ class TestFrontend(Basetest):
         https://github.com/BITPlan/pyWikiCMS/issues/14
         """
         # see e.g. http://wiki.bitplan.com/index.php/Property:Frame
-        frontend = self.server.enableFrontend("www")
+        frontend = self.get_frontend("www")
         pageTitle = "Feedback"
         frame = frontend.getFrame(pageTitle)
         self.assertEqual("Contact", frame)
@@ -91,7 +111,7 @@ class TestFrontend(Basetest):
         see https://github.com/BITPlan/pyWikiCMS/issues/15
 
         """
-        frontend = self.server.enableFrontend("cr")
+        frontend = self.get_frontend("cr")
         unfiltered = """<span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=...;action=edit&amp;section=T-1" title="Edit section: ">edit</a><span class="mw-editsection-bracket">]</span></span>"""
         filtered = frontend.doFilter(unfiltered, ["editsection"])
         if self.debug:
@@ -110,7 +130,7 @@ class TestFrontend(Basetest):
         editsection filter should keep other span's untouched #19
         """
         unfiltered = """<span class="mw-editsection">editsection</span><span class='image'>image section</span>"""
-        frontend = self.server.enableFrontend("cr")
+        frontend = self.get_frontend("cr")
         filtered = frontend.doFilter(unfiltered, ["editsection"])
         # print(filtered)
         self.assertTrue("""<span class="image">image section</span>""" in str(filtered))
@@ -121,7 +141,7 @@ class TestFrontend(Basetest):
 
         filter <html><body><div class="mw-parser-output">
         """
-        frontend = self.server.enableFrontend("cr")
+        frontend = self.get_frontend("cr")
         unfiltered = (
             """<html><body><div class="mw-parser-output">content</div></body></html>"""
         )
@@ -163,7 +183,7 @@ class TestFrontend(Basetest):
                 </div>
             </body>
         <html>"""
-        frontend = self.server.enableFrontend("www")
+        frontend = self.get_frontend("www")
         html = frontend.toReveal(wikihtml)
         if self.debug:
             print(html)
@@ -173,7 +193,7 @@ class TestFrontend(Basetest):
         test that hrefs, images src, srcset videos and objects are
         modified from local-absolute urls to ones with "www"
         """
-        frontend = self.server.enableFrontend("www")
+        frontend = self.get_frontend("www")
         pageTitle, content, error = frontend.getContent("Welcome")
         if error is not None:
             print(error)
