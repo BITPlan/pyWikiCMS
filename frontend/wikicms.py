@@ -401,6 +401,7 @@ class WikiFrontend(object):
             page_title, content, error = self.getContent(path)
             html_frame = HtmlFrame(self, title=page_title)
             html = content
+            framed_html=None
             if error:
                 html = f"error getting {page_title} for {self.name}:<br>{error}"
             else:
@@ -409,8 +410,9 @@ class WikiFrontend(object):
                     # Complete reveal.js webpage
                     framed_html = self.wrapWithReveal(html)
                     html = content
-                else:
-                    framed_html = html_frame.frame(html)
+
+            if not framed_html:
+                framed_html = html_frame.frame(html)
             response = HTMLResponse(framed_html)
         return response
 
