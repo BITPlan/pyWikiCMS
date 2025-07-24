@@ -119,7 +119,7 @@ class TransferSiteCmd(BaseCmd):
         )
         parser.add_argument(
             "-cf",
-            "--checkfamiliy",
+            "--checkfamily",
             action="store_true",
             help="check family state of source/target",
         )
