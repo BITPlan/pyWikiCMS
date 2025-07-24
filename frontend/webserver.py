@@ -6,23 +6,25 @@ Created on 2020-12-30
 
 import os
 
+from backend.server import Servers
 from basemkit.persistent_log import Log
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
+from frontend.servers_view import ServersView
+from frontend.version import Version
+from frontend.wikicms import WikiFrontend, WikiFrontends
+from frontend.wikigrid import WikiGrid
 from mogwai.core import MogwaiGraph
 from mogwai.schema.graph_schema import GraphSchema
 from mogwai.web.node_view import NodeTableView, NodeViewConfig
 from ng3.graph_navigator import GraphNavigatorSolution, GraphNavigatorWebserver
 from ngwidgets.input_webserver import InputWebSolution
+from ngwidgets.login import Login
 from ngwidgets.sso_users_solution import SsoSolution
 from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
-
-from backend.server import Servers
-from frontend.servers_view import ServersView
-from frontend.version import Version
-from frontend.wikicms import WikiFrontend, WikiFrontends
-from frontend.wikigrid import WikiGrid
+from starlette.responses import RedirectResponse
+from wikibot3rd.sso_users import Sso_Users
 
 
 class CmsWebServer(GraphNavigatorWebserver):
@@ -51,10 +53,18 @@ class CmsWebServer(GraphNavigatorWebserver):
         GraphNavigatorWebserver.__init__(self, config=CmsWebServer.get_config())
         self.servers = Servers.of_config_path()
         self.wiki_frontends = WikiFrontends(self.servers)
+        self.users = Sso_Users(self.config.short_name)
+        self.login = Login(self, self.users)
 
         @ui.page("/servers")
         async def show_solutions(client: Client):
+            if not self.login.authenticated():
+                return RedirectResponse("/login")
             return await self.page(client, CmsSolution.show_servers)
+
+        @ui.page("/login")
+        async def login(client: Client) -> None:
+            return await self.page(client, CmsSolution.show_login)
 
         @app.get("/{frontend_name}/{page_path:path}")
         def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
@@ -131,10 +141,12 @@ class CmsSolution(GraphNavigatorSolution):
         configure my menu
         """
         InputWebSolution.configure_menu(self)
+        self.login=self.webserver.login
         self.sso_solution = SsoSolution(webserver=self.webserver)
         self.sso_solution.configure_menu()
         # icons from https://fonts.google.com/icons
-        self.link_button(name="servers", icon_name="cloud", target="/servers")
+        if self.login.authenticated():
+            self.link_button(name="servers", icon_name="cloud", target="/servers")
 
     async def home(self):
         """

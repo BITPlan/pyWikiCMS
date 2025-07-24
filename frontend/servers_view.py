@@ -30,7 +30,6 @@ class ServersView:
             tqdm(items, desc="Adding servers to graph") if with_progress else items
         )
         for name, server in iterator:
-            server.probe_remote()
             props = {
                 "hostname": server.hostname,
                 "platform": server.platform,
@@ -49,10 +48,21 @@ class ServerView(NodeView):
         """Setup UI with code display."""
         try:
             if self.node_data:
-                server=self.node_data.get("_instance")
-                html_markup=server.as_html()
-                ui.html(html_markup)
+                self.server=self.node_data.get("_instance")
+                html_markup=self.server.as_html()
+                self.html=ui.html(html_markup)
                 pass
+                # Add probe button
+                ui.button("Probe Remote", on_click=self.probe)
             super().setup_ui()
+        except Exception as ex:
+            self.solution.handle_exception(ex)
+
+    async def probe(self):
+        """Probe remote server and update display."""
+        try:
+            self.server.probe_remote()
+            html_markup=self.server.as_html()
+            self.html.content=html_markup
         except Exception as ex:
             self.solution.handle_exception(ex)
