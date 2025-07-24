@@ -293,7 +293,7 @@ class Server:
         stateSymbol = self.stateSymbol(confExists)
         return stateSymbol
 
-    def asHtml(self, logo_size: int = 64) -> str:
+    def as_html(self, logo_size: int = 64) -> str:
         """
         render me as HTML code
 

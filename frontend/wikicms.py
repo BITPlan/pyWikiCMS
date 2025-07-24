@@ -3,12 +3,14 @@ Created on 2020-07-27
 
 @author: wf
 """
+
 import logging
 import re
 import traceback
 
 import requests
 from bs4 import BeautifulSoup, Comment
+from bs4.element import NavigableString, Tag
 from fastapi import Response
 from fastapi.responses import HTMLResponse
 from wikibot3rd.smw import SMWClient
@@ -312,9 +314,33 @@ class WikiFrontend(object):
             error = self.errMsg(e)
         return pageTitle, content, error
 
-    def toReveal(self, html:str):
+    def wrapWithReveal(self, html: str):
+        """
+        wrap html content with reveal.js structure and dependencies
+        """
+        wrapped_html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/white.css">
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+{html}
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+    <script>Reveal.initialize({{
+    }});</script>
+</body>
+</html>"""
+        return wrapped_html
+
+    def toReveal(self, html: str):
         """
         convert the given html to reveal
+        see https://revealjs.com/
         """
         soup = BeautifulSoup(html, "lxml")
         for h2 in soup.findChildren(recursive=True):
@@ -334,23 +360,23 @@ class WikiFrontend(object):
         html = self.unwrap(soup)
         return html
 
-    def get_frame(self,page_title:str)->str:
+    def get_frame(self, page_title: str) -> str:
         """
         get the frame property for the given page_title
         """
-        frame=None
-        markup=self.wiki.get_wiki_markup(page_title)
+        frame = None
+        markup = self.wiki.get_wiki_markup(page_title)
         # {{#set:frame=reveal}}
         # {{UseFrame|Contact.rythm|
         patterns = [
-            r'{{#set:frame=([^}]+)}}',    # {{#set:frame=reveal}}
-            r'{{UseFrame\|([^.]+)'        # {{UseFrame|Contact.rythm|
+            r"{{#set:frame=([^}]+)}}",  # {{#set:frame=reveal}}
+            r"{{UseFrame\|([^.]+)",  # {{UseFrame|Contact.rythm|
         ]
 
         for pattern in patterns:
             match = re.search(pattern, markup)
             if match:
-                frame=match.group(1)
+                frame = match.group(1)
         return frame
 
     def get_path_response(self, path: str) -> str:
@@ -373,29 +399,33 @@ class WikiFrontend(object):
             )
         else:
             page_title, content, error = self.getContent(path)
-            frame = HtmlFrame(self, title=page_title)
+            html_frame = HtmlFrame(self, title=page_title)
             html = content
             if error:
                 html = f"error getting {page_title} for {self.name}:<br>{error}"
             else:
                 if "<slideshow" in html or "&lt;slideshow" in html:
                     content = self.toReveal(content)
+                    # Complete reveal.js webpage
+                    framed_html = self.wrapWithReveal(html)
                     html = content
-            framed_html = frame.frame(html)
+                else:
+                    framed_html = html_frame.frame(html)
             response = HTMLResponse(framed_html)
         return response
+
 
 class WikiFrontends:
     """
     wiki frontends
     """
 
-    def __init__(self,servers):
+    def __init__(self, servers):
         """
         constructor
         """
-        self.servers=servers
-        self.wiki_frontends={}
+        self.servers = servers
+        self.wiki_frontends = {}
 
     def enableSites(self, siteNames):
         """

@@ -65,7 +65,5 @@ class TestServer(Basetest):
         test the servers collection
         """
         servers = Servers.of_config_path()
-        arche=servers.servers.get("arche")
+        arche = servers.servers.get("arche")
         arche.probe_wiki_family()
-
-

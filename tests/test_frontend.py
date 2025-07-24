@@ -6,10 +6,10 @@ Created on 2020-12-27
 
 import json
 
-from backend.server import Servers
-from frontend.wikicms import WikiFrontend, WikiFrontends
 from ngwidgets.basetest import Basetest
 
+from backend.server import Servers
+from frontend.wikicms import WikiFrontend, WikiFrontends
 from tests.test_webserver import TestWebServer
 
 
@@ -21,16 +21,15 @@ class TestFrontend(Basetest):
     def setUp(self):
         Basetest.setUp(self)
         self.server = TestWebServer.getServer()
-        self.servers=Servers.of_config_path()
-        self.wiki_frontends=WikiFrontends(self.servers)
+        self.servers = Servers.of_config_path()
+        self.wiki_frontends = WikiFrontends(self.servers)
         pass
-
 
     def testWikiPage(self):
         """
         test the route to page translation
         """
-        frontendSite=self.servers.frontends_by_name.get("www")
+        frontendSite = self.servers.frontends_by_name.get("www")
         frontend = WikiFrontend(frontendSite)
         routes = ["/index.php/File:Link.png"]
         expectedList = ["File:Link.png"]
@@ -75,13 +74,10 @@ class TestFrontend(Basetest):
         """
         # see e.g. http://wiki.bitplan.com/index.php/Property:Frame
         frontend = self.get_frontend("www")
-        test_cases= [
-            ("SMWConTalk2015-05","reveal"),
-            ("Feedback","Contact")
-        ]
-        debug=self.debug
-        #debug=True
-        for test_page,expected_frame in test_cases:
+        test_cases = [("SMWConTalk2015-05", "reveal"), ("Feedback", "Contact")]
+        debug = self.debug
+        # debug=True
+        for test_page, expected_frame in test_cases:
             frame = frontend.get_frame(test_page)
             self.assertEqual(expected_frame, frame)
             page_title, html, error = frontend.getContent(test_page)
@@ -104,7 +100,7 @@ class TestFrontend(Basetest):
         if self.debug:
             print(filtered)
         self.assertFalse("""<span class="mw-editsection">""" in filtered)
-        issue_page="WikiCMS/Issue15"
+        issue_page = "WikiCMS/Issue15"
         pageTitle, content, error = frontend.getContent(issue_page)
         self.assertEqual(issue_page, pageTitle)
         self.assertIsNone(error)
@@ -139,7 +135,7 @@ class TestFrontend(Basetest):
             print(filtered)
         self.assertFalse("<html>" in filtered)
         self.assertFalse("<body>" in filtered)
-        issue_page="WikiCMS/Issue17"
+        issue_page = "WikiCMS/Issue17"
         pageTitle, content, error = frontend.getContent(issue_page)
         self.assertIsNone(error)
         self.assertEqual(issue_page, pageTitle)
@@ -174,8 +170,8 @@ class TestFrontend(Basetest):
         <html>"""
         frontend = self.wiki_frontends.get_frontend("www")
         html = frontend.toReveal(wikihtml)
-        debug=self.debug
-        debug=True
+        debug = self.debug
+        debug = True
         if debug:
             print(html)
 
@@ -205,12 +201,12 @@ class TestFrontend(Basetest):
         """
         test the content management pages
         """
-        frontendSite=self.servers.frontends_by_name.get("www")
-        frontend = WikiFrontend(frontendSite,debug=True)
+        frontendSite = self.servers.frontends_by_name.get("www")
+        frontend = WikiFrontend(frontendSite, debug=True)
         frontend.open()
         cms_pages = frontend.get_cms_pages()
         debug = self.debug
-        #debug=True
+        # debug=True
         if debug:
             print(json.dumps(cms_pages, indent=2))
         self.assertTrue("CMS/footer/de" in cms_pages)

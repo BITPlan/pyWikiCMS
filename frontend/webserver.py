@@ -4,19 +4,28 @@ Created on 2020-12-30
 @author: wf
 """
 
-from backend.server import Servers
+import os
+
+from basemkit.persistent_log import Log
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
-from frontend.version import Version
-from frontend.wikicms import WikiFrontend, WikiFrontends
-from frontend.wikigrid import WikiGrid
-from ngwidgets.input_webserver import InputWebserver, InputWebSolution
+from mogwai.core import MogwaiGraph
+from mogwai.schema.graph_schema import GraphSchema
+from mogwai.web.node_view import NodeTableView, NodeViewConfig
+from ng3.graph_navigator import GraphNavigatorSolution, GraphNavigatorWebserver
+from ngwidgets.input_webserver import InputWebSolution
 from ngwidgets.sso_users_solution import SsoSolution
 from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
 
+from backend.server import Servers
+from frontend.servers_view import ServersView
+from frontend.version import Version
+from frontend.wikicms import WikiFrontend, WikiFrontends
+from frontend.wikigrid import WikiGrid
 
-class CmsWebServer(InputWebserver):
+
+class CmsWebServer(GraphNavigatorWebserver):
     """
     WebServer class that manages the servers
 
@@ -39,9 +48,13 @@ class CmsWebServer(InputWebserver):
         """
         constructor
         """
-        InputWebserver.__init__(self, config=CmsWebServer.get_config())
+        GraphNavigatorWebserver.__init__(self, config=CmsWebServer.get_config())
         self.servers = Servers.of_config_path()
-        self.wiki_frontends=WikiFrontends(self.servers)
+        self.wiki_frontends = WikiFrontends(self.servers)
+
+        @ui.page("/servers")
+        async def show_solutions(client: Client):
+            return await self.page(client, CmsSolution.show_servers)
 
         @app.get("/{frontend_name}/{page_path:path}")
         def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
@@ -85,11 +98,15 @@ class CmsWebServer(InputWebserver):
         """
         configure command line specific details
         """
-        InputWebserver.configure_run(self)
+        super().configure_run()
         self.wiki_frontends.enableSites(self.args.sites)
+        module_path = os.path.dirname(os.path.abspath(__file__))
+        yaml_path = os.path.join(module_path, "resources", "schema.yaml")
+        self.load_schema(yaml_path)
+        ServersView.add_to_graph(self.servers, self.graph, with_progress=True)
 
 
-class CmsSolution(InputWebSolution):
+class CmsSolution(GraphNavigatorSolution):
     """
     Content management solution
     """
@@ -106,6 +123,7 @@ class CmsSolution(InputWebSolution):
         super().__init__(webserver, client)  # Call to the superclass constructor
         self.wiki_grid = WikiGrid(self)
         self.servers = webserver.servers
+        self.servers_view = ServersView(self, self.servers)
         self.server_html = {}
 
     def configure_menu(self):
@@ -115,6 +133,8 @@ class CmsSolution(InputWebSolution):
         InputWebSolution.configure_menu(self)
         self.sso_solution = SsoSolution(webserver=self.webserver)
         self.sso_solution.configure_menu()
+        # icons from https://fonts.google.com/icons
+        self.link_button(name="servers", icon_name="cloud", target="/servers")
 
     async def home(self):
         """
@@ -123,8 +143,35 @@ class CmsSolution(InputWebSolution):
 
         def show():
             with self.content_div:
-                for server_name, server in self.servers.servers.items():
-                    self.server_html[server_name] = ui.html(server.asHtml())
                 self.wiki_grid.setup()
 
         await self.setup_content_div(show)
+
+    async def show_nodes(self, node_type: str):
+        """
+        show nodes of the given type
+
+        Args:
+            node_type(str): the type of nodes to show
+        """
+
+        def show():
+            try:
+                config = NodeViewConfig(
+                    solution=self,
+                    graph=self.graph,
+                    schema=self.schema,
+                    node_type=node_type,
+                )
+                if not config.node_type_config:
+                    ui.label(f"invalid_node_type: {node_type}")
+                    return
+                node_table_view = NodeTableView(config=config)
+                node_table_view.setup_ui()
+            except Exception as ex:
+                self.handle_exception(ex)
+
+        await self.setup_content_div(show)
+
+    async def show_servers(self):
+        await self.show_nodes("Server")
