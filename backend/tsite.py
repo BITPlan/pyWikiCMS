@@ -9,13 +9,46 @@ to a dockerized environment
 """
 
 from argparse import ArgumentParser
+from dataclasses import dataclass
 import sys
 
-from backend.server import Servers
-from backend.site import Site
+from backend.server import Servers, Server
+from backend.site import Site, WikiSite
 from basemkit.base_cmd import BaseCmd
+from basemkit.persistent_log import Log
 from profiwiki.version import Version
+from wikibot3rd.smw import SMWClient
+from wikibot3rd.wikiclient import WikiClient
+from wikibot3rd.wikiuser import WikiUser
 
+
+@dataclass
+class TransferTask:
+    wiki_site: WikiSite
+    source: Server
+    target: Server
+    debug:bool=False
+    progress:bool=True
+    query_division:int=50
+
+    def __post_init__(self):
+        self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
+        self.wikiClient = WikiClient.ofWikiUser(self.wikiUser)
+        self.smwClient = SMWClient(
+            self.wikiClient.getSite(),
+            showProgress=self.progress,
+            queryDivision=self.query_division,
+            debug=self.debug,
+        )
+        self.site=self.wikiClient.get_site()
+
+    def login(self):
+        wu=self.wikiUser
+        #self.wikiClient.login()
+        # just fake a compatible version to allow client login
+        self.site.version=(1,35,5)
+        self.site.clientlogin(username=wu.user, password=wu.get_password())
+        pass
 
 class TransferSite:
     """
@@ -31,6 +64,8 @@ class TransferSite:
         self.target = args.target
         self.sitename = args.sitename
         self.servers = Servers.of_config_path()
+        self.log=Log()
+        self.log.do_print=args.verbose
 
     def checksite(self):
         """
@@ -39,12 +74,20 @@ class TransferSite:
         """
         index=0
         for wiki in self.get_selected_wikis():
-            ssh_timestamp=wiki.remote.ssh_able()
-            ok=Site.state_symbol(ssh_timestamp is not None)
             index+=1
-            print(f"{index:02d}: {wiki.hostname:<26} {ok} {ssh_timestamp or ''}")
-            if self.args.debug:
-                wiki.remote.log.dump()
+            self.check_site(wiki,index)
+
+    def check_site(self,site,index:int=None)->bool:
+        """
+        check the given wiki
+        """
+        ssh_timestamp=site.remote.ssh_able()
+        ok=Site.state_symbol(ssh_timestamp is not None)
+        index_str=f"{index:02d}:"  if index else ""
+        print(f"{index_str}{site.hostname:<26} {ok} {ssh_timestamp or ''}")
+        if self.args.debug:
+            site.remote.log.dump()
+        return ok
 
     def checkfamily(self):
         """
@@ -58,6 +101,41 @@ class TransferSite:
         check the apache configurations
         """
         pass
+
+    def create_TransferTask(self)->TransferTask:
+        """
+        create a transfer Task
+        """
+        wiki=self.servers.wikis_by_hostname.get(self.sitename)
+        if wiki is None:
+            self.log.log("❌","transfer",f"invalid wiki {self.sitename}")
+            return
+        self.check_site(wiki)
+        source_ok=self.source and self.source in self.servers.servers
+        if not source_ok:
+            self.log.log("❌","transfer",f"invalid source {self.source}")
+            return
+        source_server=self.servers.servers.get(self.source)
+        if not self.check_site(source_server):
+            return
+        target_ok=self.target and self.target in self.servers.servers
+        if not target_ok:
+            self.log.log("❌","transfer",f"invalid target {self.target}")
+            return
+        target_server=self.servers.servers.get(self.target)
+        if not self.check_site(target_server):
+            return
+        transferTask=TransferTask(wiki,source_server,target_server)
+        return transferTask
+
+    def transfer(self):
+        """
+        transfer the given site from the source to the target server
+        """
+        transferTask=self.create_TransferTask()
+        transferTask.login()
+        self.log.log("✅","transfer",transferTask.site.version)
+
 
     def get_selected_servers(self):
         """
@@ -87,7 +165,7 @@ class TransferSite:
                     yield wiki
         else:
             if self.sitename:
-                wiki=self.servers.wikis_by_name.get(self.sitename)
+                wiki=self.servers.wikis_by_hostname.get(self.sitename)
                 yield wiki
 
     def list_sites(self) -> None:
@@ -130,6 +208,11 @@ class TransferSiteCmd(BaseCmd):
             help="check Apache configuration for the site",
         )
         parser.add_argument(
+            "--transfer",
+            action="store_true",
+            help="transfer the given site",
+        )
+        parser.add_argument(
             "-ls",
             "--list-sites",
             action="store_true",
@@ -161,8 +244,13 @@ class TransferSiteCmd(BaseCmd):
             handled = True
         if args.checkapache:
             handled=tsite.checkapache()
+        if args.transfer:
+            if not args.sitename or not args.source or not args.target:
+                print("need sitename, source and target!")
+                self.parser.print_help()
+            else:
+                handled=tsite.transfer()
         return handled
-
 
 def main():
     """
