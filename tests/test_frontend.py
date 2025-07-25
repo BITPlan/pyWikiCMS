@@ -68,7 +68,9 @@ class TestFrontend(WebserverTest):
             self.servers = first.servers
             self.wiki_frontends = first.wiki_frontends
             self.ws = first.ws
+            self.server_runner = first.server_runner
             self.client = TestClient(self.ws.app)
+            self.debug=first.debug
 
     def get_frontend(self, name: str) -> WikiFrontend:
         frontend = self.wiki_frontends.get_frontend(name)
