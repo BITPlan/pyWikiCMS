@@ -6,12 +6,12 @@ Created on 2020-07-11
 
 import warnings
 
-from ngwidgets.webserver_test import WebserverTest
-
 from backend.server import Server
-from backend.site import FrontendSite
+from backend.site import FrontendSite, WikiSite
 from frontend.cmsmain import CmsMain
 from frontend.webserver import CmsWebServer
+from ngwidgets.webserver_test import WebserverTest
+
 from tests.test_wikicms import TestWikiCMS
 
 
@@ -38,10 +38,13 @@ class TestWebServer(WebserverTest):
         warnings.simplefilter("ignore", ResourceWarning)
         server = Server(name="test", hostname="localhost")
         server.logo = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
+        server.wikis= {
+            "wiki.bitplan.com": WikiSite(name="wiki",wikiId="wiki")
+        }
         server.frontends = {
-            "cr": FrontendSite(name="cr", wikiId="cr"),
-            "sharks": FrontendSite(name="sharks", wikiId="wiki", defaultPage="Sharks"),
-            "www": FrontendSite(name="www", wikiId="wiki", defaultPage="Welcome"),
+            "cr.bitplan.com": FrontendSite(name="cr", wikiId="wiki"),
+            "sharks.bitplan.com": FrontendSite(name="sharks", wikiId="wiki", defaultPage="Sharks"),
+            "www.bitplan.com": FrontendSite(name="www", wikiId="wiki", defaultPage="Welcome"),
         }
         for frontend in server.frontends.values():
             # make sure ini file is available

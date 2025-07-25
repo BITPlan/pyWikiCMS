@@ -6,11 +6,13 @@ Created on 2020-12-27
 
 import json
 
+from backend.server import Servers
+from backend.site import WikiSite
+from frontend.wikicms import WikiFrontend, WikiFrontends
 from ngwidgets.basetest import Basetest
 
-from backend.server import Servers
-from frontend.wikicms import WikiFrontend, WikiFrontends
 from tests.test_webserver import TestWebServer
+
 
 class TestFrontend(Basetest):
     """
@@ -20,7 +22,12 @@ class TestFrontend(Basetest):
     def setUp(self):
         Basetest.setUp(self)
         self.server = TestWebServer.getServer()
-        self.servers = Servers.of_config_path()
+        #if self.inPublicCI():
+        self.servers=Servers()
+        self.servers.servers["test"]=self.server
+        self.servers.init()
+        #else:
+        #self.servers = Servers.of_config_path()
         self.wiki_frontends = WikiFrontends(self.servers)
         pass
 
