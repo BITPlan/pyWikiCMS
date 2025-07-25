@@ -42,9 +42,9 @@ class TestWebServer(WebserverTest):
             "wiki.bitplan.com": WikiSite(name="wiki",wikiId="wiki")
         }
         server.frontends = {
-            "cr.bitplan.com": FrontendSite(name="cr", wikiId="wiki"),
-            "sharks.bitplan.com": FrontendSite(name="sharks", wikiId="wiki", defaultPage="Sharks"),
-            "www.bitplan.com": FrontendSite(name="www", wikiId="wiki", defaultPage="Welcome"),
+            "cr": FrontendSite(name="cr", wikiId="wiki"),
+            "sharks": FrontendSite(name="sharks", wikiId="wiki", defaultPage="Sharks"),
+            "www": FrontendSite(name="www", wikiId="wiki", defaultPage="Welcome"),
         }
         for frontend in server.frontends.values():
             # make sure ini file is available
@@ -72,7 +72,7 @@ class TestWebServer(WebserverTest):
         https://github.com/BITPlan/pyWikiCMS/issues/20
         support reveal.js slideshow if frame is "reveal" #20
         """
-        html = self.get_html("www/SMWConTalk2015-05")
+        html = self.get_html("/www/SMWConTalk2015-05")
         if self.debug:
             print(html)
         self.assertTrue("reveal.min.css" in html)
