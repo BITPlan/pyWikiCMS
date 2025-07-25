@@ -5,35 +5,73 @@ Created on 2020-12-27
 """
 
 import json
+import warnings
 
-from backend.server import Servers
-from backend.site import WikiSite
+from ngwidgets.webserver_test import WebserverTest
+
+from backend.server import Server, Servers
+from backend.site import FrontendSite, WikiSite
+from frontend.cmsmain import CmsMain
+from frontend.webserver import CmsWebServer
 from frontend.wikicms import WikiFrontend, WikiFrontends
-from ngwidgets.basetest import Basetest
+from tests.smw_access import SMWAccess
 
-from tests.test_webserver import TestWebServer
-
-
-class TestFrontend(Basetest):
+class TestFrontend(WebserverTest):
     """
     test the frontend
     """
 
-    def setUp(self):
-        Basetest.setUp(self)
-        self.server = TestWebServer.getServer()
-        #if self.inPublicCI():
-        self.servers=Servers()
-        self.servers.servers["test"]=self.server
+    def setUp(self, debug=False, profile=True):
+        server_class = CmsWebServer
+        cmd_class = CmsMain
+        WebserverTest.setUp(self, server_class, cmd_class, debug=debug, profile=profile)
+        self.server = self.getServer()
+        self.servers = Servers()
+        self.servers.servers["test"] = self.server
         self.servers.init()
-        #else:
-        #self.servers = Servers.of_config_path()
+        # if self.inPublicCI():
+        # else:
+        # self.servers = Servers.of_config_path()
         self.wiki_frontends = WikiFrontends(self.servers)
-        pass
+        sites = list(self.server.frontends.keys())
+        self.ws.wiki_frontends.enableSites(sites)
 
-    def get_frontend(self,name:str)->WikiFrontend:
-        frontend=self.wiki_frontends.get_frontend(name)
+    def get_frontend(self, name: str) -> WikiFrontend:
+        frontend = self.wiki_frontends.get_frontend(name)
         return frontend
+
+    def getServer(self):
+        """
+        initialize the server
+        """
+        warnings.simplefilter("ignore", ResourceWarning)
+        server = Server(name="test", hostname="localhost")
+        server.logo = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Desmond_Llewelyn_01.jpg/330px-Desmond_Llewelyn_01.jpg"
+        server.wikis = {"wiki.bitplan.com": WikiSite(name="wiki", wikiId="wiki")}
+        server.frontends = {
+            "cr": FrontendSite(name="cr", wikiId="wiki"),
+            "sharks": FrontendSite(name="sharks", wikiId="wiki", defaultPage="Sharks"),
+            "www": FrontendSite(name="www", wikiId="wiki", defaultPage="Welcome"),
+        }
+        for frontend in server.frontends.values():
+            # make sure ini file is available
+            SMWAccess.getSMW_WikiUser(frontend.wikiId)
+        return server
+
+    def testWebServer(self):
+        """
+        test the WebServer
+        """
+        queries = ["/www/Joker", "/", "/www/{Illegal}"]
+        expected = ["Joker", "<title>pyWikiCMS</title>", "invalid char"]
+        debug = self.debug
+        # debug = True
+        for i, query in enumerate(queries):
+            html = self.get_html(query)
+            if debug:
+                print(f"{i+1}:{query}\n{html}")
+            ehtml = expected[i]
+            self.assertTrue(ehtml, ehtml in html)
 
     def testWikiPage(self):
         """
@@ -183,6 +221,18 @@ class TestFrontend(Basetest):
         debug = True
         if debug:
             print(html)
+
+    def testRevealIssue20(self):
+        """
+        test Issue 20
+        https://github.com/BITPlan/pyWikiCMS/issues/20
+        support reveal.js slideshow if frame is "reveal" #20
+        """
+        html = self.get_html("www/SMWConTalk2015-05")
+        if self.debug:
+            print(html)
+        self.assertTrue("reveal.min.css" in html)
+        self.assertTrue("Reveal.initialize({" in html)
 
     def testFixHtml(self):
         """

@@ -401,7 +401,7 @@ class WikiFrontend(object):
             page_title, content, error = self.getContent(path)
             html_frame = HtmlFrame(self, title=page_title)
             html = content
-            framed_html=None
+            framed_html = None
             if error:
                 html = f"error getting {page_title} for {self.name}:<br>{error}"
             else:

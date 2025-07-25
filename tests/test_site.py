@@ -6,9 +6,10 @@ Created on 2021-01-01
 
 import unittest
 
+from basemkit.basetest import Basetest
+
 from backend.server import Servers
 from backend.site import WikiSite
-from basemkit.basetest import Basetest
 
 
 class TestSite(Basetest):
@@ -20,12 +21,14 @@ class TestSite(Basetest):
         Basetest.setUp(self, debug=debug, profile=profile)
         self.servers = Servers.of_config_path()
 
-    def configure_wiki(self,hostname)->WikiSite:
+    def configure_wiki(self, hostname) -> WikiSite:
         wiki = self.servers.wikis_by_hostname.get(hostname)
-        family=self.servers.servers.get("q")
+        family = self.servers.servers.get("q")
         self.assertIsNotNone(family)
-        family.sitedir="/var/www/mediawiki/sites"
-        wiki.configure_of_settings(family,f"{family.sitedir}/{hostname}/LocalSettings.php")
+        family.sitedir = "/var/www/mediawiki/sites"
+        wiki.configure_of_settings(
+            family, f"{family.sitedir}/{hostname}/LocalSettings.php"
+        )
         return wiki
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")

@@ -4,11 +4,12 @@ Created on 2025-07-23
 @author: wf
 """
 
-from backend.server import Servers
 from mogwai.core.mogwaigraph import MogwaiGraph
 from mogwai.web.node_view import NodeView
 from nicegui import ui
 from tqdm import tqdm
+
+from backend.server import Servers
 
 
 class ServersView:
@@ -33,7 +34,7 @@ class ServersView:
             props = {
                 "hostname": server.hostname,
                 "platform": server.platform,
-                "_instance": server
+                "_instance": server,
             }
             _node = graph.add_labeled_node("Server", name=name, properties=props)
         return graph
@@ -48,9 +49,9 @@ class ServerView(NodeView):
         """Setup UI with code display."""
         try:
             if self.node_data:
-                self.server=self.node_data.get("_instance")
-                html_markup=self.server.as_html()
-                self.html=ui.html(html_markup)
+                self.server = self.node_data.get("_instance")
+                html_markup = self.server.as_html()
+                self.html = ui.html(html_markup)
                 pass
                 # Add probe button
                 ui.button("Probe Remote", on_click=self.probe)
@@ -62,7 +63,7 @@ class ServerView(NodeView):
         """Probe remote server and update display."""
         try:
             self.server.probe_remote()
-            html_markup=self.server.as_html()
-            self.html.content=html_markup
+            html_markup = self.server.as_html()
+            self.html.content = html_markup
         except Exception as ex:
             self.solution.handle_exception(ex)

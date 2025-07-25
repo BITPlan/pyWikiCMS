@@ -6,14 +6,9 @@ Created on 2020-12-30
 
 import os
 
-from backend.server import Servers
 from basemkit.persistent_log import Log
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
-from frontend.servers_view import ServersView
-from frontend.version import Version
-from frontend.wikicms import WikiFrontend, WikiFrontends
-from frontend.wikigrid import WikiGrid
 from mogwai.core import MogwaiGraph
 from mogwai.schema.graph_schema import GraphSchema
 from mogwai.web.node_view import NodeTableView, NodeViewConfig
@@ -25,6 +20,12 @@ from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
 from starlette.responses import RedirectResponse
 from wikibot3rd.sso_users import Sso_Users
+
+from backend.server import Servers
+from frontend.servers_view import ServersView
+from frontend.version import Version
+from frontend.wikicms import WikiFrontend, WikiFrontends
+from frontend.wikigrid import WikiGrid
 
 
 class CmsWebServer(GraphNavigatorWebserver):
@@ -142,7 +143,7 @@ class CmsSolution(GraphNavigatorSolution):
         configure my menu
         """
         InputWebSolution.configure_menu(self)
-        self.login=self.webserver.login
+        self.login = self.webserver.login
         self.sso_solution = SsoSolution(webserver=self.webserver)
         self.sso_solution.configure_menu()
         # icons from https://fonts.google.com/icons
