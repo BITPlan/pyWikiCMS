@@ -39,7 +39,7 @@ class Server:
     frontends: Dict[str,FrontendSite]  = field(default_factory=dict)
 
     # Non-persistent calculated fields
-    pingable: bool = field(default=False,init=False, repr=False)
+    sitedir: str = field(default=False,init=False, repr=False)
     actual_hostname: str = field(default="", init=False, repr=False)
     platform: str = field(default="", init=False, repr=False)
     ip: str = field(default="127.0.0.1", init=False, repr=False)

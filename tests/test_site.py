@@ -6,9 +6,9 @@ Created on 2021-01-01
 
 import unittest
 
-from basemkit.basetest import Basetest
-
 from backend.server import Servers
+from backend.site import WikiSite
+from basemkit.basetest import Basetest
 
 
 class TestSite(Basetest):
@@ -20,12 +20,20 @@ class TestSite(Basetest):
         Basetest.setUp(self, debug=debug, profile=profile)
         self.servers = Servers.of_config_path()
 
+    def configure_wiki(self,hostname)->WikiSite:
+        wiki = self.servers.wikis_by_hostname.get(hostname)
+        family=self.servers.servers.get("q")
+        self.assertIsNotNone(family)
+        family.sitedir="/var/www/mediawiki/sites"
+        wiki.configure_of_settings(family,f"{family.sitedir}/{hostname}/LocalSettings.php")
+        return wiki
+
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testLogo(self):
         """
         test fixing BITPlan wiki family style logo references with a site subpath
         """
-        wiki = self.servers.wikis_by_hostname.get("wiki.bitplan.com")
+        wiki = self.configure_wiki("wiki.bitplan.com")
         logoFile = wiki.getLogo()
         if self.debug:
             print(logoFile)
@@ -36,10 +44,7 @@ class TestSite(Basetest):
         """
         test getting the status code for the a wiki
         """
-        wiki = self.servers.wikis_by_hostname.get("wiki.bitplan.com")
-        server=self.servers.servers.get("q")
-        self.assertIsNotNone(server)
-        wiki.configure_of_settings(server,"/var/www/mediawiki/sites/wiki.bitplan.com/LocalSettings.php")
+        wiki = self.configure_wiki("wiki.bitplan.com")
         statusCode = wiki.getStatusCode(5.0)
         self.assertEqual(200, statusCode)
 
