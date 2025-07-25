@@ -3,10 +3,13 @@ Created on 2020-07-27
 
 @author: wf
 """
+
 # from wikibot.smw import SMWClient
 from basemkit.basetest import Basetest
+
 from frontend.wikicms import WikiFrontend
 from tests.smw_access import SMWAccess
+
 
 class TestWikiCMS(Basetest):
     """
@@ -19,8 +22,6 @@ class TestWikiCMS(Basetest):
 
     def tearDown(self):
         pass
-
-
 
     def testWikiCMS(self):
         """test CMS access"""

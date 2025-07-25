@@ -6,15 +6,16 @@ Created on 2020-12-27
 
 import json
 import warnings
+
 # this is starlette TestClient under the hood
 from fastapi.testclient import TestClient
+from ngwidgets.webserver_test import WebserverTest
+
 from backend.server import Server, Servers
 from backend.site import FrontendSite, WikiSite
 from frontend.cmsmain import CmsMain
 from frontend.webserver import CmsWebServer
 from frontend.wikicms import WikiFrontend, WikiFrontends
-from ngwidgets.webserver_test import WebserverTest
-
 from tests.smw_access import SMWAccess
 
 
@@ -22,7 +23,8 @@ class TestFrontend(WebserverTest):
     """
     test the frontend
     """
-    instance=None
+
+    instance = None
 
     @classmethod
     def tearDownClass(cls):
@@ -45,10 +47,12 @@ class TestFrontend(WebserverTest):
         if not TestFrontend.instance:
             server_class = CmsWebServer
             cmd_class = CmsMain
-            super().setUp(server_class=server_class,
+            super().setUp(
+                server_class=server_class,
                 cmd_class=cmd_class,
                 debug=debug,
-                profile=profile)
+                profile=profile,
+            )
             self.server = self.getServer()
             self.servers = Servers()
             # uncomment if you want to test local setup
@@ -60,17 +64,17 @@ class TestFrontend(WebserverTest):
             self.wiki_frontends = WikiFrontends(self.servers)
             sites = list(self.server.frontends.keys())
             self.ws.wiki_frontends.enableSites(sites)
-            TestFrontend.instance=self
+            TestFrontend.instance = self
         else:
             # reuse setup from first instance
-            first=TestFrontend.instance
+            first = TestFrontend.instance
             self.server = first.server
             self.servers = first.servers
             self.wiki_frontends = first.wiki_frontends
             self.ws = first.ws
             self.server_runner = first.server_runner
             self.client = TestClient(self.ws.app)
-            self.debug=first.debug
+            self.debug = first.debug
 
     def get_frontend(self, name: str) -> WikiFrontend:
         frontend = self.wiki_frontends.get_frontend(name)
@@ -120,7 +124,6 @@ class TestFrontend(WebserverTest):
             print(html)
         self.assertTrue("reveal.min.css" in html)
         self.assertTrue("Reveal.initialize({" in html)
-
 
     def testWikiPage(self):
         """
@@ -267,7 +270,7 @@ class TestFrontend(WebserverTest):
         frontend = self.get_frontend("www")
         html = frontend.toReveal(wikihtml)
         debug = self.debug
-        #debug = True
+        # debug = True
         if debug:
             print(html)
 
