@@ -43,6 +43,9 @@ class TransferTask:
         self.site=self.wikiClient.get_site()
 
     def login(self):
+        """
+        login to the source wiki
+        """
         wu=self.wikiUser
         #self.wikiClient.login()
         # just fake a compatible version to allow client login
@@ -100,6 +103,11 @@ class TransferSite:
         """
         check the apache configurations
         """
+        for server in self.get_selected_servers():
+            server.probe_apache_configs()
+            for site in server.wikis.values():
+                if site.apache_config:
+                    print(f"{server.hostname}:{site.apache_config}")
         pass
 
     def create_TransferTask(self)->TransferTask:
