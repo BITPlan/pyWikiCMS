@@ -40,6 +40,7 @@ class CmsWebServer(GraphNavigatorWebserver):
             copy_right=copy_right,
             version=Version(),
             default_port=8252,
+            timeout=10.0,
             short_name="wikicms",
         )
         server_config = WebserverConfig.get(config)
