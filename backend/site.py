@@ -89,9 +89,9 @@ class WikiSite(Site):
         super().__post_init__()
         pass
 
-    def configure_local_wiki(self, family = None, localSettings: str = None) -> None:
+    def configure_of_settings(self, family = None, localSettings: str = None) -> None:
         """
-        Configure this site as a local wiki
+        Configure this site from the given settings
 
         Args:
             family: WikiFamily instance

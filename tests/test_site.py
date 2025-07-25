@@ -9,7 +9,6 @@ import unittest
 from basemkit.basetest import Basetest
 
 from backend.server import Servers
-from backend.site import WikiSite
 
 
 class TestSite(Basetest):
@@ -38,6 +37,9 @@ class TestSite(Basetest):
         test getting the status code for the a wiki
         """
         wiki = self.servers.wikis_by_hostname.get("wiki.bitplan.com")
+        server=self.servers.servers.get("q")
+        self.assertIsNotNone(server)
+        wiki.configure_of_settings(server,"/var/www/mediawiki/sites/wiki.bitplan.com/LocalSettings.php")
         statusCode = wiki.getStatusCode(5.0)
         self.assertEqual(200, statusCode)
 

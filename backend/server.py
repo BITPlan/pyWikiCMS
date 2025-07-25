@@ -149,7 +149,7 @@ class Server:
                     self.log.log("⚠️", "configure_wiki_family", f"Site {site_name} found but not declared")
                 else:
                     site=self.wikis.get(site_name)
-                    site.configure_local_wiki(family=self, localSettings=local_settings_path)
+                    site.configure_of_settings(family=self, localSettings=local_settings_path)
                     wikisites.append(site)
 
         return wikisites
