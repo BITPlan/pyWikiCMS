@@ -6,35 +6,69 @@ Created on 2020-12-27
 
 import json
 import warnings
-
-from ngwidgets.webserver_test import WebserverTest
-
+# this is starlette TestClient under the hood
+from fastapi.testclient import TestClient
 from backend.server import Server, Servers
 from backend.site import FrontendSite, WikiSite
 from frontend.cmsmain import CmsMain
 from frontend.webserver import CmsWebServer
 from frontend.wikicms import WikiFrontend, WikiFrontends
+from ngwidgets.webserver_test import WebserverTest
+
 from tests.smw_access import SMWAccess
+
 
 class TestFrontend(WebserverTest):
     """
     test the frontend
     """
+    instance=None
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.instance:
+            cls.instance.tearDown()
+
+    def tearDown(self):
+        """
+        avoid the default tearDown behavior which e.g. closes the event
+        loop - there are follow-up e.g race condition issues which
+        we would rather only have to mitigate once
+        """
+        pass
 
     def setUp(self, debug=False, profile=True):
-        server_class = CmsWebServer
-        cmd_class = CmsMain
-        WebserverTest.setUp(self, server_class, cmd_class, debug=debug, profile=profile)
-        self.server = self.getServer()
-        self.servers = Servers()
-        self.servers.servers["test"] = self.server
-        self.servers.init()
-        # if self.inPublicCI():
-        # else:
-        # self.servers = Servers.of_config_path()
-        self.wiki_frontends = WikiFrontends(self.servers)
-        sites = list(self.server.frontends.keys())
-        self.ws.wiki_frontends.enableSites(sites)
+        """
+        setUp the test environment making sure we reuse the expensive
+        nicegui Webserver
+        """
+        if not TestFrontend.instance:
+            server_class = CmsWebServer
+            cmd_class = CmsMain
+            super().setUp(server_class=server_class,
+                cmd_class=cmd_class,
+                debug=debug,
+                profile=profile)
+            self.server = self.getServer()
+            self.servers = Servers()
+            # uncomment if you want to test local setup
+            # if self.inPublicCI():
+            self.servers.servers["test"] = self.server
+            self.servers.init()
+            # else:
+            # self.servers = Servers.of_config_path()
+            self.wiki_frontends = WikiFrontends(self.servers)
+            sites = list(self.server.frontends.keys())
+            self.ws.wiki_frontends.enableSites(sites)
+            TestFrontend.instance=self
+        else:
+            # reuse setup from first instance
+            first=TestFrontend.instance
+            self.server = first.server
+            self.servers = first.servers
+            self.wiki_frontends = first.wiki_frontends
+            self.ws = first.ws
+            self.client = TestClient(self.ws.app)
 
     def get_frontend(self, name: str) -> WikiFrontend:
         frontend = self.wiki_frontends.get_frontend(name)
@@ -58,20 +92,33 @@ class TestFrontend(WebserverTest):
             SMWAccess.getSMW_WikiUser(frontend.wikiId)
         return server
 
-    def testWebServer(self):
+    def testWebServerPaths(self):
         """
-        test the WebServer
+        Test the WebServer using subtests for better reporting
         """
         queries = ["/www/Joker", "/", "/www/{Illegal}"]
         expected = ["Joker", "<title>pyWikiCMS</title>", "invalid char"]
         debug = self.debug
-        # debug = True
-        for i, query in enumerate(queries):
-            html = self.get_html(query)
-            if debug:
-                print(f"{i+1}:{query}\n{html}")
-            ehtml = expected[i]
-            self.assertTrue(ehtml, ehtml in html)
+        # debug=True
+        for i, (query, ehtml) in enumerate(zip(queries, expected)):
+            with self.subTest(query=query):
+                html = self.get_html(query)
+                if debug:
+                    print(f"{i+1}:{query}\n{html}")
+                self.assertIn(ehtml, html)
+
+    def testRevealIssue20(self):
+        """
+        test Issue 20
+        https://github.com/BITPlan/pyWikiCMS/issues/20
+        support reveal.js slideshow if frame is "reveal" #20
+        """
+        html = self.get_html("/www/SMWConTalk2015-05")
+        if self.debug:
+            print(html)
+        self.assertTrue("reveal.min.css" in html)
+        self.assertTrue("Reveal.initialize({" in html)
+
 
     def testWikiPage(self):
         """
@@ -218,21 +265,9 @@ class TestFrontend(WebserverTest):
         frontend = self.get_frontend("www")
         html = frontend.toReveal(wikihtml)
         debug = self.debug
-        debug = True
+        #debug = True
         if debug:
             print(html)
-
-    def testRevealIssue20(self):
-        """
-        test Issue 20
-        https://github.com/BITPlan/pyWikiCMS/issues/20
-        support reveal.js slideshow if frame is "reveal" #20
-        """
-        html = self.get_html("www/SMWConTalk2015-05")
-        if self.debug:
-            print(html)
-        self.assertTrue("reveal.min.css" in html)
-        self.assertTrue("Reveal.initialize({" in html)
 
     def testFixHtml(self):
         """

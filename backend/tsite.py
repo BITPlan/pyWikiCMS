@@ -208,6 +208,11 @@ class TransferSiteCmd(BaseCmd):
             help="check Apache configuration for the site",
         )
         parser.add_argument(
+            "--backup",
+            action="store_true",
+            help="create a backup wiki",
+        )
+        parser.add_argument(
             "--transfer",
             action="store_true",
             help="transfer the given site",
