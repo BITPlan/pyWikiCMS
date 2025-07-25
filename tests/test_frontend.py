@@ -12,7 +12,6 @@ from backend.server import Servers
 from frontend.wikicms import WikiFrontend, WikiFrontends
 from tests.test_webserver import TestWebServer
 
-
 class TestFrontend(Basetest):
     """
     test the frontend
@@ -25,12 +24,15 @@ class TestFrontend(Basetest):
         self.wiki_frontends = WikiFrontends(self.servers)
         pass
 
+    def get_frontend(self,name:str)->WikiFrontend:
+        frontend=self.wiki_frontends.get_frontend(name)
+        return frontend
+
     def testWikiPage(self):
         """
         test the route to page translation
         """
-        frontendSite = self.servers.frontends_by_name.get("www")
-        frontend = WikiFrontend(frontendSite)
+        frontend = self.get_frontend("www")
         routes = ["/index.php/File:Link.png"]
         expectedList = ["File:Link.png"]
         for i, route in enumerate(routes):
@@ -168,7 +170,7 @@ class TestFrontend(Basetest):
                 </div>
             </body>
         <html>"""
-        frontend = self.wiki_frontends.get_frontend("www")
+        frontend = self.get_frontend("www")
         html = frontend.toReveal(wikihtml)
         debug = self.debug
         debug = True
@@ -180,7 +182,7 @@ class TestFrontend(Basetest):
         test that hrefs, images src, srcset videos and objects are
         modified from local-absolute urls to ones with "www"
         """
-        frontend = self.wiki_frontends.get_frontend("www")
+        frontend = self.get_frontend("www")
         pageTitle, content, error = frontend.getContent("Welcome")
         if error is not None:
             print(error)
@@ -201,8 +203,7 @@ class TestFrontend(Basetest):
         """
         test the content management pages
         """
-        frontendSite = self.servers.frontends_by_name.get("www")
-        frontend = WikiFrontend(frontendSite, debug=True)
+        frontend = self.get_frontend("www")
         frontend.open()
         cms_pages = frontend.get_cms_pages()
         debug = self.debug
