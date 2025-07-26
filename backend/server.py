@@ -17,6 +17,7 @@ from backend.site import Site, WikiSite, FrontendSite
 from basemkit.persistent_log import Log
 from basemkit.yamlable import lod_storable
 import pymysql
+from lodstorage.query import EndpointManager
 
 
 @lod_storable
@@ -59,6 +60,13 @@ class Server:
         """Load server configurations from YAML file."""
         server_configs = cls.load_from_yaml_file(yaml_path)
         return server_configs
+
+    def init_endpoints(self,config_path:str):
+        """
+        initialize my endpoints
+        """
+        self.endpoint_yaml_path = os.path.join(config_path, "servers",self.name,"endpoints.yaml")
+        self.endpoints = EndpointManager.getEndpoints(self.endpoint_yaml_path)
 
     def probe_remote(self):
         """

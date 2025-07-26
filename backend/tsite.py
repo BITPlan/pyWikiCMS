@@ -70,7 +70,18 @@ class TransferSite:
         self.log=Log()
         self.log.do_print=args.verbose
 
-    def checkbackup(self):
+    def check_apache(self):
+        """
+        check the apache configurations
+        """
+        for server in self.get_selected_servers():
+            server.probe_apache_configs()
+            for site in server.wikis.values():
+                if site.apache_config:
+                    print(f"{server.hostname}:{site.apache_config}")
+        pass
+
+    def check_backup(self):
         """
         check the backup state of the selected servers sites
         """
@@ -83,7 +94,14 @@ class TransferSite:
                         age_marker = "✅" if stats.age_days < 1.0 else "❌"
                         print(f"{server.hostname}:{filepath} {stats.age_days:.2f} d {age_marker}")
 
-    def checksite(self):
+    def check_endpoints(self):
+        """
+        check that we have endpoint configurations
+        """
+        for server in self.get_selected_servers():
+            server.init_endpoints(self.servers.get_config_path())
+
+    def check_site(self):
         """
         Prints reachability status of sites
         Returns True if both are reachable, else False.
@@ -91,9 +109,9 @@ class TransferSite:
         index=0
         for wiki in self.get_selected_wikis():
             index+=1
-            self.check_site(wiki,index)
+            self.check_wikisite(wiki,index)
 
-    def check_site(self,site,index:int=None)->bool:
+    def check_wikisite(self,site,index:int=None)->bool:
         """
         check the given wiki
         """
@@ -105,14 +123,14 @@ class TransferSite:
             site.remote.log.dump()
         return ok
 
-    def checkfamily(self):
+    def check_family(self):
         """
         check the family probing
         """
         for server in self.get_selected_servers():
             wikis=server.probe_wiki_family()
 
-    def checktools(self):
+    def check_tools(self):
         """
         Check availability and versions of required tools on selected servers
 
@@ -133,17 +151,6 @@ class TransferSite:
             version_info = output.split('\n')[0].strip() if output else "?"
             hint=version_info if status_symbol == "✅" else tool.install_cmd
             print(f" {tool_name:<12} {status_symbol} {hint}")
-
-    def checkapache(self):
-        """
-        check the apache configurations
-        """
-        for server in self.get_selected_servers():
-            server.probe_apache_configs()
-            for site in server.wikis.values():
-                if site.apache_config:
-                    print(f"{server.hostname}:{site.apache_config}")
-        pass
 
     def create_TransferTask(self)->TransferTask:
         """
@@ -232,34 +239,40 @@ class TransferSiteCmd(BaseCmd):
         """
         super().add_arguments(parser)
         parser.add_argument(
+            "-ca",
+            "--check-apache",
+            action="store_true",
+            help="check Apache configuration for selected sites",
+        )
+        parser.add_argument(
             "-cs",
-            "--checksite",
+            "--check-site",
             action="store_true",
             help="check site state of selected sites",
         )
         parser.add_argument(
             "-ct",
-            "--checktools",
+            "--check-tools",
             action="store_true",
             help="check availability of needed tools on selected sites",
         )
         parser.add_argument(
             "-cb",
-            "--checkbackup",
+            "--check-backup",
+            action="store_true",
+            help="check backup state of selected wikis",
+        )
+        parser.add_argument(
+            "-ce",
+            "--check-endpoints",
             action="store_true",
             help="check backup state of selected wikis",
         )
         parser.add_argument(
             "-cf",
-            "--checkfamily",
+            "--check-family",
             action="store_true",
             help="check family state of selected sites",
-        )
-        parser.add_argument(
-            "-ca",
-            "--checkapache",
-            action="store_true",
-            help="check Apache configuration for selected sites",
         )
         parser.add_argument(
             "--backup",
@@ -292,24 +305,28 @@ class TransferSiteCmd(BaseCmd):
     def handle_args(self, args):
         handled=super().handle_args(args)
         tsite = TransferSite(args)
-        if args.checkbackup:
-            tsite.checkbackup()
+        if args.check_apache:
+            tsite.check_apache()
             handled=True
-        if args.checksite:
-            tsite.checksite()
+        if args.check_backup:
+            tsite.check_backup()
             handled=True
-        if args.checkfamily:
-            tsite.checkfamily()
+        if args.check_endpoints:
+            tsite.check_endpoints()
+            handled=True
+        if args.check_family:
+            tsite.check_family()
+            handled=True
+        if args.check_site:
+            tsite.check_site()
+            handled=True
+        if args.check_tools:
+            tsite.check_tools()
             handled=True
         if args.list_sites:
             tsite.list_sites()
             handled = True
-        if args.checkapache:
-            tsite.checkapache()
-            handled=True
-        if args.checktools:
-            tsite.checktools()
-            handled=True
+
         if args.transfer:
             if not args.sitename or not args.source or not args.target:
                 print("need sitename, source and target!")
