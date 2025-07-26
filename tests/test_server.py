@@ -43,6 +43,11 @@ class TestServer(Basetest):
         """
         servers = Servers.of_config_path()
         self.assertTrue(len(servers.servers) > 0)
+        self.assertTrue(len(servers.tools.tools) >= 5)
+        if self.debug:
+            print("Tools:")
+            for tool_name, tool in servers.tools.tools.items():
+                print(f" Tool: {tool_name} - {tool.version_cmd}")
 
         # Probe all servers
         for server_name, server in servers.servers.items():

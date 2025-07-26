@@ -70,6 +70,19 @@ class TransferSite:
         self.log=Log()
         self.log.do_print=args.verbose
 
+    def checkbackup(self):
+        """
+        check the backup state of the selected servers sites
+        """
+        for server in self.get_selected_servers():
+            files = server.remote.listdir(server.sql_backup_path+"/today","*.sql")
+            if files:
+                for filepath in files:
+                    stats = server.remote.get_file_stats(filepath)
+                    if stats:
+                        age_marker = "✅" if stats.age_days < 1.0 else "❌"
+                        print(f"{server.hostname}:{filepath} {stats.age_days:.2f} d {age_marker}")
+
     def checksite(self):
         """
         Prints reachability status of sites
@@ -98,6 +111,28 @@ class TransferSite:
         """
         for server in self.get_selected_servers():
             wikis=server.probe_wiki_family()
+
+    def checktools(self):
+        """
+        Check availability and versions of required tools on selected servers
+
+        Tools are loaded from tools.yaml configuration
+        """
+        for server in self.get_selected_servers():
+            print(f"\nServer: {server.hostname}")
+            self.check_server_tools(server)
+
+    def check_server_tools(self, server):
+        """
+        Check tools on a specific server
+        """
+        for tool_name, tool in self.servers.tools.tools.items():
+            cmd=f"source .profile;{tool.version_cmd}"
+            output = server.remote.get_output(cmd)
+            status_symbol = "✅" if output else "❌"
+            version_info = output.split('\n')[0].strip() if output else "?"
+            hint=version_info if status_symbol == "✅" else tool.install_cmd
+            print(f" {tool_name:<12} {status_symbol} {hint}")
 
     def checkapache(self):
         """
@@ -143,7 +178,6 @@ class TransferSite:
         transferTask=self.create_TransferTask()
         transferTask.login()
         self.log.log("✅","transfer",transferTask.site.version)
-
 
     def get_selected_servers(self):
         """
@@ -201,19 +235,31 @@ class TransferSiteCmd(BaseCmd):
             "-cs",
             "--checksite",
             action="store_true",
-            help="check site state of source/target",
+            help="check site state of selected sites",
+        )
+        parser.add_argument(
+            "-ct",
+            "--checktools",
+            action="store_true",
+            help="check availability of needed tools on selected sites",
+        )
+        parser.add_argument(
+            "-cb",
+            "--checkbackup",
+            action="store_true",
+            help="check backup state of selected wikis",
         )
         parser.add_argument(
             "-cf",
             "--checkfamily",
             action="store_true",
-            help="check family state of source/target",
+            help="check family state of selected sites",
         )
         parser.add_argument(
             "-ca",
             "--checkapache",
             action="store_true",
-            help="check Apache configuration for the site",
+            help="check Apache configuration for selected sites",
         )
         parser.add_argument(
             "--backup",
@@ -246,6 +292,9 @@ class TransferSiteCmd(BaseCmd):
     def handle_args(self, args):
         handled=super().handle_args(args)
         tsite = TransferSite(args)
+        if args.checkbackup:
+            tsite.checkbackup()
+            handled=True
         if args.checksite:
             tsite.checksite()
             handled=True
@@ -256,7 +305,11 @@ class TransferSiteCmd(BaseCmd):
             tsite.list_sites()
             handled = True
         if args.checkapache:
-            handled=tsite.checkapache()
+            tsite.checkapache()
+            handled=True
+        if args.checktools:
+            tsite.checktools()
+            handled=True
         if args.transfer:
             if not args.sitename or not args.source or not args.target:
                 print("need sitename, source and target!")

@@ -12,7 +12,7 @@ import socket
 from sys import platform
 from typing import Dict, Optional
 
-from backend.remote import Remote
+from backend.remote import Remote, Tool, Tools
 from backend.site import Site, WikiSite, FrontendSite
 from basemkit.persistent_log import Log
 from basemkit.yamlable import lod_storable
@@ -32,7 +32,7 @@ class Server:
     admin_password: Optional[str]=None
     purpose: Optional[str]=None
     logo: str = "https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png"
-    sqlBackupPath:str = "/var/backup/sqlbackup"
+    sql_backup_path:str = "/var/backup/sqlbackup"
     timeout:int=5 # 5 secs
     sites: Dict[str, Site] = field(default_factory=dict)
     wikis: Dict[str, WikiSite] = field(default_factory=dict)
@@ -245,7 +245,7 @@ class Server:
             dict: backup State
 
         """
-        fullBackup = "%s/today/%s_full.sql" % (self.sqlBackupPath, dbName)
+        fullBackup = "%s/today/%s_full.sql" % (self.sql_backup_path, dbName)
         size = 0
         mdate = None
         exists = os.path.isfile(fullBackup)
@@ -320,6 +320,8 @@ class Servers:
     Collection of servers loaded from YAML configuration files
     """
     servers: Dict[str, Server] = field(default_factory=dict)
+    tools: Optional[Tools] = None
+
     # Non-persistent calculated fields
     wikis_by_hostname: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
     wikis_by_id: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
@@ -344,12 +346,15 @@ class Servers:
         servers_instance = cls()
         config_path = cls.get_config_path()
         yaml_pattern = f"{config_path}/*.yaml"
+        tools_path=f"{config_path}/tools.yaml"
         yaml_files = glob.glob(yaml_pattern)
-
         for yaml_file in yaml_files:
-            server = Server.of_yaml(yaml_file)
-            server_name = os.path.basename(yaml_file).replace('.yaml', '')
-            servers_instance.servers[server_name] = server
+            if yaml_file == tools_path:
+                servers_instance.tools = Tools.of_yaml(tools_path)
+            else:
+                server = Server.of_yaml(yaml_file)
+                server_name = os.path.basename(yaml_file).replace('.yaml', '')
+                servers_instance.servers[server_name] = server
 
         servers_instance.init()
         return servers_instance
@@ -376,6 +381,9 @@ class Servers:
         self.wikis_by_id.clear()
         self.frontends_by_hostname.clear()
         self.frontends_by_name.clear()
+        if self.tools:
+            for tool_name, tool in self.tools.tools.items():
+                tool.name=tool_name
         for server in self.servers.values():
             for hostname, wiki in server.wikis.items():
                 self.wikis_by_hostname[hostname] = wiki
