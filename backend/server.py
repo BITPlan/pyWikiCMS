@@ -66,7 +66,13 @@ class Server:
         initialize my endpoints
         """
         self.endpoint_yaml_path = os.path.join(config_path, "servers",self.name,"endpoints.yaml")
-        self.endpoints = EndpointManager.getEndpoints(self.endpoint_yaml_path)
+        remote_path=f".wikicms/servers/{self.name}/endpoints.yaml"
+        ep_stats=self.remote.get_file_stats(remote_path)
+        if ep_stats:
+            os.makedirs(os.path.dirname(self.endpoint_yaml_path), exist_ok=True)
+            proc=self.remote.scp_from(remote_path, self.endpoint_yaml_path)
+            if proc.returncode==0:
+                self.endpoints = EndpointManager.getEndpoints(self.endpoint_yaml_path)
 
     def probe_remote(self):
         """

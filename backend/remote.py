@@ -12,8 +12,6 @@ from basemkit.persistent_log import Log
 from basemkit.shell import Shell
 from basemkit.yamlable import lod_storable
 
-
-
 @lod_storable
 class Tool:
     """ tool configuration."""
@@ -158,22 +156,45 @@ class Remote:
         self.shell = Shell()
         self.timeout=timeout
         self.log=Log()
+        self.ssh_options=f"-o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host}"
 
     def run(self,cmd:str,tee:bool=False)-> subprocess.CompletedProcess:
         """
         run the given command remotely
         """
-        remote_cmd=f"ssh -o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host} "
+        remote_cmd=f"ssh  {self.ssh_options}"
         if self.container:
-            remote_cmd+=f"docker exec {self.container} "
+            remote_cmd+=f"docker exec {self.container}"
 
-        remote_cmd+=f'"{cmd}"'
+        remote_cmd+=f' "{cmd}"'
+        result=self.run_remote(remote_cmd,tee=tee)
+        return result
+
+    def run_remote(self,remote_cmd:str,tee:bool=False)-> subprocess.CompletedProcess:
+        """
+        run the given remote command
+        """
         result = self.shell.run(remote_cmd, tee=tee)
         if result.returncode != 0:
             self.log.log("❌", "remote",remote_cmd)
         else:
             self.log.log("✅", "remote",remote_cmd)
         return result
+
+    def scp_from(self, remote_path: str, local_path: str) -> subprocess.CompletedProcess:
+        """
+        Copy file from remote host to local path using scp
+
+        Args:
+            remote_path: full path to the remote file
+            local_path: full destination path on local machine
+
+        Returns:
+            subprocess.CompletedProcess result
+        """
+        scp_cmd = f"scp {self.ssh_options}:{remote_path} {local_path}"
+        return self.run_remote(scp_cmd)
+
 
     def get_output(self, cmd: str) -> Optional[str]:
         """

@@ -100,6 +100,8 @@ class TransferSite:
         """
         for server in self.get_selected_servers():
             server.init_endpoints(self.servers.get_config_path())
+            if self.args.debug:
+                server.remote.log.dump()
 
     def check_site(self):
         """
