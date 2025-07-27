@@ -129,6 +129,16 @@ class TestFrontend(WebserverTest):
             SMWAccess.getSMW_WikiUser(frontend.wikiId)
         return server
 
+    def testGetFrontend(self):
+        """
+        test the route to page translation
+        """
+        self.check_server()
+        frontend = self.get_frontend("www")
+        self.assertIsNotNone(frontend)
+        self.assertEquals("www",frontend.name)
+        pass
+
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testWebServerPaths(self):
         """
@@ -189,7 +199,6 @@ class TestFrontend(WebserverTest):
         self.assertEqual(200, imageResponse.status_code)
         self.assertEqual(expected_size, len(imageResponse.content))
 
-    #@unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testProxy(self):
         """
         test the proxy handling
@@ -198,7 +207,6 @@ class TestFrontend(WebserverTest):
         url = "/images/wiki/thumb/6/62/IMG_0736_Shark.png/400px-IMG_0736_Shark.png"
         self.checkProxiedContent("sharks", url, 79499)
 
-    #@unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue18(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/18
@@ -291,7 +299,6 @@ class TestFrontend(WebserverTest):
         if self.debug:
             print(content)
 
-    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue28_video_support(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/28

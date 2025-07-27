@@ -81,6 +81,13 @@ class CmsWebServer(GraphNavigatorWebserver):
                 return RedirectResponse("/login")
             return await self.page(client, CmsSolution.show_wikis)
 
+        @ui.page("/wiki/{wiki_name}")
+        async def show_wiki(client: Client, wiki_name: str):
+            if not self.authenticated():
+                return RedirectResponse("/login")
+            return await self.page(client, lambda solution: solution.show_wiki(wiki_name))
+
+
         @ui.page("/login")
         async def login(client: Client) -> None:
             return await self.page(client, CmsSolution.show_login)
