@@ -24,7 +24,7 @@ from wikibot3rd.sso_users import Sso_Users
 from backend.server import Servers
 from frontend.servers_view import ServersView
 from frontend.version import Version
-from frontend.wikicms import WikiFrontend, WikiFrontends
+from frontend.wikicms import WikiFrontends
 from frontend.wikigrid import WikiGrid
 
 

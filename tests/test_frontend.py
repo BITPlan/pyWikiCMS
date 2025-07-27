@@ -44,6 +44,9 @@ class TestFrontend(WebserverTest):
         setUp the test environment making sure we reuse the expensive
         nicegui Webserver
         """
+        # we do not have credentials in public CI
+        if self.inPublicCI():
+            WikiFrontend.with_login=False
         if not TestFrontend.instance:
             server_class = CmsWebServer
             cmd_class = CmsMain

@@ -24,6 +24,7 @@ class WikiFrontend(object):
     """
     Wiki Content Management System Frontend
     """
+    with_login:bool=True
 
     def __init__(
         self,
@@ -100,7 +101,8 @@ class WikiFrontend(object):
         """
         if self.wiki is None:
             self.wiki = WikiClient.ofWikiId(self.frontend.wikiId)
-            self.wiki.login()
+            if WikiFrontend.with_login:
+                self.wiki.login()
             self.smwclient = SMWClient(self.wiki.getSite())
             self.cms_pages = self.get_cms_pages()
             self.frontend.enabled = True
