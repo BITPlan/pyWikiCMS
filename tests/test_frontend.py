@@ -189,7 +189,7 @@ class TestFrontend(WebserverTest):
         self.assertEqual(200, imageResponse.status_code)
         self.assertEqual(expected_size, len(imageResponse.content))
 
-    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
+    #@unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testProxy(self):
         """
         test the proxy handling
