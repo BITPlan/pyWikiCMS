@@ -42,24 +42,22 @@ class TestFrontend(WebserverTest):
             self.client = None
         pass
 
-    def use_new_event_loop(self):
-        """
-        Ensure we have a clean event loop for CI environments
-        """
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-
     def setUp(self, debug=False, profile=True):
         """
         setUp the test environment making sure we reuse the expensive
         nicegui Webserver
         """
-        # we do not have credentials in public CI
+        # special settings for public Continuous Integration environment
+        # such as github
         if self.inPublicCI():
+            # we do not have credentials in public CI
             WikiFrontend.with_login=False
-            # work around ValueError: The future belongs to a different loop than the one specified as the loop argument
-            self.use_new_event_loop()
+            # work around ValueError: The future belongs to a different loop
+            # than the one specified as the loop argument
+            # recreate a new server instance for every test - this is
+            # less efficient but should be more stable - in the CI the longer
+            # runtime is not so critical
+            TestFrontend.instance=None
         if not TestFrontend.instance:
             server_class = CmsWebServer
             cmd_class = CmsMain
