@@ -4,20 +4,20 @@ Created on 2020-12-27
 @author: wf
 """
 
-from datetime import datetime
 import json
 import unittest
 import warnings
+from datetime import datetime
 
-from backend.server import Server, Servers
-from backend.site import FrontendSite, WikiSite
 from fastapi.testclient import TestClient
-from frontend.cmsmain import CmsMain
-from frontend.webserver import CmsWebServer
-from frontend.wikicms import WikiFrontend, WikiFrontends
 from ngwidgets.basetest import Basetest
 from ngwidgets.webserver_test import WebserverTest
 
+from backend.server import Server, Servers
+from backend.site import FrontendSite, WikiSite
+from frontend.cmsmain import CmsMain
+from frontend.webserver import CmsWebServer
+from frontend.wikicms import WikiFrontend, WikiFrontends
 from tests.smw_access import SMWAccess
 
 
@@ -46,13 +46,13 @@ class TestFrontend(WebserverTest):
             self.client = None
         pass
 
-    def check_server(self,hint:str=None):
+    def check_server(self, hint: str = None):
         """
         make sure the server is ready
         """
         timestamp = datetime.now().isoformat()
         if hint is None:
-            hint=self._testMethodName
+            hint = self._testMethodName
         msg = f"{timestamp} - {hint}"
         print(msg)
         pass
@@ -136,7 +136,7 @@ class TestFrontend(WebserverTest):
         self.check_server()
         frontend = self.get_frontend("www")
         self.assertIsNotNone(frontend)
-        self.assertEquals("www",frontend.name)
+        self.assertEqual("www", frontend.name)
         pass
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")

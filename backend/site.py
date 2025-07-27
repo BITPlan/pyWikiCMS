@@ -4,14 +4,15 @@ Created on 2021-01-01
 @author: wf
 """
 
-from dataclasses import field, dataclass
 import re
 import socket
+from dataclasses import dataclass, field
 from typing import Optional
 
-from backend.remote import Remote
-from basemkit.yamlable import lod_storable
 import requests
+from basemkit.yamlable import lod_storable
+
+from backend.remote import Remote
 
 
 @dataclass
@@ -19,17 +20,17 @@ class Site:
     """
     an Apache Site
     """
+
     name: str
     # if container is set the site is provided by a docker container
-    container: Optional[str]=None
+    container: Optional[str] = None
     apache_config: Optional[str] = None
     ip: str = field(default="?", init=False)
     url: Optional[str] = field(default=None, init=False)
 
     # Non-persistent calculated fields
     remote: Remote = field(default=None, init=False, repr=False)
-    hostname: str = field(default=None,init=False,repr=True)
-
+    hostname: str = field(default=None, init=False, repr=True)
 
     def __post_init__(self):
         """
@@ -61,11 +62,13 @@ class Site:
         except Exception:
             self.ip = "?"
 
+
 @lod_storable
 class WikiSite(Site):
     """
     A MediaWiki Site
     """
+
     wikiId: Optional[str] = None
     database: Optional[str] = None
     defaultPage: str = "Main Page"
@@ -89,7 +92,7 @@ class WikiSite(Site):
         super().__post_init__()
         pass
 
-    def configure_of_settings(self, family = None, localSettings: str = None) -> None:
+    def configure_of_settings(self, family=None, localSettings: str = None) -> None:
         """
         Configure this site from the given settings
 
@@ -185,9 +188,10 @@ class FrontendSite(Site):
     """
     a frontend site - backed by a WikiSite
     """
-    wikiId:str = "wiki"
+
+    wikiId: str = "wiki"
     defaultPage: str = "Main Page"
-    enabled: bool=False;
+    enabled: bool = False
 
     # non persistent field
     wikisite: WikiSite = field(default=False, init=False, repr=False)

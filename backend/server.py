@@ -3,21 +3,23 @@ Created on 2021-01-06
 
 @author: wf
 """
-from dataclasses import field
+
 import datetime
 import glob
 import os
 import re
 import socket
 import sys
+from dataclasses import field
 from typing import Dict, Optional
 
-from backend.remote import Remote, Tool, Tools
-from backend.site import Site, WikiSite, FrontendSite
+import pymysql
 from basemkit.persistent_log import Log
 from basemkit.yamlable import lod_storable
-import pymysql
 from lodstorage.query import EndpointManager
+
+from backend.remote import Remote, Tool, Tools
+from backend.site import FrontendSite, Site, WikiSite
 
 
 @lod_storable
@@ -27,21 +29,22 @@ class Server:
     either in legacy style with a directory layout or with multiple docker
     containers
     """
+
     name: str
     hostname: str
-    admin_user: Optional[str]=None
-    admin_password: Optional[str]=None
-    auto_login:bool=False
-    purpose: Optional[str]=None
+    admin_user: Optional[str] = None
+    admin_password: Optional[str] = None
+    auto_login: bool = False
+    purpose: Optional[str] = None
     logo: str = "https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png"
-    sql_backup_path:str = "/var/backup/sqlbackup"
-    timeout:int=5 # 5 secs
+    sql_backup_path: str = "/var/backup/sqlbackup"
+    timeout: int = 5  # 5 secs
     sites: Dict[str, Site] = field(default_factory=dict)
     wikis: Dict[str, WikiSite] = field(default_factory=dict)
-    frontends: Dict[str,FrontendSite]  = field(default_factory=dict)
+    frontends: Dict[str, FrontendSite] = field(default_factory=dict)
 
     # Non-persistent calculated fields
-    sitedir: str = field(default=False,init=False, repr=False)
+    sitedir: str = field(default=False, init=False, repr=False)
     actual_hostname: str = field(default="", init=False, repr=False)
     platform: str = field(default="", init=False, repr=False)
     ip: str = field(default="127.0.0.1", init=False, repr=False)
@@ -53,8 +56,8 @@ class Server:
         """
         Initialize calculated fields
         """
-        self.log=Log()
-        self.remote=Remote(self.hostname)
+        self.log = Log()
+        self.remote = Remote(self.hostname)
 
     @classmethod
     def of_yaml(cls, yaml_path: str) -> "Server":
@@ -62,17 +65,19 @@ class Server:
         server_configs = cls.load_from_yaml_file(yaml_path)
         return server_configs
 
-    def init_endpoints(self,config_path:str):
+    def init_endpoints(self, config_path: str):
         """
         initialize my endpoints
         """
-        self.endpoint_yaml_path = os.path.join(config_path, "servers",self.name,"endpoints.yaml")
-        remote_path=f".wikicms/servers/{self.name}/endpoints.yaml"
-        ep_stats=self.remote.get_file_stats(remote_path)
+        self.endpoint_yaml_path = os.path.join(
+            config_path, "servers", self.name, "endpoints.yaml"
+        )
+        remote_path = f".wikicms/servers/{self.name}/endpoints.yaml"
+        ep_stats = self.remote.get_file_stats(remote_path)
         if ep_stats:
             os.makedirs(os.path.dirname(self.endpoint_yaml_path), exist_ok=True)
-            proc=self.remote.scp_from(remote_path, self.endpoint_yaml_path)
-            if proc.returncode==0:
+            proc = self.remote.scp_from(remote_path, self.endpoint_yaml_path)
+            if proc.returncode == 0:
                 self.endpoints = EndpointManager.getEndpoints(self.endpoint_yaml_path)
 
     def probe_remote(self):
@@ -87,7 +92,9 @@ class Server:
 
         if ssh_timestamp:
             # Get platform information
-            self.platform = self.remote.get_output("python3 -c 'import sys; print(sys.platform)'")
+            self.platform = self.remote.get_output(
+                "python3 -c 'import sys; print(sys.platform)'"
+            )
 
             # Get hostname
             self.hostname = self.remote.get_output("hostname")
@@ -97,16 +104,15 @@ class Server:
 
             self.probe_apache_configs()
 
-
     def probe_apache_configs(self):
         """
         Probe and set Apache configuration for all sites
         """
         apache_configs = self.remote.get_output("sudo apachectl -S | grep namevhost")
         if apache_configs:
-            for line in apache_configs.split('\n'):
+            for line in apache_configs.split("\n"):
                 if line.strip():
-                    match = re.search(r'namevhost (\S+) \(([^:]+):', line)
+                    match = re.search(r"namevhost (\S+) \(([^:]+):", line)
                 if match:
                     hostname = match.group(1)
                     config_file = match.group(2)
@@ -132,7 +138,9 @@ class Server:
                 print(str(ex))
             self.ip = "127.0.0.1"
 
-    def probe_wiki_family(self, sitedir: str = "/var/www/mediawiki/sites") -> list[WikiSite]:
+    def probe_wiki_family(
+        self, sitedir: str = "/var/www/mediawiki/sites"
+    ) -> list[WikiSite]:
         """
         probe this server for a wiki
         family by scanning sitedir for LocalSettings.php files
@@ -159,12 +167,18 @@ class Server:
             settings_stats = self.remote.get_file_stats(local_settings_path)
 
             if settings_stats is not None and not settings_stats.is_directory:
-                site_name=site_file
+                site_name = site_file
                 if site_name not in self.wikis:
-                    self.log.log("⚠️", "configure_wiki_family", f"Site {site_name} found but not declared")
+                    self.log.log(
+                        "⚠️",
+                        "configure_wiki_family",
+                        f"Site {site_name} found but not declared",
+                    )
                 else:
-                    site=self.wikis.get(site_name)
-                    site.configure_of_settings(family=self, localSettings=local_settings_path)
+                    site = self.wikis.get(site_name)
+                    site.configure_of_settings(
+                        family=self, localSettings=local_settings_path
+                    )
                     wikisites.append(site)
 
         return wikisites
@@ -329,26 +343,36 @@ class Server:
 """
         return html
 
+
 @lod_storable
 class Servers:
     """
     Collection of servers loaded from YAML configuration files
     """
+
     servers: Dict[str, Server] = field(default_factory=dict)
     tools: Optional[Tools] = None
 
     # Non-persistent calculated fields
-    wikis_by_hostname: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
-    wikis_by_id: Dict[str, WikiSite] = field(default_factory=dict, init=False, repr=False)
-    frontends_by_hostname: Dict[str,FrontendSite] = field(default_factory=dict, init=False, repr=False)
-    frontends_by_name: Dict[str,FrontendSite] = field(default_factory=dict, init=False, repr=False)
+    wikis_by_hostname: Dict[str, WikiSite] = field(
+        default_factory=dict, init=False, repr=False
+    )
+    wikis_by_id: Dict[str, WikiSite] = field(
+        default_factory=dict, init=False, repr=False
+    )
+    frontends_by_hostname: Dict[str, FrontendSite] = field(
+        default_factory=dict, init=False, repr=False
+    )
+    frontends_by_name: Dict[str, FrontendSite] = field(
+        default_factory=dict, init=False, repr=False
+    )
     log: Log = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         """
         Initialize calculated fields
         """
-        self.log=Log()
+        self.log = Log()
 
     @classmethod
     def of_config_path(cls) -> "Servers":
@@ -361,14 +385,14 @@ class Servers:
         servers_instance = cls()
         config_path = cls.get_config_path()
         yaml_pattern = f"{config_path}/*.yaml"
-        tools_path=f"{config_path}/tools.yaml"
+        tools_path = f"{config_path}/tools.yaml"
         yaml_files = glob.glob(yaml_pattern)
         for yaml_file in yaml_files:
             if yaml_file == tools_path:
                 servers_instance.tools = Tools.of_yaml(tools_path)
             else:
                 server = Server.of_yaml(yaml_file)
-                server_name = os.path.basename(yaml_file).replace('.yaml', '')
+                server_name = os.path.basename(yaml_file).replace(".yaml", "")
                 servers_instance.servers[server_name] = server
 
         servers_instance.init()
@@ -398,20 +422,20 @@ class Servers:
         self.frontends_by_name.clear()
         if self.tools:
             for tool_name, tool in self.tools.tools.items():
-                tool.name=tool_name
+                tool.name = tool_name
         for server in self.servers.values():
             for hostname, wiki in server.wikis.items():
                 self.wikis_by_hostname[hostname] = wiki
-                self.wikis_by_id[wiki.wikiId] =wiki
-                wiki.hostname=hostname
+                self.wikis_by_id[wiki.wikiId] = wiki
+                wiki.hostname = hostname
                 wiki.init_remote()
-            for hostname,frontend in server.frontends.items():
-                self.frontends_by_hostname[hostname]=frontend
-                self.frontends_by_name[frontend.name]=frontend
-                frontend.hostname=hostname
+            for hostname, frontend in server.frontends.items():
+                self.frontends_by_hostname[hostname] = frontend
+                self.frontends_by_name[frontend.name] = frontend
+                frontend.hostname = hostname
                 frontend.init_remote()
                 if frontend.wikiId in self.wikis_by_id:
-                    frontend.wikisite=self.wikis_by_id.get(frontend.wikiId)
+                    frontend.wikisite = self.wikis_by_id.get(frontend.wikiId)
                 else:
-                    msg=f"invalid frontend wikiId {frontend.wikiId}"
-                    self.log.log("❌","frontend",msg)
+                    msg = f"invalid frontend wikiId {frontend.wikiId}"
+                    self.log.log("❌", "frontend", msg)

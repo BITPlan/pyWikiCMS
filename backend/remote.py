@@ -3,19 +3,24 @@ Created on 2025-07-21
 
 @author: wf
 """
+
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
-import subprocess
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from basemkit.persistent_log import Log
 from basemkit.shell import Shell
 from basemkit.yamlable import lod_storable
 
+
 @lod_storable
 class Tool:
-    """ tool configuration."""
-    name: Optional[str]=None # Tool identifier name will be set from dict keys if this tools is part of Tools
+    """tool configuration."""
+
+    name: Optional[str] = (
+        None  # Tool identifier name will be set from dict keys if this tools is part of Tools
+    )
     version_cmd: Optional[str] = None  # Command to check tool version
     description: Optional[str] = None  # Tool description text
     wikidata_id: Optional[str] = None  # Wikidata entity identifier
@@ -23,12 +28,14 @@ class Tool:
     install_mac: Optional[str] = None  # Installation command for macOS
     post_install_mac: Optional[str] = None  # Post-installation command for macOS
 
+
 @lod_storable
 class Tools:
     """
     assembly of tools
     """
-    tools: Dict[str,Tool] = field(default_factory=dict)
+
+    tools: Dict[str, Tool] = field(default_factory=dict)
 
     @classmethod
     def of_yaml(cls, yaml_path: str) -> "Tools":
@@ -36,17 +43,18 @@ class Tools:
         tools = cls.load_from_yaml_file(yaml_path)
         return tools
 
+
 @dataclass
 class Stats:
     filepath: str
-    size:int
+    size: int
     mtime_int: int
-    permissions:str
-    owner:str
-    group:str
+    permissions: str
+    owner: str
+    group: str
 
     @classmethod
-    def of_stats(cls, filepath:str, result_stdout: str) -> 'Stats':
+    def of_stats(cls, filepath: str, result_stdout: str) -> "Stats":
         """
         Create Stats object from stat command output
 
@@ -64,7 +72,7 @@ class Stats:
             mtime_int=int(parts[1]),
             permissions=parts[2],
             owner=parts[3],
-            group=parts[4]
+            group=parts[4],
         )
         return stats_obj
 
@@ -76,7 +84,7 @@ class Stats:
         Returns:
             True if directory, False otherwise
         """
-        is_directory=self.permissions.startswith('d')
+        is_directory = self.permissions.startswith("d")
         return is_directory
 
     @property
@@ -87,7 +95,7 @@ class Stats:
         Returns:
             Filename without directory path
         """
-        filename = self.filepath.split('/')[-1]
+        filename = self.filepath.split("/")[-1]
         return filename
 
     @property
@@ -133,8 +141,9 @@ class Stats:
         Returns:
             Age in days as float
         """
-        age_days=self.age_secs/86400.0
+        age_days = self.age_secs / 86400.0
         return age_days
+
 
 class Remote:
     """
@@ -142,7 +151,7 @@ class Remote:
     a given server and potentially a docker container
     """
 
-    def __init__(self, host:str, container: Optional[str] = None,  timeout:int=5):
+    def __init__(self, host: str, container: Optional[str] = None, timeout: int = 5):
         """
         Constructor
 
@@ -151,37 +160,43 @@ class Remote:
             container: Optional docker container name
             timeout: the timeout for the command
         """
-        self.host=host
+        self.host = host
         self.container = container
         self.shell = Shell()
-        self.timeout=timeout
-        self.log=Log()
-        self.ssh_options=f"-o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host}"
+        self.timeout = timeout
+        self.log = Log()
+        self.ssh_options = (
+            f"-o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host}"
+        )
 
-    def run(self,cmd:str,tee:bool=False)-> subprocess.CompletedProcess:
+    def run(self, cmd: str, tee: bool = False) -> subprocess.CompletedProcess:
         """
         run the given command remotely
         """
-        remote_cmd=f"ssh  {self.ssh_options}"
+        remote_cmd = f"ssh  {self.ssh_options}"
         if self.container:
-            remote_cmd+=f" docker exec {self.container}"
+            remote_cmd += f" docker exec {self.container}"
 
-        remote_cmd+=f' "{cmd}"'
-        result=self.run_remote(remote_cmd,tee=tee)
+        remote_cmd += f' "{cmd}"'
+        result = self.run_remote(remote_cmd, tee=tee)
         return result
 
-    def run_remote(self,remote_cmd:str,tee:bool=False)-> subprocess.CompletedProcess:
+    def run_remote(
+        self, remote_cmd: str, tee: bool = False
+    ) -> subprocess.CompletedProcess:
         """
         run the given remote command
         """
         result = self.shell.run(remote_cmd, tee=tee)
         if result.returncode != 0:
-            self.log.log("❌", "remote",remote_cmd)
+            self.log.log("❌", "remote", remote_cmd)
         else:
-            self.log.log("✅", "remote",remote_cmd)
+            self.log.log("✅", "remote", remote_cmd)
         return result
 
-    def scp_from(self, remote_path: str, local_path: str) -> subprocess.CompletedProcess:
+    def scp_from(
+        self, remote_path: str, local_path: str
+    ) -> subprocess.CompletedProcess:
         """
         Copy file from remote host to local path using scp
 
@@ -194,7 +209,6 @@ class Remote:
         """
         scp_cmd = f"scp {self.ssh_options}:{remote_path} {local_path}"
         return self.run_remote(scp_cmd)
-
 
     def get_output(self, cmd: str) -> Optional[str]:
         """
@@ -236,7 +250,7 @@ class Remote:
         result = self.run(cmd)
         stats_obj = None
         if result.returncode == 0:
-            stats_obj = Stats.of_stats(filepath,result.stdout)
+            stats_obj = Stats.of_stats(filepath, result.stdout)
         return stats_obj
 
     def listdir(self, dirpath: str, wildcard: str = "*") -> Optional[list[str]]:

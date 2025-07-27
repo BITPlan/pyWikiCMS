@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup, Comment
 from bs4.element import NavigableString, Tag
 from fastapi import Response
 from fastapi.responses import HTMLResponse
+from mogwai.core.mogwaigraph import MogwaiGraph
+from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 

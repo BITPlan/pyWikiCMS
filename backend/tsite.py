@@ -8,12 +8,10 @@ to a dockerized environment
 @author: wf
 """
 
+import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
-import sys
 
-from backend.server import Servers, Server
-from backend.site import Site, WikiSite
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from profiwiki.version import Version
@@ -21,15 +19,18 @@ from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 
+from backend.server import Server, Servers
+from backend.site import Site, WikiSite
+
 
 @dataclass
 class TransferTask:
     wiki_site: WikiSite
     source: Server
     target: Server
-    debug:bool=False
-    progress:bool=True
-    query_division:int=50
+    debug: bool = False
+    progress: bool = True
+    query_division: int = 50
 
     def __post_init__(self):
         self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
@@ -40,18 +41,19 @@ class TransferTask:
             queryDivision=self.query_division,
             debug=self.debug,
         )
-        self.site=self.wikiClient.get_site()
+        self.site = self.wikiClient.get_site()
 
     def login(self):
         """
         login to the source wiki
         """
-        wu=self.wikiUser
-        #self.wikiClient.login()
+        wu = self.wikiUser
+        # self.wikiClient.login()
         # just fake a compatible version to allow client login
-        self.site.version=(1,35,5)
+        self.site.version = (1, 35, 5)
         self.site.clientlogin(username=wu.user, password=wu.get_password())
         pass
+
 
 class TransferSite:
     """
@@ -62,13 +64,13 @@ class TransferSite:
         """
         constructor
         """
-        self.args=args
+        self.args = args
         self.source = args.source
         self.target = args.target
         self.sitename = args.sitename
         self.servers = Servers.of_config_path()
-        self.log=Log()
-        self.log.do_print=args.verbose
+        self.log = Log()
+        self.log.do_print = args.verbose
 
     def check_apache(self):
         """
@@ -86,13 +88,15 @@ class TransferSite:
         check the backup state of the selected servers sites
         """
         for server in self.get_selected_servers():
-            files = server.remote.listdir(server.sql_backup_path+"/today","*.sql")
+            files = server.remote.listdir(server.sql_backup_path + "/today", "*.sql")
             if files:
                 for filepath in files:
                     stats = server.remote.get_file_stats(filepath)
                     if stats:
                         age_marker = "✅" if stats.age_days < 1.0 else "❌"
-                        print(f"{server.hostname}:{filepath} {stats.age_days:.2f} d {age_marker}")
+                        print(
+                            f"{server.hostname}:{filepath} {stats.age_days:.2f} d {age_marker}"
+                        )
 
     def check_endpoints(self):
         """
@@ -108,18 +112,18 @@ class TransferSite:
         Prints reachability status of sites
         Returns True if both are reachable, else False.
         """
-        index=0
+        index = 0
         for wiki in self.get_selected_wikis():
-            index+=1
-            self.check_wikisite(wiki,index)
+            index += 1
+            self.check_wikisite(wiki, index)
 
-    def check_wikisite(self,site,index:int=None)->bool:
+    def check_wikisite(self, site, index: int = None) -> bool:
         """
         check the given wiki
         """
-        ssh_timestamp=site.remote.ssh_able()
-        ok=Site.state_symbol(ssh_timestamp is not None)
-        index_str=f"{index:02d}:"  if index else ""
+        ssh_timestamp = site.remote.ssh_able()
+        ok = Site.state_symbol(ssh_timestamp is not None)
+        index_str = f"{index:02d}:" if index else ""
         print(f"{index_str}{site.hostname:<26} {ok} {ssh_timestamp or ''}")
         if self.args.debug:
             site.remote.log.dump()
@@ -130,7 +134,7 @@ class TransferSite:
         check the family probing
         """
         for server in self.get_selected_servers():
-            wikis=server.probe_wiki_family()
+            wikis = server.probe_wiki_family()
 
     def check_tools(self):
         """
@@ -147,46 +151,46 @@ class TransferSite:
         Check tools on a specific server
         """
         for tool_name, tool in self.servers.tools.tools.items():
-            cmd=f"source .profile;{tool.version_cmd}"
+            cmd = f"source .profile;{tool.version_cmd}"
             output = server.remote.get_output(cmd)
             status_symbol = "✅" if output else "❌"
-            version_info = output.split('\n')[0].strip() if output else "?"
-            hint=version_info if status_symbol == "✅" else tool.install_cmd
+            version_info = output.split("\n")[0].strip() if output else "?"
+            hint = version_info if status_symbol == "✅" else tool.install_cmd
             print(f" {tool_name:<12} {status_symbol} {hint}")
 
-    def create_TransferTask(self)->TransferTask:
+    def create_TransferTask(self) -> TransferTask:
         """
         create a transfer Task
         """
-        wiki=self.servers.wikis_by_hostname.get(self.sitename)
+        wiki = self.servers.wikis_by_hostname.get(self.sitename)
         if wiki is None:
-            self.log.log("❌","transfer",f"invalid wiki {self.sitename}")
+            self.log.log("❌", "transfer", f"invalid wiki {self.sitename}")
             return
         self.check_site(wiki)
-        source_ok=self.source and self.source in self.servers.servers
+        source_ok = self.source and self.source in self.servers.servers
         if not source_ok:
-            self.log.log("❌","transfer",f"invalid source {self.source}")
+            self.log.log("❌", "transfer", f"invalid source {self.source}")
             return
-        source_server=self.servers.servers.get(self.source)
+        source_server = self.servers.servers.get(self.source)
         if not self.check_site(source_server):
             return
-        target_ok=self.target and self.target in self.servers.servers
+        target_ok = self.target and self.target in self.servers.servers
         if not target_ok:
-            self.log.log("❌","transfer",f"invalid target {self.target}")
+            self.log.log("❌", "transfer", f"invalid target {self.target}")
             return
-        target_server=self.servers.servers.get(self.target)
+        target_server = self.servers.servers.get(self.target)
         if not self.check_site(target_server):
             return
-        transferTask=TransferTask(wiki,source_server,target_server)
+        transferTask = TransferTask(wiki, source_server, target_server)
         return transferTask
 
     def transfer(self):
         """
         transfer the given site from the source to the target server
         """
-        transferTask=self.create_TransferTask()
+        transferTask = self.create_TransferTask()
         transferTask.login()
-        self.log.log("✅","transfer",transferTask.site.version)
+        self.log.log("✅", "transfer", transferTask.site.version)
 
     def get_selected_servers(self):
         """
@@ -216,7 +220,7 @@ class TransferSite:
                     yield wiki
         else:
             if self.sitename:
-                wiki=self.servers.wikis_by_hostname.get(self.sitename)
+                wiki = self.servers.wikis_by_hostname.get(self.sitename)
                 yield wiki
 
     def list_sites(self) -> None:
@@ -229,6 +233,7 @@ class TransferSite:
             for wiki_name, wiki in server.wikis.items():
                 database_info = f" (DB: {wiki.database})" if wiki.database else ""
                 print(f"  - {wiki_name}{database_info}")
+
 
 class TransferSiteCmd(BaseCmd):
     """
@@ -305,26 +310,26 @@ class TransferSiteCmd(BaseCmd):
         parser.add_argument("-t", "--target", help="specify the target server")
 
     def handle_args(self, args):
-        handled=super().handle_args(args)
+        handled = super().handle_args(args)
         tsite = TransferSite(args)
         if args.check_apache:
             tsite.check_apache()
-            handled=True
+            handled = True
         if args.check_backup:
             tsite.check_backup()
-            handled=True
+            handled = True
         if args.check_endpoints:
             tsite.check_endpoints()
-            handled=True
+            handled = True
         if args.check_family:
             tsite.check_family()
-            handled=True
+            handled = True
         if args.check_site:
             tsite.check_site()
-            handled=True
+            handled = True
         if args.check_tools:
             tsite.check_tools()
-            handled=True
+            handled = True
         if args.list_sites:
             tsite.list_sites()
             handled = True
@@ -334,8 +339,9 @@ class TransferSiteCmd(BaseCmd):
                 print("need sitename, source and target!")
                 self.parser.print_help()
             else:
-                handled=tsite.transfer()
+                handled = tsite.transfer()
         return handled
+
 
 def main():
     """

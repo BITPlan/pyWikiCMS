@@ -20,6 +20,7 @@ from starlette.responses import RedirectResponse
 from wikibot3rd.sso_users import Sso_Users
 
 from backend.server import Servers
+from backend.wikis import Wikis
 from frontend.servers_view import ServersView
 from frontend.version import Version
 from frontend.wikicms import WikiFrontends
@@ -85,8 +86,9 @@ class CmsWebServer(GraphNavigatorWebserver):
         async def show_wiki(client: Client, wiki_name: str):
             if not self.authenticated():
                 return RedirectResponse("/login")
-            return await self.page(client, lambda solution: solution.show_wiki(wiki_name))
-
+            return await self.page(
+                client, lambda solution: solution.show_wiki(wiki_name)
+            )
 
         @ui.page("/login")
         async def login(client: Client) -> None:
@@ -140,6 +142,8 @@ class CmsWebServer(GraphNavigatorWebserver):
         yaml_path = os.path.join(module_path, "resources", "schema.yaml")
         self.load_schema(yaml_path)
         ServersView.add_to_graph(self.servers, self.graph, with_progress=True)
+        self.wikis = Wikis()
+        self.wikis.add_to_graph(self.graph, with_progress=True)
         pass
 
 
@@ -158,7 +162,7 @@ class CmsSolution(GraphNavigatorSolution):
             client (Client): The client instance this context is associated with.
         """
         super().__init__(webserver, client)  # Call to the superclass constructor
-        self.wiki_grid = WikiGrid(self)
+        self.wiki_grid = WikiGrid(self,webserver.wikis)
         self.servers = webserver.servers
         self.server = webserver.server
         self.hostname = webserver.hostname
@@ -199,31 +203,8 @@ class CmsSolution(GraphNavigatorSolution):
 
         await self.setup_content_div(show)
 
-    async def show_nodes(self, node_type: str):
-        """
-        show nodes of the given type
-
-        Args:
-            node_type(str): the type of nodes to show
-        """
-
-        def show():
-            try:
-                config = NodeViewConfig(
-                    solution=self,
-                    graph=self.graph,
-                    schema=self.schema,
-                    node_type=node_type,
-                )
-                if not config.node_type_config:
-                    ui.label(f"invalid_node_type: {node_type}")
-                    return
-                node_table_view = NodeTableView(config=config)
-                node_table_view.setup_ui()
-            except Exception as ex:
-                self.handle_exception(ex)
-
-        await self.setup_content_div(show)
+    async def show_wiki(self, node_id: str):
+        await self.show_node("Wiki", node_id)
 
     async def show_servers(self):
         await self.show_nodes("Server")

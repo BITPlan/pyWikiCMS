@@ -13,9 +13,8 @@ from ngwidgets.lod_grid import GridConfig, ListOfDictsGrid
 from ngwidgets.progress import NiceguiProgressbar
 from ngwidgets.task_runner import TaskRunner
 from nicegui import ui
-from wikibot3rd.wikiuser import WikiUser
 
-from frontend.mediawiki_site import MediaWikiSite
+from backend.wikis import MediaWikiSite, Wikis
 
 
 class WikiCheck:
@@ -42,24 +41,11 @@ class WikiGrid:
     A grid of Wikis.
     """
 
-    def __init__(self, solution):
+    def __init__(self, solution, wikis: Wikis):
         # back reference to nicegui solution
         self.solution = solution
-
-        self.wiki_users = WikiUser.getWikiUsers()
-        self.wiki_clients = {}
-        self.smw_clients = {}
-        self.sorted_wiki_users = sorted(
-            self.wiki_users.values(), key=lambda w: w.wikiId
-        )
-        self.lod = []
+        self.wikis = wikis
         self.task_runner = TaskRunner(timeout=40)
-        self.wikistates_by_row_no = {}
-        for index, wiki_user in enumerate(self.sorted_wiki_users):
-            wiki_state = MediaWikiSite(wiki_user=wiki_user, row_index=index)
-            record = wiki_state.as_dict()
-            self.lod.append(record)
-            self.wikistates_by_row_no[wiki_state.row_no] = wiki_state
 
     def setup(self):
         """
@@ -67,7 +53,7 @@ class WikiGrid:
         """
         self.add_checkboxes()
         self.progressbar = NiceguiProgressbar(
-            len(self.wikistates_by_row_no), "work on wikis", "steps"
+            self.wikis.get_wiki_count(), "work on wikis", "steps"
         )
         self.task_runner.progress = self.progressbar
         self.as_grid()
@@ -83,7 +69,7 @@ class WikiGrid:
             button_names=["all", "fit"],
             debug=False,
         )
-        self.lod_grid = ListOfDictsGrid(lod=self.lod, config=grid_config)
+        self.lod_grid = ListOfDictsGrid(lod=self.wikis.get_lod(), config=grid_config)
         self.lod_grid.ag_grid._props["html_columns"] = [0, 1, 2]
         return self.lod_grid
 
@@ -104,7 +90,7 @@ class WikiGrid:
 
     async def get_selected_lod(self):
         lod_index = self.lod_grid.get_index(
-            lenient=self.lod_grid.config.lenient, lod=self.lod
+            lenient=self.lod_grid.config.lenient, lod=self.wikis.get_lod()
         )
         lod = await self.lod_grid.get_selected_lod(lod_index=lod_index)
         if len(lod) == 0:
@@ -140,7 +126,7 @@ class WikiGrid:
             # Process each wiki sequentially
             for row in self.select_lod:
                 row_no = row["#"]
-                wiki_state = self.wikistates_by_row_no.get(row_no)
+                wiki_state = self.wikis.get_wiki_state_by_row(row_no)
                 self.run_wiki_check(wiki_state)
 
         except BaseException as ex:

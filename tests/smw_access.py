@@ -3,6 +3,7 @@ Created on 2025-07-25
 
 @author: wf
 """
+
 import getpass
 import os
 
@@ -73,7 +74,7 @@ class SMWAccess:
             if wikiDict is None:
                 raise Exception(f"{iniFile} missing for wikiId {wikiId}")
             else:
-                wikiDict["user"]=getpass.getuser()
+                wikiDict["user"] = getpass.getuser()
                 wikiUser = WikiUser.ofDict(wikiDict, lenient=True)
                 if Basetest.inPublicCI():
                     wikiUser.save()
