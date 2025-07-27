@@ -4,23 +4,24 @@ Created on 2020-12-27
 @author: wf
 """
 
-import json
-import warnings
 from datetime import datetime
-
-# this is starlette TestClient under the hood
-from fastapi.testclient import TestClient
-from ngwidgets.basetest import Basetest
-from ngwidgets.webserver_test import WebserverTest
+import json
+import unittest
+import warnings
 
 from backend.server import Server, Servers
 from backend.site import FrontendSite, WikiSite
+from fastapi.testclient import TestClient
 from frontend.cmsmain import CmsMain
 from frontend.webserver import CmsWebServer
 from frontend.wikicms import WikiFrontend, WikiFrontends
+from ngwidgets.basetest import Basetest
+from ngwidgets.webserver_test import WebserverTest
+
 from tests.smw_access import SMWAccess
 
 
+# this is starlette TestClient under the hood
 class TestFrontend(WebserverTest):
     """
     test the frontend
@@ -316,6 +317,7 @@ class TestFrontend(WebserverTest):
         if debug:
             print(html)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testFixHtml(self):
         """
         test that hrefs, images src, srcset videos and objects are
