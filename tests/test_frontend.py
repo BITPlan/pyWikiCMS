@@ -3,7 +3,7 @@ Created on 2020-12-27
 
 @author: wf
 """
-
+import asyncio
 import json
 import warnings
 
@@ -37,7 +37,18 @@ class TestFrontend(WebserverTest):
         loop - there are follow-up e.g race condition issues which
         we would rather only have to mitigate once
         """
+        # make sure each test operates with a new client
+        if hasattr(self, 'client'):
+            self.client = None
         pass
+
+    def use_new_event_loop(self):
+        """
+        Ensure we have a clean event loop for CI environments
+        """
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
 
     def setUp(self, debug=False, profile=True):
         """
@@ -47,6 +58,8 @@ class TestFrontend(WebserverTest):
         # we do not have credentials in public CI
         if self.inPublicCI():
             WikiFrontend.with_login=False
+            # work around ValueError: The future belongs to a different loop than the one specified as the loop argument
+            self.use_new_event_loop()
         if not TestFrontend.instance:
             server_class = CmsWebServer
             cmd_class = CmsMain
