@@ -3,12 +3,14 @@ Created on 2020-12-27
 
 @author: wf
 """
+
 import json
-import time
 import warnings
+from datetime import datetime
 
 # this is starlette TestClient under the hood
 from fastapi.testclient import TestClient
+from ngwidgets.basetest import Basetest
 from ngwidgets.webserver_test import WebserverTest
 
 from backend.server import Server, Servers
@@ -37,27 +39,34 @@ class TestFrontend(WebserverTest):
         loop - there are follow-up e.g race condition issues which
         we would rather only have to mitigate once
         """
+        Basetest.tearDown(self)
         # make sure each test operates with a new client
-        if hasattr(self, 'client'):
+        if hasattr(self, "client"):
             self.client = None
         pass
 
-    def wait_for_server(self):
-        if self.inPublicCI():
-            # wait for the server to finish tasks
-            time.sleep(self.ws.config.timeout)
-
+    def check_server(self,hint:str=None):
+        """
+        make sure the server is ready
+        """
+        timestamp = datetime.now().isoformat()
+        if hint is None:
+            hint=self._testMethodName
+        msg = f"{timestamp} - {hint}"
+        print(msg)
+        pass
 
     def setUp(self, debug=False, profile=True):
         """
         setUp the test environment making sure we reuse the expensive
         nicegui Webserver
         """
+        Basetest.setUp(self, debug=debug, profile=profile)
         # special settings for public Continuous Integration environment
         # such as github
         if self.inPublicCI():
             # we do not have credentials in public CI
-            WikiFrontend.with_login=False
+            WikiFrontend.with_login = False
             # work around ValueError: The future belongs to a different loop
             # than the one specified as the loop argument
             # recreate a new server instance for every test - this is
@@ -95,6 +104,7 @@ class TestFrontend(WebserverTest):
             self.server_runner = first.server_runner
             self.client = TestClient(self.ws.app)
             self.debug = first.debug
+        self.check_server("setup")
 
     def get_frontend(self, name: str) -> WikiFrontend:
         frontend = self.wiki_frontends.get_frontend(name)
@@ -122,7 +132,7 @@ class TestFrontend(WebserverTest):
         """
         Test the WebServer using subtests for better reporting
         """
-        self.wait_for_server()
+        self.check_server()
         queries = ["/www/Joker", "/", "/www/{Illegal}"]
         expected = ["Joker", "<title>pyWikiCMS</title>", "invalid char"]
         debug = self.debug
@@ -140,6 +150,7 @@ class TestFrontend(WebserverTest):
         https://github.com/BITPlan/pyWikiCMS/issues/20
         support reveal.js slideshow if frame is "reveal" #20
         """
+        self.check_server()
         html = self.get_html("/www/SMWConTalk2015-05")
         if self.debug:
             print(html)
@@ -150,6 +161,7 @@ class TestFrontend(WebserverTest):
         """
         test the route to page translation
         """
+        self.check_server()
         frontend = self.get_frontend("www")
         routes = ["/index.php/File:Link.png"]
         expectedList = ["File:Link.png"]
@@ -165,6 +177,7 @@ class TestFrontend(WebserverTest):
         """
         check access of a proxied content at a given frontend and url for an expected size
         """
+        self.check_server()
         frontend = self.get_frontend(frontend_name)
         self.assertTrue(frontend.needsProxy(url))
         imageResponse = frontend.proxy(url)
@@ -176,6 +189,7 @@ class TestFrontend(WebserverTest):
         """
         test the proxy handling
         """
+        self.check_server()
         url = "/images/wiki/thumb/6/62/IMG_0736_Shark.png/400px-IMG_0736_Shark.png"
         self.checkProxiedContent("sharks", url, 79499)
 
@@ -184,6 +198,7 @@ class TestFrontend(WebserverTest):
         https://github.com/BITPlan/pyWikiCMS/issues/18
         image proxying should work #18
         """
+        self.check_server()
         url = "/images/wiki/thumb/4/42/1738-006.jpg/400px-1738-006.jpg"
         self.checkProxiedContent("www", url, 33742)
 
@@ -192,6 +207,7 @@ class TestFrontend(WebserverTest):
         test Allow to use templates specified in Wiki
         https://github.com/BITPlan/pyWikiCMS/issues/14
         """
+        self.check_server()
         # see e.g. http://wiki.bitplan.com/index.php/Property:Frame
         frontend = self.get_frontend("www")
         test_cases = [("SMWConTalk2015-05", "reveal"), ("Feedback", "Contact")]
@@ -214,6 +230,7 @@ class TestFrontend(WebserverTest):
         see https://github.com/BITPlan/pyWikiCMS/issues/15
 
         """
+        self.check_server()
         frontend = self.get_frontend("www")
         unfiltered = """<span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=...;action=edit&amp;section=T-1" title="Edit section: ">edit</a><span class="mw-editsection-bracket">]</span></span>"""
         filtered = frontend.doFilter(unfiltered, ["editsection"])
@@ -233,6 +250,7 @@ class TestFrontend(WebserverTest):
         https://github.com/BITPlan/pyWikiCMS/issues/19
         editsection filter should keep other span's untouched #19
         """
+        self.check_server()
         unfiltered = """<span class="mw-editsection">editsection</span><span class='image'>image section</span>"""
         frontend = self.get_frontend("www")
         filtered = frontend.doFilter(unfiltered, ["editsection"])
@@ -245,6 +263,7 @@ class TestFrontend(WebserverTest):
 
         filter <html><body><div class="mw-parser-output">
         """
+        self.check_server()
         frontend = self.get_frontend("www")
         unfiltered = (
             """<html><body><div class="mw-parser-output">content</div></body></html>"""
@@ -266,6 +285,7 @@ class TestFrontend(WebserverTest):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/28
         """
+        self.check_server()
         url = "/videos/HDV_0878.webm"
         expected_size = 2939840
         self.checkProxiedContent("www", url, expected_size)
@@ -274,6 +294,7 @@ class TestFrontend(WebserverTest):
         """
         test reveal handling
         """
+        self.check_server()
         wikihtml = """
         <!DOCTYPE html>
         <html>
@@ -300,6 +321,7 @@ class TestFrontend(WebserverTest):
         test that hrefs, images src, srcset videos and objects are
         modified from local-absolute urls to ones with "www"
         """
+        self.check_server()
         frontend = self.get_frontend("www")
         pageTitle, content, error = frontend.getContent("Welcome")
         if error is not None:
@@ -321,6 +343,7 @@ class TestFrontend(WebserverTest):
         """
         test the content management pages
         """
+        self.check_server()
         frontend = self.get_frontend("www")
         frontend.open()
         cms_pages = frontend.get_cms_pages()

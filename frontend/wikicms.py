@@ -24,7 +24,8 @@ class WikiFrontend(object):
     """
     Wiki Content Management System Frontend
     """
-    with_login:bool=True
+
+    with_login: bool = True
 
     def __init__(
         self,

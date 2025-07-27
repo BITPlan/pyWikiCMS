@@ -3,16 +3,12 @@ Created on 2020-12-30
 
 @author: wf
 """
-import socket
-import os
 
-from backend.server import Servers
+import os
+import socket
+
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
-from frontend.servers_view import ServersView
-from frontend.version import Version
-from frontend.wikicms import WikiFrontends
-from frontend.wikigrid import WikiGrid
 from mogwai.web.node_view import NodeTableView, NodeViewConfig
 from ng3.graph_navigator import GraphNavigatorSolution, GraphNavigatorWebserver
 from ngwidgets.input_webserver import InputWebSolution
@@ -22,6 +18,13 @@ from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
 from starlette.responses import RedirectResponse
 from wikibot3rd.sso_users import Sso_Users
+
+from backend.server import Servers
+from frontend.servers_view import ServersView
+from frontend.version import Version
+from frontend.wikicms import WikiFrontends
+from frontend.wikigrid import WikiGrid
+
 
 class CmsWebServer(GraphNavigatorWebserver):
     """
@@ -43,13 +46,13 @@ class CmsWebServer(GraphNavigatorWebserver):
         server_config.solution_class = CmsSolution
         return server_config
 
-    def authenticated(self)->bool:
+    def authenticated(self) -> bool:
         """
         check authentication
         """
-        allow=self.login.authenticated()
+        allow = self.login.authenticated()
         if self.server:
-            allow=allow or self.server.auto_login
+            allow = allow or self.server.auto_login
         return allow
 
     def __init__(self):
@@ -62,7 +65,7 @@ class CmsWebServer(GraphNavigatorWebserver):
         self.users = Sso_Users(self.config.short_name)
         self.login = Login(self, self.users)
         self.hostname = socket.gethostname()
-        self.server=self.servers.servers.get(self.hostname)
+        self.server = self.servers.servers.get(self.hostname)
         if self.server:
             self.server.probe_local()
 
@@ -132,6 +135,7 @@ class CmsWebServer(GraphNavigatorWebserver):
         ServersView.add_to_graph(self.servers, self.graph, with_progress=True)
         pass
 
+
 class CmsSolution(GraphNavigatorSolution):
     """
     Content management solution
@@ -149,8 +153,8 @@ class CmsSolution(GraphNavigatorSolution):
         super().__init__(webserver, client)  # Call to the superclass constructor
         self.wiki_grid = WikiGrid(self)
         self.servers = webserver.servers
-        self.server=webserver.server
-        self.hostname=webserver.hostname
+        self.server = webserver.server
+        self.hostname = webserver.hostname
         self.servers_view = ServersView(self, self.servers)
 
     def configure_menu(self):
@@ -175,7 +179,7 @@ class CmsSolution(GraphNavigatorSolution):
             with self.content_div:
                 ui.label(f"Welcome to {self.hostname}")
                 if self.server:
-                    html_markup=self.server.as_html()
+                    html_markup = self.server.as_html()
                     ui.html(html_markup)
                 pass
 
