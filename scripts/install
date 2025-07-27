@@ -1,10 +1,18 @@
 #!/bin/bash
 # WF 2020-07-27
-pip install .
-# make sure pywikibot configuration is available
-if [ ! -d $HOME/.pywikibot ]
-then
-   mkdir $HOME/.pywikibot
-   echo "creating user-config.py"
-   echo "put_throttle = 0" > $HOME/.pywikibot/user-config.py
+# WF 2025-07-27
+# remove pywikibot config
+# works around SystemError: PY_SSIZE_T_CLEAN macro must be defined for '#' formats
+# horror see https://stackoverflow.com/a/73713926/1497139
+# Check if pycrypto is installed
+if pip show pycrypto &> /dev/null; then
+    echo "Uninstalling pycrypto..."
+    pip uninstall pycrypto -y
 fi
+
+# Check if pycryptodome is already installed
+if ! pip show pycryptodome &> /dev/null; then
+    echo "Installing pycryptodome..."
+    pip install pycryptodome
+fi
+pip install .
