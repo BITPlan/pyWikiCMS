@@ -63,7 +63,8 @@ class CmsWebServer(GraphNavigatorWebserver):
         self.login = Login(self, self.users)
         self.hostname = socket.gethostname()
         self.server=self.servers.servers.get(self.hostname)
-        self.server.probe_local()
+        if self.server:
+            self.server.probe_local()
 
         @ui.page("/servers")
         async def show_servers(client: Client):
