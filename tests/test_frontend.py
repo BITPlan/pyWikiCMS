@@ -57,7 +57,7 @@ class TestFrontend(WebserverTest):
             # recreate a new server instance for every test - this is
             # less efficient but should be more stable - in the CI the longer
             # runtime is not so critical
-            TestFrontend.instance=None
+            # TestFrontend.instance=None
         if not TestFrontend.instance:
             server_class = CmsWebServer
             cmd_class = CmsMain

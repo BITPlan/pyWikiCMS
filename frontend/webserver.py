@@ -6,11 +6,13 @@ Created on 2020-12-30
 
 import os
 
-from basemkit.persistent_log import Log
+from backend.server import Servers
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
-from mogwai.core import MogwaiGraph
-from mogwai.schema.graph_schema import GraphSchema
+from frontend.servers_view import ServersView
+from frontend.version import Version
+from frontend.wikicms import WikiFrontends
+from frontend.wikigrid import WikiGrid
 from mogwai.web.node_view import NodeTableView, NodeViewConfig
 from ng3.graph_navigator import GraphNavigatorSolution, GraphNavigatorWebserver
 from ngwidgets.input_webserver import InputWebSolution
@@ -20,13 +22,6 @@ from ngwidgets.webserver import WebserverConfig
 from nicegui import Client, app, ui
 from starlette.responses import RedirectResponse
 from wikibot3rd.sso_users import Sso_Users
-
-from backend.server import Servers
-from frontend.servers_view import ServersView
-from frontend.version import Version
-from frontend.wikicms import WikiFrontends
-from frontend.wikigrid import WikiGrid
-
 
 class CmsWebServer(GraphNavigatorWebserver):
     """
@@ -116,7 +111,6 @@ class CmsWebServer(GraphNavigatorWebserver):
         yaml_path = os.path.join(module_path, "resources", "schema.yaml")
         self.load_schema(yaml_path)
         ServersView.add_to_graph(self.servers, self.graph, with_progress=True)
-
 
 class CmsSolution(GraphNavigatorSolution):
     """

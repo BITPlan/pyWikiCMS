@@ -21,7 +21,7 @@ dependencies = [
   	# Python base module kit: YAML/JSON I/O, structured logging, CLI tooling, shell execution, and remote pydevd debug support.
  	"pybasemkit>=0.0.5",
     # https://github.com/WolfgangFahl/nicegui_widgets
-    "ngwidgets>=0.29.3",
+    "ngwidgets>=0.29.4",
     # https://pypi.org/project/pyLodStorage/
 	"pyLodStorage>=0.17.5",
     # https://pypi.org/project/py-3rdparty-mediawiki/
