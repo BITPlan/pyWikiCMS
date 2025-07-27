@@ -9,7 +9,6 @@ import socket
 
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
-from mogwai.web.node_view import NodeTableView, NodeViewConfig
 from ng3.graph_navigator import GraphNavigatorSolution, GraphNavigatorWebserver
 from ngwidgets.input_webserver import InputWebSolution
 from ngwidgets.login import Login
@@ -86,9 +85,7 @@ class CmsWebServer(GraphNavigatorWebserver):
         async def show_wiki(client: Client, wiki_name: str):
             if not self.authenticated():
                 return RedirectResponse("/login")
-            return await self.page(
-                client, lambda solution: solution.show_wiki(wiki_name)
-            )
+            return await self.page(client, CmsSolution.show_wiki,wiki_name)
 
         @ui.page("/login")
         async def login(client: Client) -> None:
@@ -204,7 +201,7 @@ class CmsSolution(GraphNavigatorSolution):
         await self.setup_content_div(show)
 
     async def show_wiki(self, node_id: str):
-        await self.show_node("Wiki", node_id)
+        await self.show_node("MediaWikiSite", node_id)
 
     async def show_servers(self):
         await self.show_nodes("Server")

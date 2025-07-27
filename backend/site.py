@@ -20,7 +20,6 @@ class Site:
     """
     an Apache Site
     """
-
     name: str
     # if container is set the site is provided by a docker container
     container: Optional[str] = None
@@ -68,7 +67,6 @@ class WikiSite(Site):
     """
     A MediaWiki Site
     """
-
     wikiId: Optional[str] = None
     database: Optional[str] = None
     defaultPage: str = "Main Page"

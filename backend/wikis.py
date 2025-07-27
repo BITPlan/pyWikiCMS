@@ -4,42 +4,57 @@ Created on 2025-07-27
 @author: wf
 """
 
+from dataclasses import field
 from typing import Any, Dict, List, Optional
 
+from backend.backup import WikiBackup
+from backend.site import WikiSite
+from basekit.yamlable import lod_storable
+from frontend.html_table import HtmlTables
 from lodstorage.lod import LOD
 from mogwai.core import MogwaiGraph
-from ngwidgets.task_runner import TaskRunner
 from ngwidgets.widgets import Link
 from tqdm import tqdm
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 
-from backend.backup import WikiBackup
-from frontend.html_table import HtmlTables
 
-class MediaWikiSite:
+@lod_storable
+class MediaWikiSite(WikiSite):
     """
     a MediaWikiSite and it's current  state
     """
+    wiki_id: Optional[str]=None
 
-    def __init__(
-        self,
+    # Non-persistent fields
+    wiki_user: WikiUser = field(default=None, init=False)
+    wiki_url: str = field(default="", init=False)
+    debug: bool = field(default=False, init=False)
+    show_html: bool = field(default=False, init=False)
+    wiki_backup: WikiBackup = field(default=None, init=False)
+    _wiki_client: WikiClient = field(default=None, init=False)
+    _node_id: str = field(default=None, init=False)
+    row_no: int = field(default=0, init=False)
+
+    @classmethod
+    def ofWikiUser(
+        cls,
         wiki_user: WikiUser,
-        row_index: int = 0,
         debug: bool = False,
         show_html: bool = False,
     ):
         """
         constructor
         """
-        self.row_no = row_index + 1
-        self.wiki_user = wiki_user
-        self.wiki_url = self.wiki_user.url
-        self.debug = debug
-        self.show_html = show_html
-        self.wiki_backup = WikiBackup(wiki_user)
-        self._wiki_client = None
-        self.task_runner = TaskRunner()
+        wiki_id=wiki_user.wikiId
+        wiki=cls(name=wiki_id,wiki_id=wiki_id)
+        wiki.wiki_user = wiki_user
+        wiki.wiki_url = wiki.wiki_user.url
+        wiki.debug = debug
+        wiki.show_html = show_html
+        wiki.wiki_backup = WikiBackup(wiki_user)
+        wiki._wiki_client = None
+        return wiki
 
     @property
     def wiki_client(self) -> WikiClient:
@@ -141,7 +156,7 @@ class Wikis:
         self.lod = None
 
         for wiki_id, wiki_user in self.wiki_users.items():
-            wiki_site = MediaWikiSite(wiki_user=wiki_user)
+            wiki_site = MediaWikiSite.ofWikiUser(wiki_user)
             self.wiki_sites[wiki_id] = wiki_site
 
     def get_wiki_state_by_row(self, row_no: int) -> MediaWikiSite:
