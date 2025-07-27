@@ -41,8 +41,11 @@ class TestFrontend(WebserverTest):
         if hasattr(self, 'client'):
             self.client = None
         pass
-        # wait for the server to finish tasks
-        time.sleep(self.ws.config.timeout)
+
+    def wait_for_server(self):
+        if self.inPublicCI():
+            # wait for the server to finish tasks
+            time.sleep(self.ws.config.timeout)
 
 
     def setUp(self, debug=False, profile=True):
@@ -119,6 +122,7 @@ class TestFrontend(WebserverTest):
         """
         Test the WebServer using subtests for better reporting
         """
+        self.wait_for_server()
         queries = ["/www/Joker", "/", "/www/{Illegal}"]
         expected = ["Joker", "<title>pyWikiCMS</title>", "invalid char"]
         debug = self.debug
