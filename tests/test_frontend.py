@@ -4,6 +4,7 @@ Created on 2020-12-27
 @author: wf
 """
 import json
+import time
 import warnings
 
 # this is starlette TestClient under the hood
@@ -40,6 +41,9 @@ class TestFrontend(WebserverTest):
         if hasattr(self, 'client'):
             self.client = None
         pass
+        # wait for the server to finish tasks
+        time.sleep(self.ws.config.timeout)
+
 
     def setUp(self, debug=False, profile=True):
         """
@@ -56,7 +60,7 @@ class TestFrontend(WebserverTest):
             # recreate a new server instance for every test - this is
             # less efficient but should be more stable - in the CI the longer
             # runtime is not so critical
-            TestFrontend.instance=None
+            # TestFrontend.instance=None
         if not TestFrontend.instance:
             server_class = CmsWebServer
             cmd_class = CmsMain
