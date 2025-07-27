@@ -3,7 +3,7 @@ Created on 2020-12-30
 
 @author: wf
 """
-
+import socket
 import os
 
 from backend.server import Servers
@@ -43,6 +43,15 @@ class CmsWebServer(GraphNavigatorWebserver):
         server_config.solution_class = CmsSolution
         return server_config
 
+    def authenticated(self)->bool:
+        """
+        check authentication
+        """
+        allow=self.login.authenticated()
+        if self.server:
+            allow=allow or self.server.auto_login
+        return allow
+
     def __init__(self):
         """
         constructor
@@ -52,12 +61,21 @@ class CmsWebServer(GraphNavigatorWebserver):
         self.wiki_frontends = WikiFrontends(self.servers)
         self.users = Sso_Users(self.config.short_name)
         self.login = Login(self, self.users)
+        self.hostname = socket.gethostname()
+        self.server=self.servers.servers.get(self.hostname)
+        self.server.probe_local()
 
         @ui.page("/servers")
-        async def show_solutions(client: Client):
-            if not self.login.authenticated():
+        async def show_servers(client: Client):
+            if not self.authenticated():
                 return RedirectResponse("/login")
             return await self.page(client, CmsSolution.show_servers)
+
+        @ui.page("/wikis")
+        async def show_wikis(client: Client):
+            if not self.authenticated():
+                return RedirectResponse("/login")
+            return await self.page(client, CmsSolution.show_wikis)
 
         @ui.page("/login")
         async def login(client: Client) -> None:
@@ -111,6 +129,7 @@ class CmsWebServer(GraphNavigatorWebserver):
         yaml_path = os.path.join(module_path, "resources", "schema.yaml")
         self.load_schema(yaml_path)
         ServersView.add_to_graph(self.servers, self.graph, with_progress=True)
+        pass
 
 class CmsSolution(GraphNavigatorSolution):
     """
@@ -129,8 +148,9 @@ class CmsSolution(GraphNavigatorSolution):
         super().__init__(webserver, client)  # Call to the superclass constructor
         self.wiki_grid = WikiGrid(self)
         self.servers = webserver.servers
+        self.server=webserver.server
+        self.hostname=webserver.hostname
         self.servers_view = ServersView(self, self.servers)
-        self.server_html = {}
 
     def configure_menu(self):
         """
@@ -141,7 +161,8 @@ class CmsSolution(GraphNavigatorSolution):
         self.sso_solution = SsoSolution(webserver=self.webserver)
         self.sso_solution.configure_menu()
         # icons from https://fonts.google.com/icons
-        if self.login.authenticated():
+        if self.webserver.authenticated():
+            self.link_button(name="wikis", icon_name="menu_book", target="/wikis")
             self.link_button(name="servers", icon_name="cloud", target="/servers")
 
     async def home(self):
@@ -149,6 +170,17 @@ class CmsSolution(GraphNavigatorSolution):
         provide the main content page
         """
 
+        def show():
+            with self.content_div:
+                ui.label(f"Welcome to {self.hostname}")
+                if self.server:
+                    html_markup=self.server.as_html()
+                    ui.html(html_markup)
+                pass
+
+        await self.setup_content_div(show)
+
+    async def show_wikis(self):
         def show():
             with self.content_div:
                 self.wiki_grid.setup()

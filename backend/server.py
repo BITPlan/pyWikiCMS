@@ -9,7 +9,7 @@ import glob
 import os
 import re
 import socket
-from sys import platform
+import sys
 from typing import Dict, Optional
 
 from backend.remote import Remote, Tool, Tools
@@ -31,6 +31,7 @@ class Server:
     hostname: str
     admin_user: Optional[str]=None
     admin_password: Optional[str]=None
+    auto_login:bool=False
     purpose: Optional[str]=None
     logo: str = "https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png"
     sql_backup_path:str = "/var/backup/sqlbackup"
@@ -121,7 +122,7 @@ class Server:
             debug (bool): Enable debug output
         """
         self.debug = debug
-        self.platform = platform
+        self.platform = sys.platform
         uname = os.uname()
         self.actual_hostname = uname[1]
         try:
@@ -322,7 +323,7 @@ class Server:
 <tr>
     <td><img src='{server.getPlatformLogo()}' alt='{server.platform} logo' height='{logo_size}' width='{logo_size}'></td>
     {logo_html}
-    <td><span>Welcome to {server.name } ({ server.ip }) { server.purpose }</span><td>
+    <td><span>{server.name } ({ server.ip }) { server.purpose }</span><td>
 </tr>
 </table>
 """
