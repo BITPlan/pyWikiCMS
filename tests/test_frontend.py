@@ -129,6 +129,7 @@ class TestFrontend(WebserverTest):
             SMWAccess.getSMW_WikiUser(frontend.wikiId)
         return server
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testWebServerPaths(self):
         """
         Test the WebServer using subtests for better reporting
@@ -145,6 +146,7 @@ class TestFrontend(WebserverTest):
                     print(f"{i+1}:{query}\n{html}")
                 self.assertIn(ehtml, html)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testRevealIssue20(self):
         """
         test Issue 20
@@ -158,6 +160,7 @@ class TestFrontend(WebserverTest):
         self.assertTrue("reveal.min.css" in html)
         self.assertTrue("Reveal.initialize({" in html)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testWikiPage(self):
         """
         test the route to page translation
@@ -186,6 +189,7 @@ class TestFrontend(WebserverTest):
         self.assertEqual(200, imageResponse.status_code)
         self.assertEqual(expected_size, len(imageResponse.content))
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testProxy(self):
         """
         test the proxy handling
@@ -194,6 +198,7 @@ class TestFrontend(WebserverTest):
         url = "/images/wiki/thumb/6/62/IMG_0736_Shark.png/400px-IMG_0736_Shark.png"
         self.checkProxiedContent("sharks", url, 79499)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue18(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/18
@@ -203,6 +208,7 @@ class TestFrontend(WebserverTest):
         url = "/images/wiki/thumb/4/42/1738-006.jpg/400px-1738-006.jpg"
         self.checkProxiedContent("www", url, 33742)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue14(self):
         """
         test Allow to use templates specified in Wiki
@@ -224,6 +230,7 @@ class TestFrontend(WebserverTest):
             self.assertEqual(page_title, test_page)
             self.assertTrue("</div" in html or "<p>" in html)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue15(self):
         """
         test Filter "edit" section buttons
@@ -246,6 +253,7 @@ class TestFrontend(WebserverTest):
             print(content)
         self.assertFalse("""<span class="mw-editsection">""" in content)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue19(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/19
@@ -258,6 +266,7 @@ class TestFrontend(WebserverTest):
         # print(filtered)
         self.assertTrue("""<span class="image">image section</span>""" in str(filtered))
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue17(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/17
@@ -282,6 +291,7 @@ class TestFrontend(WebserverTest):
         if self.debug:
             print(content)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue28_video_support(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/28
@@ -291,6 +301,7 @@ class TestFrontend(WebserverTest):
         expected_size = 2939840
         self.checkProxiedContent("www", url, expected_size)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testToReveal(self):
         """
         test reveal handling
