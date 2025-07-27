@@ -164,7 +164,7 @@ class Remote:
         """
         remote_cmd=f"ssh  {self.ssh_options}"
         if self.container:
-            remote_cmd+=f"docker exec {self.container}"
+            remote_cmd+=f" docker exec {self.container}"
 
         remote_cmd+=f' "{cmd}"'
         result=self.run_remote(remote_cmd,tee=tee)
