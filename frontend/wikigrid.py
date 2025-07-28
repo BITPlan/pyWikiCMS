@@ -126,8 +126,8 @@ class WikiGrid:
             # Process each wiki sequentially
             for row in self.select_lod:
                 row_no = row["#"]
-                wiki_state = self.wikis.get_wiki_state_by_row(row_no)
-                self.run_wiki_check(wiki_state)
+                wikisite = self.wikis.get_wikisite_by_row(row_no)
+                self.run_wiki_check(wikisite)
 
         except BaseException as ex:
             self.solution.handle_exception(ex)
