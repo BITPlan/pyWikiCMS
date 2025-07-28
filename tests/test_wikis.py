@@ -4,7 +4,7 @@ Created on 2023-10-31
 @author: wf
 """
 from basemkit.basetest import Basetest
-from backend.wikis import Wikis
+from backend.site import Wikis
 from mogwai.core.mogwaigraph import MogwaiGraph
 
 
