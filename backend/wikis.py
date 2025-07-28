@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from backend.backup import WikiBackup
 from backend.site import WikiSite
-from basekit.yamlable import lod_storable
+from basemkit.yamlable import lod_storable
 from frontend.html_table import HtmlTables
 from lodstorage.lod import LOD
 from mogwai.core import MogwaiGraph
