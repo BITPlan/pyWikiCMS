@@ -40,6 +40,7 @@ class TestFrontend(WebserverTest):
         loop - there are follow-up e.g race condition issues which
         we would rather only have to mitigate once
         """
+        # call the unit test tear down and profile time
         Basetest.tearDown(self)
         # make sure each test operates with a new client
         if hasattr(self, "client"):
@@ -62,7 +63,6 @@ class TestFrontend(WebserverTest):
         setUp the test environment making sure we reuse the expensive
         nicegui Webserver
         """
-        Basetest.setUp(self, debug=debug, profile=profile)
         # special settings for public Continuous Integration environment
         # such as github
         if self.inPublicCI():
@@ -98,6 +98,7 @@ class TestFrontend(WebserverTest):
         else:
             # reuse setup from first instance
             first = TestFrontend.instance
+            self.profiler=first.profiler
             self.server = first.server
             self.servers = first.servers
             self.wiki_frontends = first.wiki_frontends
@@ -142,19 +143,21 @@ class TestFrontend(WebserverTest):
     #@unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testWebServerPaths(self):
         """
-        Test the WebServer using subtests for better reporting
+        Test the WebServer using normal loop with tupled test cases
         """
         self.check_server()
-        queries = ["/www/Joker", "/", "/www/{Illegal}"]
-        expected = ["Joker", "<title>pyWikiCMS</title>", "invalid char"]
+        test_cases = [
+            ("/www/Joker", "Joker"),
+            ("/", "<title>pyWikiCMS</title>"),
+            ("/www/{Illegal}", "invalid char")
+        ]
         debug = self.debug
         # debug=True
-        for i, (query, ehtml) in enumerate(zip(queries, expected)):
-            with self.subTest(query=query):
-                html = self.get_html(query)
-                if debug:
-                    print(f"{i+1}:{query}\n{html}")
-                self.assertIn(ehtml, html)
+        for i, (query, ehtml) in enumerate(test_cases):
+            html = self.get_html(query)
+            if debug:
+                print(f"{i+1}:{query}\n{html}")
+            self.assertIn(ehtml, html)
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testRevealIssue20(self):
