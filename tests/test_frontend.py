@@ -165,24 +165,30 @@ class TestFrontend(WebserverTest):
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testWebServerPaths(self):
-        """
-        Test the WebServer with example paths
-        """
+        print("\n=== START testWebServerPaths DEBUG ===")
+        self.check_server("initial_state")
+
         frontend = self.get_frontend("www")
-        self.check_server()
+        self.check_server("after_get_frontend")
 
         test_cases = [
             ("/www/Joker", "Joker"),
             ("/", "<title>pyWikiCMS</title>"),
             ("/www/{Illegal}", "invalid char")
         ]
-        debug = self.debug
-        # debug=True
+
         for i, (query, ehtml) in enumerate(test_cases):
-            html = self.get_html(query)
-            if debug:
-                print(f"{i+1}:{query}\n{html}")
-            self.assertIn(ehtml, html)
+            print(f"\n--- Request {i+1}: {query} ---")
+            self.check_server(f"pre_request_{i}")
+            try:
+                html = self.get_html(query)
+                self.check_server(f"post_request_{i}_success")
+                self.assertIn(ehtml, html)
+            except Exception as e:
+                self.check_server(f"post_request_{i}_error: {str(e)}")
+                raise
+
+        print("=== END testWebServerPaths DEBUG ===")
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testRevealIssue20(self):
