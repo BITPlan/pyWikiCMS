@@ -139,7 +139,7 @@ class TestFrontend(WebserverTest):
         self.assertEqual("www", frontend.name)
         pass
 
-    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
+    #@unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testWebServerPaths(self):
         """
         Test the WebServer using subtests for better reporting
