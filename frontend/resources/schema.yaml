@@ -21,7 +21,7 @@ node_type_configs:
     label: Wiki
     icon: menu_book
     key_field: wiki_id
-    dataclass_name: backend.wikis.MediaWikiSite
+    dataclass_name: backend.site.WikiSite
     display_order: 20
     display_name: Wiki
     description: Mediawiki Site
