@@ -19,7 +19,7 @@ from starlette.responses import RedirectResponse
 from wikibot3rd.sso_users import Sso_Users
 
 from backend.server import Servers
-from backend.wikis import Wikis
+from backend.site import Wikis
 from frontend.servers_view import ServersView
 from frontend.version import Version
 from frontend.wikicms import WikiFrontends

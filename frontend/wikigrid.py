@@ -14,7 +14,7 @@ from ngwidgets.progress import NiceguiProgressbar
 from ngwidgets.task_runner import TaskRunner
 from nicegui import ui
 
-from backend.wikis import MediaWikiSite, Wikis
+from backend.site import WikiSite, Wikis
 
 
 class WikiCheck:
@@ -147,7 +147,7 @@ class WikiGrid:
         except BaseException as ex:
             self.solution.handle_exception(ex)
 
-    def check_pages(self, wiki_state: MediaWikiSite):
+    def check_pages(self, wiki_state: WikiSite):
         """
         Try login for wiki user and report success or failure.
         """
@@ -165,7 +165,7 @@ class WikiGrid:
         except BaseException as ex:
             self.solution.handle_exception(ex)
 
-    def check_wiki_version(self, wiki_state: MediaWikiSite):
+    def check_wiki_version(self, wiki_state: WikiSite):
         """
         Check the MediaWiki version for a specific WikiState.
         """
