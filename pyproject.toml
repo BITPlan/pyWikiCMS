@@ -84,3 +84,4 @@ only-include = ["frontend","backend"]
 [project.scripts]
 wikicms = "frontend.cmsmain:main"
 tsite = "backend.tsite:main"
+sqlbackup = "backend.sql_backup:main"

@@ -6,13 +6,12 @@ Converted from bash script to Python using Remote class
 @author: wf
 """
 import argparse
-from dataclasses import dataclass
 from datetime import datetime
-import os
 from pathlib import Path
 import subprocess
 import sys
 from typing import List
+from tqdm import tqdm
 
 from backend.remote import Remote
 from basemkit.persistent_log import Log
@@ -29,6 +28,8 @@ class SqlBackup:
         backup_host: str = "localhost",
         backup_dir: str = "/var/backup/sqlbackup",
         verbose: bool = False,
+        debug:bool=False,
+        progress:bool=False,
     ):
         """
         Initialize SQLBackup instance
@@ -39,13 +40,19 @@ class SqlBackup:
             login_path: MySQL login path name
             backup_dir: Base backup directory path
             verbose: Enable verbose output
+            debug: Enable debug output
+            progress: show progress
         """
         self.backup_user = backup_user
         self.backup_host = backup_host
         self.backup_dir = Path(backup_dir)
         self.verbose = verbose
+        self.debug = debug
+        self.progress=progress
         self.remote = Remote(host=backup_host)
         self.today_dir = self.backup_dir / "today"
+        self.tmp_dir=   self.backup_dir / "tmp"
+
         self.version=None
         self.log=Log()
 
@@ -108,6 +115,7 @@ class SqlBackup:
         return databases
 
     def show_backups(self):
+        self.get_version()
         databases=self.list_all_databases()
         for database in databases:
             for full in [False,True]:
@@ -119,13 +127,15 @@ class SqlBackup:
                         f"{self.backup_host}:{backup_path} {stats.age_days:.2f} d {age_marker}"
                     )
 
-    def get_backup_path(self, database:str, full:bool=False)->str:
+    def get_backup_path(self, database:str, base_path: str ,full:bool=False)->str:
+        """
+        """
         postfix = "_full" if full else ""
         db_file = f"{database}{postfix}.sql"
-        backup_path = self.today_dir / db_file
+        backup_path = base_path / db_file
         return backup_path
 
-    def backup_database(self, database: str, full: bool = False) -> bool:
+    def backup_database(self, database: str, full: bool = False) -> subprocess.CompletedProcess:
         """
         Backup single database
 
@@ -136,63 +146,45 @@ class SqlBackup:
         Returns:
             True if backup successful, False otherwise
         """
-        backup_path=self.get_backup_path(database, full)
+        backup_tmp_path=self.get_backup_path(database,self.tmp_dir,full)
+        backup_path=self.get_backup_path(database,self.today_dir,full)
+
         create_option = "" if full else "--no-create-db --no-create-info"
-        cmd = f'mysqldump -u root --quick --routines {create_option} --skip-add-locks --complete-insert --opt "{database}" > {backup_path}'
-        proc = self.remote.run(cmd)
+        cmds = {
+            "backup": f'sudo mysqldump -u root --quick --routines {create_option} --skip-add-locks --complete-insert --opt "{database}" > {backup_tmp_path}',
+            "move": f'sudo mv {backup_tmp_path} {backup_path}',
+            "owner": f'sudo chown {self.backup_user} {backup_path}',
+            "permissions": f'sudo chmod 440 {backup_path}'
+        }
+        procs = self.remote.run_cmds(cmds)
+        proc=procs.get("backup")
         return proc
 
-
-    def backup_all_databases(self, is_full: bool = False) -> bool:
-        """
-        Backup all filtered databases
+    def perform_backup(self, database: str = "all", full: bool = True) -> int:
+        """Perform backups of one or more databases.
 
         Args:
-            is_full: Whether to include table structure
+            database: Name of the database to back up. Defaults to "all" which will
+                back up all available databases.
+            full: If True, performs a full backup. If False, performs an incremental
+                backup. Defaults to True.
 
         Returns:
-            True if all backups successful, False otherwise
+            int: The number of failed backups (0 if all were successful).
         """
-        weekday = datetime.now().strftime("%A")
-        use_complete = weekday == "Monday"
-
-        if use_complete:
-            databases = self.list_all_databases()
+        self.get_version()
+        errors=0
+        if database=="all":
+            databases=self.list_all_databases()
         else:
-            databases = self.list_filtered_databases()
-
-        all_success = True
+            databases=[database]
+        iterator = tqdm(databases, desc="Backing up databases") if self.progress else databases
         for database in databases:
-            success = self.backup_database(database, is_full)
-            if not success:
-                all_success = False
+            proc=self.backup_database(database, full)
+            if proc.returncode!=0:
+                errors+=1
+        return errors
 
-        return all_success
-
-    def perform_backup(self, full_backup: bool = False) -> bool:
-        """
-        Perform complete backup operation
-
-        Args:
-            full_backup: Whether to perform full backup with structure
-
-        Returns:
-            True if backup successful, False otherwise
-        """
-        if self.today_dir.exists():
-            for sql_file in self.today_dir.glob("*.sql"):
-                sql_file.unlink()
-        else:
-            self.today_dir.mkdir(parents=True, exist_ok=True)
-
-        success = True
-        if full_backup:
-            success &= self.backup_all_databases(is_full=True)
-            success &= self.backup_all_databases(is_full=False)
-        else:
-            success = self.backup_all_databases(is_full=False)
-
-        return success
 
     def create_backup_archive(self) -> bool:
         """
@@ -214,6 +206,17 @@ class SqlBackup:
             self.show_result(f"{backup_file} created")
 
         return success
+
+    def init(self):
+        """
+        initialize the backup enviroment
+        """
+        cmds={
+            "create temp dir": f"sudo mkdir -p {self.tmp_dir}",
+            "change permissions": f"sudo chmod 777 {self.tmp_dir}",
+            "change owner": f"sudo chown {self.backup_user} {self.tmp_dir}"
+        }
+        self.remote.run_cmds(cmds)
 
     def grant_permissions(self, password: str, mysql_root_password: str) -> bool:
         """
@@ -254,18 +257,27 @@ def create_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SQL backup utility for MySQL/MariaDB")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument(
+        "-d", "--debug", action="store_true", help="show debug info"
+    )
+    parser.add_argument(
         "-f", "--full", action="store_true", help="Full backup with table structure"
     )
     parser.add_argument(
-        "-i", "--init", action="store_true", help="Initialize password for login path"
+        "-i", "--init", action="store_true", help="Initialize backup environment"
     )
     parser.add_argument(
         "-l", "--list", action="store_true", help="List all databases"
     )
+    parser.add_argument(
+        "-b", "--backup", action="store_true", help="perform backup"
+    )
+    parser.add_argument(
+    "-p", "--progress", action="store_true", help="Show progress bars for operations"
+    )
     parser.add_argument("-hs", "--host", help="Backup host")
+    parser.add_argument("-db", "--database", help="the database to backup 'all' if all databases should be backed up", default="all")
     parser.add_argument("-u", "--user", help="Backup user")
     return parser
-
 
 def main():
     """
@@ -278,21 +290,28 @@ def main():
         backup_user=args.user or "backup",
         backup_host=args.host or "localhost",
         verbose=args.verbose,
+        debug=args.debug,
+        progress=args.progress
     )
+    exit_code=0
 
     if args.list:
         backup.show_backups()
 
     if args.init:
-        success = backup.grant_permissions()
-        exit_code = 0 if success else 1
-        sys.exit(exit_code)
+        success = backup.init()
+        if not success:
+            exit_code=1
 
-    success = backup.perform_backup(full_backup=args.full)
-    if success:
-        success = backup.create_backup_archive()
-
-    exit_code = 0 if success else 1
+    if args.backup:
+        errors = backup.perform_backup(database=args.database,full=args.full)
+        if errors==0:
+            pass
+            #    success = backup.create_backup_archive()
+        else:
+            exit_code=1
+    if args.debug:
+        backup.remote.log.dump()
     sys.exit(exit_code)
 
 

@@ -169,6 +169,33 @@ class Remote:
             f"-o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host}"
         )
 
+    def run_cmds(self, cmds: Dict[str, str]) -> Dict[str, subprocess.CompletedProcess]:
+        """
+        Runs a given map of commands
+        as long as the return code of the previous command is zero
+
+        Args:
+            cmds: key->remote command map
+
+        Returns:
+            key->subprocess.CompletedProcess
+
+        Example:
+            >>> results = run_cmds({
+            ...     'disk': 'df -h',
+            ...     'memory': 'free -m',
+            ... })
+            >>> results['disk'].stdout
+            'Filesystem      Size  Used Avail Use% Mounted on...'
+        """
+        procs = {}
+        for key, cmd in cmds.items():
+            proc=self.run(cmd)
+            procs[key] = proc
+            if proc.returncode!=0:
+                break
+        return procs
+
     def run(self, cmd: str, tee: bool = False) -> subprocess.CompletedProcess:
         """
         run the given command remotely
@@ -181,17 +208,32 @@ class Remote:
         result = self.run_remote(remote_cmd, tee=tee)
         return result
 
-    def run_remote(
-        self, remote_cmd: str, tee: bool = False
-    ) -> subprocess.CompletedProcess:
-        """
-        run the given remote command
-        """
-        result = self.shell.run(remote_cmd, tee=tee)
-        if result.returncode != 0:
-            self.log.log("❌", "remote", remote_cmd)
-        else:
-            self.log.log("✅", "remote", remote_cmd)
+    def trim_output(self, output: str, max_lines=5, max_len=500) -> str:
+        """Trim output to max_lines and max_len, adding truncation notice."""
+        if not output:
+            return ""
+        all_lines = output.splitlines()
+        lines=all_lines[:max_lines]
+        trimmed = "\n".join(lines)
+        if len(trimmed) > max_len:
+            trimmed = trimmed[:max_len] + f"... of {len(all_lines)} lines"
+        if len(lines) < len(output.splitlines()):
+            trimmed += f"\n...[+{len(output.splitlines()) - max_lines} lines]"
+        return trimmed
+
+
+    def run_remote(self, cmd: str, tee=False) -> subprocess.CompletedProcess:
+        """Run remote command with concise failure logging."""
+        result = self.shell.run(cmd, tee=tee)
+        status = "✅" if result.returncode == 0 else "❌"
+
+        log_msg = (
+            f"{cmd}\n"
+            f"code:{result.returncode}\n"
+            f"out:{self.trim_output(result.stdout)}\n"
+            f"err:{self.trim_output(result.stderr)}"
+        )
+        self.log.log(status, "remote", log_msg)
         return result
 
     def scp_from(
