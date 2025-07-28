@@ -91,7 +91,7 @@ class TestFrontend(WebserverTest):
             self.servers.init()
             # else:
             # self.servers = Servers.of_config_path()
-            self.wiki_frontends = WikiFrontends(self.servers)
+            self.ws.wiki_frontends = WikiFrontends(self.servers)
             sites = list(self.server.frontends.keys())
             self.ws.wiki_frontends.enableSites(sites)
             TestFrontend.instance = self
@@ -101,7 +101,6 @@ class TestFrontend(WebserverTest):
             self.profiler=first.profiler
             self.server = first.server
             self.servers = first.servers
-            self.wiki_frontends = first.wiki_frontends
             self.ws = first.ws
             self.server_runner = first.server_runner
             self.client = TestClient(self.ws.app)
@@ -109,7 +108,7 @@ class TestFrontend(WebserverTest):
         self.check_server("setup")
 
     def get_frontend(self, name: str) -> WikiFrontend:
-        frontend = self.wiki_frontends.get_frontend(name)
+        frontend = self.ws.wiki_frontends.get_frontend(name)
         return frontend
 
     def getServer(self):
