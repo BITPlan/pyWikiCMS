@@ -143,9 +143,11 @@ class TestFrontend(WebserverTest):
     #@unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testWebServerPaths(self):
         """
-        Test the WebServer using normal loop with tupled test cases
+        Test the WebServer with example paths
         """
+        frontend = self.get_frontend("www")
         self.check_server()
+
         test_cases = [
             ("/www/Joker", "Joker"),
             ("/", "<title>pyWikiCMS</title>"),
