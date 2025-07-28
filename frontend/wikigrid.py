@@ -14,7 +14,7 @@ from ngwidgets.progress import NiceguiProgressbar
 from ngwidgets.task_runner import TaskRunner
 from nicegui import ui
 
-from backend.site import WikiSite, Wikis
+from backend.site import Wikis, WikiSite
 
 
 class WikiCheck:

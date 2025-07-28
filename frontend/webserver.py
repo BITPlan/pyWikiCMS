@@ -85,7 +85,7 @@ class CmsWebServer(GraphNavigatorWebserver):
         async def show_wiki(client: Client, wiki_name: str):
             if not self.authenticated():
                 return RedirectResponse("/login")
-            return await self.page(client, CmsSolution.show_wiki,wiki_name)
+            return await self.page(client, CmsSolution.show_wiki, wiki_name)
 
         @ui.page("/login")
         async def login(client: Client) -> None:
@@ -159,7 +159,7 @@ class CmsSolution(GraphNavigatorSolution):
             client (Client): The client instance this context is associated with.
         """
         super().__init__(webserver, client)  # Call to the superclass constructor
-        self.wiki_grid = WikiGrid(self,webserver.wikis)
+        self.wiki_grid = WikiGrid(self, webserver.wikis)
         self.servers = webserver.servers
         self.server = webserver.server
         self.hostname = webserver.hostname

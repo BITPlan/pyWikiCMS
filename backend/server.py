@@ -35,6 +35,7 @@ class Server:
     admin_user: Optional[str] = None
     admin_password: Optional[str] = None
     auto_login: bool = False
+    has_sqldb: bool = False
     purpose: Optional[str] = None
     logo: str = "https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png"
     sql_backup_path: str = "/var/backup/sqlbackup"

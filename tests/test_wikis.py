@@ -3,9 +3,11 @@ Created on 2023-10-31
 
 @author: wf
 """
+
 from basemkit.basetest import Basetest
-from backend.site import Wikis
 from mogwai.core.mogwaigraph import MogwaiGraph
+
+from backend.site import Wikis
 
 
 class TestWikis(Basetest):
@@ -18,9 +20,9 @@ class TestWikis(Basetest):
 
     def testWikis(self):
         """
-        test wikis         """
+        test wikis"""
         wikis = Wikis()
-        graph=MogwaiGraph()
+        graph = MogwaiGraph()
         wikis.add_to_graph(graph, with_progress=True)
         lod = wikis.get_lod()
         debug = True

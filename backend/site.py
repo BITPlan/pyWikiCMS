@@ -4,24 +4,23 @@ Created on 2021-01-01
 @author: wf
 """
 
-from dataclasses import dataclass, field
 import re
 import socket
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from typing import Optional
 
-from backend.backup import WikiBackup
-from backend.remote import Remote
+import requests
 from basemkit.yamlable import lod_storable
-from basemkit.yamlable import lod_storable
-from frontend.html_table import HtmlTables
 from lodstorage.lod import LOD
 from mogwai.core import MogwaiGraph
 from ngwidgets.widgets import Link
-import requests
 from tqdm import tqdm
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
+
+from backend.backup import WikiBackup
+from backend.remote import Remote
+from frontend.html_table import HtmlTables
 
 
 @dataclass
@@ -29,6 +28,7 @@ class Site:
     """
     an Apache Site
     """
+
     name: str
     # if container is set the site is provided by a docker container
     container: Optional[str] = None
@@ -76,6 +76,7 @@ class WikiSite(Site):
     """
     A MediaWiki Site
     """
+
     wikiId: Optional[str] = None
     database: Optional[str] = None
     defaultPage: str = "Main Page"
@@ -207,8 +208,8 @@ class WikiSite(Site):
         """
         constructor
         """
-        wiki_id=wiki_user.wikiId
-        wiki=cls(name=wiki_id,wikiId=wiki_id)
+        wiki_id = wiki_user.wikiId
+        wiki = cls(name=wiki_id, wikiId=wiki_id)
         wiki.wiki_user = wiki_user
         wiki.wiki_url = wiki.wiki_user.url
         wiki.debug = debug
@@ -227,11 +228,13 @@ class WikiSite(Site):
         return self._wiki_client
 
     def as_dict(self):
-        wikiId=self.wiki_user.wikiId
-        url=f"/wiki/{self._node_id}"
-        wiki_link=Link.create(url=url,text=wikiId)
+        wikiId = self.wiki_user.wikiId
+        url = f"/wiki/{self._node_id}"
+        wiki_link = Link.create(url=url, text=wikiId)
         wiki_url = f"{self.wiki_user.url}{self.wiki_user.scriptPath}"
-        wiki_external_link = Link.create(url=wiki_url, text=self.wiki_url, target="_blank")
+        wiki_external_link = Link.create(
+            url=wiki_url, text=self.wiki_url, target="_blank"
+        )
 
         record = {
             "#": self.row_no,
@@ -333,7 +336,9 @@ class Wikis:
         if self.lod is None:
             self.lod = []
             self.wiki_sites_by_rowno = {}
-            sorted_sites = sorted(self.wiki_sites.values(), key=lambda w: w.wiki_user.wikiId)
+            sorted_sites = sorted(
+                self.wiki_sites.values(), key=lambda w: w.wiki_user.wikiId
+            )
             for index, wiki_site in enumerate(sorted_sites):
                 wiki_site.row_no = index + 1
                 self.wiki_sites_by_rowno[wiki_site.row_no] = wiki_site
@@ -369,7 +374,6 @@ class Wikis:
                 "MediaWikiSite", name=wiki_id, properties=props
             )
             wiki_site._node_id = node_id
-
 
 
 @lod_storable

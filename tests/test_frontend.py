@@ -3,23 +3,24 @@ Created on 2020-12-27
 
 @author: wf
 """
+
 import asyncio
-from datetime import datetime
 import json
 import threading
-from typing import Dict, Any
 import unittest
 import warnings
+from datetime import datetime
+from typing import Any, Dict
 
-from backend.server import Server, Servers
-from backend.site import FrontendSite, WikiSite
 from fastapi.testclient import TestClient
-from frontend.cmsmain import CmsMain
-from frontend.webserver import CmsWebServer
-from frontend.wikicms import WikiFrontend, WikiFrontends
 from ngwidgets.basetest import Basetest
 from ngwidgets.webserver_test import WebserverTest
 
+from backend.server import Server, Servers
+from backend.site import FrontendSite, WikiSite
+from frontend.cmsmain import CmsMain
+from frontend.webserver import CmsWebServer
+from frontend.wikicms import WikiFrontend, WikiFrontends
 from tests.smw_access import SMWAccess
 
 
@@ -49,7 +50,7 @@ class TestFrontend(WebserverTest):
             self.client = None
         pass
 
-    def get_event_loop_info(self)->Dict[str,Any]:
+    def get_event_loop_info(self) -> Dict[str, Any]:
         """
         Get current event loop information to help debugging
         ValueError: The future belongs to a different loop than the one specified as the loop argument
@@ -58,16 +59,15 @@ class TestFrontend(WebserverTest):
         try:
             loop = asyncio.get_event_loop()
             loop_info = {
-                'is_running': loop.is_running(),
-                'is_closed': loop.is_closed(),
-                'loop_id': id(loop),
-                'thread_id': threading.get_ident(),
-                'tasks': len(asyncio.all_tasks(loop)) if not loop.is_closed() else 0
+                "is_running": loop.is_running(),
+                "is_closed": loop.is_closed(),
+                "loop_id": id(loop),
+                "thread_id": threading.get_ident(),
+                "tasks": len(asyncio.all_tasks(loop)) if not loop.is_closed() else 0,
             }
         except RuntimeError as e:
-            loop_info = {'error': str(e)}
+            loop_info = {"error": str(e)}
         return loop_info
-
 
     def check_server(self, hint: str = None):
         """
@@ -76,8 +76,8 @@ class TestFrontend(WebserverTest):
         timestamp = datetime.now().isoformat()
         if hint is None:
             hint = self._testMethodName
-        loop_info=self.get_event_loop_info()
-        loop_info_str=json.dumps(loop_info, indent=2)
+        loop_info = self.get_event_loop_info()
+        loop_info_str = json.dumps(loop_info, indent=2)
         msg = f"{timestamp} - {hint} Event loop:{loop_info_str}"
         print(msg)
         pass
@@ -122,7 +122,7 @@ class TestFrontend(WebserverTest):
         else:
             # reuse setup from first instance
             first = TestFrontend.instance
-            self.profiler=first.profiler
+            self.profiler = first.profiler
             self.server = first.server
             self.servers = first.servers
             self.ws = first.ws
@@ -163,7 +163,7 @@ class TestFrontend(WebserverTest):
         self.assertEqual("www", frontend.name)
         pass
 
-    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
+    # @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testWebServerPaths(self):
         print("\n=== START testWebServerPaths DEBUG ===")
         self.check_server("initial_state")
@@ -174,7 +174,7 @@ class TestFrontend(WebserverTest):
         test_cases = [
             ("/www/Joker", "Joker"),
             ("/", "<title>pyWikiCMS</title>"),
-            ("/www/{Illegal}", "invalid char")
+            ("/www/{Illegal}", "invalid char"),
         ]
 
         for i, (query, ehtml) in enumerate(test_cases):
