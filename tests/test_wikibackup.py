@@ -1,13 +1,15 @@
-'''
+"""
 Created on 2025-07-29
 
 @author: wf
-'''
+"""
+
 import unittest
 
-from backend.wikibackup import WikiBackup
 from basemkit.basetest import Basetest
 from wikibot3rd.wikiuser import WikiUser
+
+from backend.wikibackup import WikiBackup
 
 
 class TestWikiBackup(Basetest):

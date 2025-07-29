@@ -25,9 +25,8 @@ class TestSite(Basetest):
         wiki = self.servers.wikis_by_hostname.get(hostname)
         family = self.servers.servers.get("q")
         self.assertIsNotNone(family)
-        wiki.configure_of_settings(
-            family, f"{family.sitedir}/{hostname}/LocalSettings.php"
-        )
+        self.assertEqual(wiki.family,family)
+        wiki.configure_of_settings()
         return wiki
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")

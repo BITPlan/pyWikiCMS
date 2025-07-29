@@ -4,9 +4,11 @@ Created on 2025-07-21
 @author: wf
 """
 
-import unittest
 import socket
+import unittest
+
 from basemkit.basetest import Basetest
+
 from backend.remote import Remote
 
 
@@ -55,11 +57,13 @@ class TestRemote(Basetest):
         test remote localmode
         """
         test_file = "/etc/hosts"
-        hostname=socket.gethostname()
-        for hostname in [hostname,"localhost"]:
-            remote=Remote(hostname)
+        hostname = socket.gethostname()
+        for hostname in [hostname, "localhost"]:
+            remote = Remote(hostname)
             self.assertTrue(remote.is_local)
             stats = remote.get_file_stats(test_file)
-            debug=True
+            debug = True
             if debug:
-                print(f"{test_file}:created: {stats.created_iso} modified: {stats.modified_iso}{stats.size_str} {stats.age_days:.2f} days old")
+                print(
+                    f"{test_file}:created: {stats.created_iso} modified: {stats.modified_iso}{stats.size_str} {stats.age_days:.2f} days old"
+                )

@@ -8,20 +8,22 @@ to a dockerized environment
 @author: wf
 """
 
+import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
-import sys
+from typing import Iterator
 
-from backend.remote import Remote
-from backend.server import Server, Servers
-from backend.site import Site, WikiSite
-from backend.wikibackup import WikiBackup
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from profiwiki.version import Version
+from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
+
+from backend.server import Server, Servers
+from backend.site import Site, WikiSite
+
 
 @dataclass
 class TransferTask:
@@ -98,6 +100,18 @@ class TransferSite:
                             f"{server.hostname}:{filepath} {stats.age_days:.2f} d {age_marker}"
                         )
 
+    def check_database(self):
+        """
+        check the database access
+        """
+        index=0
+        for wiki in self.get_selected_wikis():
+            if wiki.localSettings is None:
+                wiki.configure_of_settings()
+                index+=1
+                print(f"{index:2d}:{wiki.database} vs {wiki.database_setting} dbUser:{wiki.dbUser}")
+                pass
+
     def check_endpoints(self):
         """
         check that we have endpoint configurations
@@ -117,11 +131,11 @@ class TransferSite:
             index += 1
             self.check_wikisite(wiki, index)
 
-    def get_wiki_user(self,wikisite:WikiSite,purpose:str):
+    def get_wiki_user(self, wikisite: WikiSite, purpose: str):
         """
         get the wikiuser and set the remote
         """
-        wikiuser=wikisite.init_wikiuser_and_backup()
+        wikiuser = wikisite.init_wikiuser_and_backup()
         if wikiuser is None:
             self.log.log("❌", purpose, f"invalid wikiuser {wikisite.wikiId}")
         return wikiuser
@@ -132,7 +146,7 @@ class TransferSite:
         Returns the number of days since last backup
         """
         for wikisite in self.get_selected_wikis():
-            wiki_user=self.get_wiki_user(wikisite,"recent backups")
+            wiki_user = self.get_wiki_user(wikisite, "recent backups")
 
             if wiki_user is None:
                 continue
@@ -142,10 +156,10 @@ class TransferSite:
         """
         check the given wiki
         """
-        ssh_timestamp = site.remote.ssh_able()
-        ok = Site.state_symbol(ssh_timestamp is not None)
+        avail_timestamp=site.remote.avail_check()
+        ok = Site.state_symbol(avail_timestamp is not None)
         index_str = f"{index:02d}:" if index else ""
-        print(f"{index_str}{site.hostname:<26} {ok} {ssh_timestamp or ''}")
+        print(f"{index_str}{site.hostname:<26} {ok} {avail_timestamp or ''}")
         if self.args.debug:
             site.remote.log.dump()
         return ok
@@ -213,37 +227,49 @@ class TransferSite:
         transferTask.login()
         self.log.log("✅", "transfer", transferTask.site.version)
 
-    def get_selected_servers(self):
+    def get_selected_servers(self) -> Iterator:
         """
-        Generator that yields selected servers based on arguments
+        Return an iterator over selected servers based on arguments.
+
+        Returns:
+            Iterator: selected servers, optionally shown with a progress bar
         """
         if self.args.all:
-            # Yield all servers
-            for server in self.servers.servers.values():
-                yield server
+            servers = list(self.servers.servers.values())
         else:
+            servers = []
             if self.source and self.source in self.servers.servers:
-                yield self.servers.servers.get(self.source)
+                servers.append(self.servers.servers.get(self.source))
             if self.target and self.target in self.servers.servers:
-                yield self.servers.servers.get(self.target)
+                servers.append(self.servers.servers.get(self.target))
 
-    def get_selected_wikis(self):
-        """
-        Generator that yields selected wikis based on arguments
+        server_iter = (
+            tqdm(servers, desc="Processing servers")
+            if self.args.progress
+            else iter(servers)
+        )
+        return server_iter
 
-        Yields:
-            tuple: (server_name, wiki_name, wiki) for each selected wiki
+    def get_selected_wikis(self) -> Iterator:
         """
+        Return an iterator over selected wikis based on arguments.
+
+        Returns:
+            Iterator: selected wikis, optionally shown with a progress bar
+        """
+        wikis=[]
         if self.args.all:
-            # Yield all wikis from all servers
             for server in self.servers.servers.values():
                 for wiki in server.wikis.values():
-                    yield wiki
+                    wikis.append(wiki)
         else:
             if self.sitename:
                 wiki = self.servers.wikis_by_hostname.get(self.sitename)
                 if wiki:
-                    yield wiki
+                    wikis.append(wiki)
+
+        wiki_iter = tqdm(wikis, desc="wikis") if self.args.progress else iter(wikis)
+        return wiki_iter
 
     def list_sites(self) -> None:
         """
@@ -261,10 +287,13 @@ class TransferSite:
         perform the backup
         """
         for wikisite in self.get_selected_wikis():
-            wikiuser=self.get_wiki_user(wikisite, "backup")
+            wikiuser = self.get_wiki_user(wikisite, "backup")
             if wikiuser is None:
                 continue
-            wikisite.wiki_backup.backup(days=self.args.days,show_progress=self.args.progress)
+            wikisite.wiki_backup.backup(
+                days=self.args.days, show_progress=self.args.progress
+            )
+
 
 class TransferSiteCmd(BaseCmd):
     """
@@ -281,6 +310,12 @@ class TransferSiteCmd(BaseCmd):
             "--check-apache",
             action="store_true",
             help="check Apache configuration for selected sites",
+        )
+        parser.add_argument(
+            "-cd",
+            "--check-database",
+            action="store_true",
+            help="check database access for selected sites",
         )
         parser.add_argument(
             "-cs",
@@ -344,7 +379,10 @@ class TransferSiteCmd(BaseCmd):
         parser.add_argument("-s", "--source", help="specify the source server")
         parser.add_argument("-t", "--target", help="specify the target server")
         parser.add_argument(
-            "-mrb", "--recent-backup", action="store_true", help="show most recent backup"
+            "-mrb",
+            "--recent-backup",
+            action="store_true",
+            help="show most recent backup",
         )
         parser.add_argument(
             "-wb", "--wikibackup", action="store_true", help="run wikibackup task"
@@ -362,6 +400,9 @@ class TransferSiteCmd(BaseCmd):
         if args.check_backup:
             tsite.check_backup()
             handled = True
+        if args.check_database:
+            tsite.check_database()
+            handlet = True
         if args.check_endpoints:
             tsite.check_endpoints()
             handled = True

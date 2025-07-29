@@ -30,6 +30,7 @@ class Server:
     either in legacy style with a directory layout or with multiple docker
     containers
     """
+
     name: str
     hostname: str
     admin_user: Optional[str] = None
@@ -88,9 +89,9 @@ class Server:
         self.avail_timestamp = self.remote.avail_check()
         if self.avail_timestamp:
             # Get IP address from remote perspective
-            self.ip = self.remote.ip
+            self.ip = self.remote.get_ip()
             # Get platform information
-            self.platform = self.remote.platform
+            self.platform = self.remote.get_platform()
             # Get hostname
             self.hostname = self.remote.get_output("hostname")
 
@@ -305,6 +306,7 @@ class Servers:
     """
     Collection of servers loaded from YAML configuration files
     """
+
     servers: Dict[str, Server] = field(default_factory=dict)
     tools: Optional[Tools] = None
 
@@ -384,6 +386,8 @@ class Servers:
                 self.wikis_by_id[wiki.wikiId] = wiki
                 wiki.hostname = hostname
                 wiki.init_remote()
+                if server.sitedir:
+                    wiki.family=server
             for hostname, frontend in server.frontends.items():
                 self.frontends_by_hostname[hostname] = frontend
                 self.frontends_by_name[frontend.name] = frontend
@@ -395,7 +399,7 @@ class Servers:
                     msg = f"invalid frontend wikiId {frontend.wikiId}"
                     self.log.log("❌", "frontend", msg)
 
-    def probe_wiki_family(self,server) -> list[WikiSite]:
+    def probe_wiki_family(self, server) -> list[WikiSite]:
         """
         probe the given server for a family of wikis
         family by scanning sitedir for LocalSettings.php files
@@ -435,4 +439,3 @@ class Servers:
                     wikisites.append(site)
 
         return wikisites
-

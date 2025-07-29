@@ -4,23 +4,23 @@ Created on 2021-01-01
 @author: wf
 """
 
+from dataclasses import dataclass, field
 import re
 import socket
-from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-import requests
+from backend.remote import Remote
+from backend.server import Server
+from backend.wikibackup import WikiBackup
 from basemkit.yamlable import lod_storable
+from frontend.html_table import HtmlTables
 from lodstorage.lod import LOD
 from mogwai.core import MogwaiGraph
 from ngwidgets.widgets import Link
+import requests
 from tqdm import tqdm
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
-
-from backend.remote import Remote
-from backend.wikibackup import WikiBackup
-from frontend.html_table import HtmlTables
 
 
 @dataclass
@@ -73,6 +73,7 @@ class Site:
         except Exception:
             self.ip = "?"
 
+
 @lod_storable
 class WikiSite(Site):
     """
@@ -95,6 +96,7 @@ class WikiSite(Site):
 
     # Non-persistent and calculated fields
     debug: bool = field(default=False, init=False, repr=False)
+    database_setting: str = field(default=None, init=False)
     wiki_url: str = field(default="", init=False)
     show_html: bool = field(default=False, init=False)
     wiki_user: WikiUser = field(default=None, init=False)
@@ -109,31 +111,42 @@ class WikiSite(Site):
         super().__post_init__()
         pass
 
-    def configure_of_settings(self, family=None, localSettings: str = None) -> None:
+    def configure_of_settings(self,family:Server=None,localSettings:str=None) -> None:
         """
         Configure this site from the given settings
 
         Args:
-            family: WikiFamily instance
+            family: optional server instance of the family we belong to
             localSettings: path to LocalSettings.php
         """
-        self.family = family
-        self.localSettings = localSettings
+        if family is not None:
+            self.family=family
+        if localSettings is not None:
+            self.localSettings=localSettings
+        if self.family is not None and self.localSettings is None:
+            self.localSettings=f"{self.family.sitedir}/{self.hostname}/LocalSettings.php"
+        if self.localSettings is None:
+            self.localSettings="/var/www/html/LocalSettings.php"
 
         if self.localSettings:
             self.load_settings()
-            self.configure_from_settings()
+            if self.settingLines:
+                self.configure_from_settings()
 
     def load_settings(self) -> None:
         """Load settings from LocalSettings.php file"""
-        self.settingLines = self.family.remote.readlines(self.localSettings)
+        if self.family is not None:
+            remote=self.family.remote
+        else:
+            remote=self.remote
+        self.settingLines = remote.readlines(self.localSettings)
 
     def configure_from_settings(self) -> None:
         """Configure site properties from loaded settings"""
         self.logo = self.getSetting("wgLogo")
-        database_setting = self.getSetting("wgDBname")
-        if database_setting:
-            self.database = database_setting
+        self.database_setting = self.getSetting("wgDBname")
+        if self.database is None:
+            self.database = self.database_setting
         self.url = self.getSetting("wgServer")
         self.dbUser = self.getSetting("wgDBuser")
         self.dbPassword = self.getSetting("wgDBpassword")
@@ -172,23 +185,24 @@ class WikiSite(Site):
             Variable value or None if not found
         """
         pattern = rf'[^#]*\${varName}\s*=\s*"(.*)"'
-        for line in self.settingLines:
-            match = re.match(pattern, line)
-            if match:
-                value = match.group(1)
-                return value
+        if self.settingLines:
+            for line in self.settingLines:
+                match = re.match(pattern, line)
+                if match:
+                    value = match.group(1)
+                    return value
         return None
 
-    def init_wikiuser_and_backup(self,wikiUser:WikiUser=None)->WikiUser:
+    def init_wikiuser_and_backup(self, wikiUser: WikiUser = None) -> WikiUser:
         """
         initialize my wiki user and wiki_backup
         """
         if wikiUser is None:
-            wikiUser=WikiUser.ofWikiId(wikiId=self.wikiId, lenient=True)
-        self.wiki_user=wikiUser
+            wikiUser = WikiUser.ofWikiId(wikiId=self.wikiId, lenient=True)
+        self.wiki_user = wikiUser
         if self.wiki_user:
             self.wiki_url = self.wiki_user.url
-        self.wiki_backup=WikiBackup(self.wiki_user)
+        self.wiki_backup = WikiBackup(self.wiki_user)
         return self.wiki_user
 
     def getLogo(self) -> Optional[str]:

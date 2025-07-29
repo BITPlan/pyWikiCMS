@@ -3,8 +3,7 @@ Created on 2025-07-21
 
 @author: wf
 """
-from dataclasses import dataclass, field
-from datetime import datetime
+
 import grp
 import os
 import pwd
@@ -12,6 +11,8 @@ import socket
 import stat
 import subprocess
 import sys
+from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Dict, Optional, Tuple
 
 from basemkit.persistent_log import Log
@@ -22,6 +23,7 @@ from basemkit.yamlable import lod_storable
 @lod_storable
 class Tool:
     """tool configuration."""
+
     name: Optional[str] = (
         None  # Tool identifier name will be set from dict keys if this tools is part of Tools
     )
@@ -38,6 +40,7 @@ class Tools:
     """
     assembly of tools
     """
+
     tools: Dict[str, Tool] = field(default_factory=dict)
 
     @classmethod
@@ -77,7 +80,7 @@ class Stats:
             permissions=parts[2],
             owner=parts[3],
             group=parts[4],
-            ctime= int(parts[5])
+            ctime=int(parts[5]),
         )
         return stats_obj
 
@@ -129,7 +132,7 @@ class Stats:
         Returns:
             ISO formatted datetime string
         """
-        modified_iso=None
+        modified_iso = None
         modified = self.modified_timestamp
         if modified:
             modified_iso = modified.isoformat()
@@ -154,7 +157,7 @@ class Stats:
         Returns:
             datetime object if ctime_int is set, otherwise None
         """
-        created=datetime.fromtimestamp(self.ctime)
+        created = datetime.fromtimestamp(self.ctime)
         return created
 
     @property
@@ -165,7 +168,7 @@ class Stats:
         Returns:
             ISO formatted string if ctime_int is set, otherwise None
         """
-        created_iso=None
+        created_iso = None
         created = self.created_timestamp
         if created:
             created_iso = created.isoformat()
@@ -211,17 +214,19 @@ class Remote:
             timeout: the timeout for the command
         """
         self.host = host
-        self._here_host=socket.gethostname()
+        self._here_host = socket.gethostname()
         self.is_local = False
-        self._ip=None
-        self._platform=None
+        self._ip = None
+        self._platform = None
         try:
             host_ip = socket.gethostbyname(host)
-            self._ip=host_ip
+            self._ip = host_ip
             local_ips = socket.gethostbyname_ex(self._here_host)[2]
-            self.is_local = host_ip in local_ips or host_ip.startswith("127.") or host_ip == "::1"
+            self.is_local = (
+                host_ip in local_ips or host_ip.startswith("127.") or host_ip == "::1"
+            )
             if self.is_local:
-                self._platform=sys.platform
+                self._platform = sys.platform
         except Exception as _ex:
             # keep None defaults
             pass
@@ -233,16 +238,16 @@ class Remote:
             f"-o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host}"
         )
 
-    @property
-    def ip(self)->str:
+    def get_ip(self) -> str:
+        """
+        """
         if self._ip is None:
-            self._ip=self.get_output("hostname -I | awk '{print $1}'")
+            self._ip = self.get_output("hostname -I | awk '{print $1}'")
         return self._ip
 
-    @property
-    def platform(self)->str:
+    def get_platform(self) -> str:
         if self._platform is None:
-            self._platform=self.get_output(
+            self._platform = self.get_output(
                 "python3 -c 'import sys; print(sys.platform)'"
             )
         return self._platform
@@ -285,7 +290,7 @@ class Remote:
         Returns:
             CompletedProcess: the result of the command
         """
-        full_cmd=cmd
+        full_cmd = cmd
         if not self.is_local:
             full_cmd = f"ssh  {self.ssh_options}"
         if self.container:
@@ -372,7 +377,7 @@ class Remote:
         """
         timestamp = None
         if self.is_local:
-            timestamp=datetime.now()
+            timestamp = datetime.now()
         else:
             result = self.run("echo ok")
             if result.returncode == 0 and "ok" in result.stdout:
@@ -406,7 +411,7 @@ class Remote:
         Returns:
             Stats object or None if file doesn't exist
         """
-        stats=None
+        stats = None
         try:
             st = os.stat(filepath)
             size = st.st_size
@@ -415,7 +420,7 @@ class Remote:
             permissions = "-" + stat.filemode(st.st_mode)[1:]
             owner = pwd.getpwuid(st.st_uid).pw_name
             group = grp.getgrgid(st.st_gid).gr_name
-            stats=Stats(
+            stats = Stats(
                 filepath=filepath,
                 size=size,
                 mtime=mtime,
@@ -423,7 +428,6 @@ class Remote:
                 permissions=permissions,
                 owner=owner,
                 group=group,
-
             )
         except Exception:
             pass
@@ -439,9 +443,12 @@ class Remote:
         Returns:
             Stats object or None if file doesn't exist
         """
-        stats = self.get_local_file_stats(filepath) if self.is_local else self.get_remote_file_stats(filepath)
+        stats = (
+            self.get_local_file_stats(filepath)
+            if self.is_local
+            else self.get_remote_file_stats(filepath)
+        )
         return stats
-
 
     def listdir(
         self, dirpath: str, wildcard: str = "*", dirs_only: bool = False
