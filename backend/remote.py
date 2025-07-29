@@ -4,10 +4,10 @@ Created on 2025-07-21
 @author: wf
 """
 
-import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Optional
+import subprocess
+from typing import Dict, Optional, Tuple
 
 from basemkit.persistent_log import Log
 from basemkit.shell import Shell
@@ -75,6 +75,24 @@ class Stats:
             group=parts[4],
         )
         return stats_obj
+
+    def get_size_unit(self, size: int) -> Tuple[str, int]:
+        """
+        Determine the appropriate unit (GB, MB, kB, B) based on file size.
+        """
+        if size >= 1024**3:
+            unit = "GB", 1024**3
+        elif size >= 1024**2:
+            unit = "MB", 1024**2
+        else:
+            unit = "kB", 1024
+        return unit
+
+    @property
+    def size_str(self)->str:
+        unit, divisor = self.get_size_unit(self.size)
+        size_str = f"{self.size / divisor:.2f} {unit}"
+        return size_str
 
     @property
     def is_directory(self) -> bool:
@@ -295,18 +313,23 @@ class Remote:
             stats_obj = Stats.of_stats(filepath, result.stdout)
         return stats_obj
 
-    def listdir(self, dirpath: str, wildcard: str = "*") -> Optional[list[str]]:
+    def listdir(self, dirpath: str, wildcard: str = "*", dirs_only: bool = False) -> Optional[list[str]]:
         """
         List directory contents with optional wildcard pattern
 
         Args:
             dirpath: path to the directory to list
             wildcard: optional wildcard pattern (e.g., "/*.sql")
+            dirs_only: if True, list directories only
 
         Returns:
             List of filenames or None if directory doesn't exist
         """
-        cmd = f"ls -1 {dirpath}/{wildcard}"
+        dirs_option=""
+        if dirs_only:
+            dirs_option="d"
+            wildcard+="/"
+        cmd = f"ls -1{dirs_option} {dirpath}/{wildcard}"
         result = self.run(cmd)
         files = None
         if result.returncode == 0:

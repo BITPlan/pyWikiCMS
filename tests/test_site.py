@@ -25,7 +25,6 @@ class TestSite(Basetest):
         wiki = self.servers.wikis_by_hostname.get(hostname)
         family = self.servers.servers.get("q")
         self.assertIsNotNone(family)
-        family.sitedir = "/var/www/mediawiki/sites"
         wiki.configure_of_settings(
             family, f"{family.sitedir}/{hostname}/LocalSettings.php"
         )

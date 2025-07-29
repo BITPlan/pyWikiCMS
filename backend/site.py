@@ -120,14 +120,14 @@ class WikiSite(Site):
         self.localSettings = localSettings
 
         if self.localSettings:
-            self._load_settings()
-            self._configure_from_settings()
+            self.load_settings()
+            self.configure_from_settings()
 
-    def _load_settings(self) -> None:
+    def load_settings(self) -> None:
         """Load settings from LocalSettings.php file"""
         self.settingLines = self.family.remote.readlines(self.localSettings)
 
-    def _configure_from_settings(self) -> None:
+    def configure_from_settings(self) -> None:
         """Configure site properties from loaded settings"""
         self.logo = self.getSetting("wgLogo")
         database_setting = self.getSetting("wgDBname")

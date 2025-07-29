@@ -119,16 +119,26 @@ class SqlBackup:
         databases=self.list_all_databases()
         for database in databases:
             for full in [False,True]:
-                backup_path=self.get_backup_path(database, full)
+                backup_path=self.get_backup_path(database,self.today_dir,full)
                 stats = self.remote.get_file_stats(backup_path)
                 if stats:
                     age_marker = "✅" if stats.age_days < 1.0 else "❌"
                     print(
-                        f"{self.backup_host}:{backup_path} {stats.age_days:.2f} d {age_marker}"
+                        f"{self.backup_host}:{backup_path} {stats.size_str} {stats.age_days:.2f} d {age_marker}"
                     )
 
-    def get_backup_path(self, database:str, base_path: str ,full:bool=False)->str:
+    def get_backup_path(self, database: str, base_path: str, full: bool = False) -> str:
         """
+        Generate a backup file path for the given database.
+
+        Args:
+            database: Name of the database to back up.
+            base_path: Base directory path where the backup should be stored.
+            full: If True, generates a path for a full backup. If False, generates a path
+                  for an incremental backup. Defaults to False.
+
+        Returns:
+            str: The full path for the backup file, including the appropriate file extension.
         """
         postfix = "_full" if full else ""
         db_file = f"{database}{postfix}.sql"
@@ -179,7 +189,7 @@ class SqlBackup:
         else:
             databases=[database]
         iterator = tqdm(databases, desc="Backing up databases") if self.progress else databases
-        for database in databases:
+        for database in iterator:
             proc=self.backup_database(database, full)
             if proc.returncode!=0:
                 errors+=1

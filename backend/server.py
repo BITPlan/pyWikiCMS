@@ -39,13 +39,15 @@ class Server:
     purpose: Optional[str] = None
     logo: str = "https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png"
     sql_backup_path: str = "/var/backup/sqlbackup"
+    # if a family is configured we expect e.g.
+    # /var/www/mediawiki/sites
+    sitedir: Optional[str] = None
     timeout: int = 5  # 5 secs
     sites: Dict[str, Site] = field(default_factory=dict)
     wikis: Dict[str, WikiSite] = field(default_factory=dict)
     frontends: Dict[str, FrontendSite] = field(default_factory=dict)
 
     # Non-persistent calculated fields
-    sitedir: str = field(default=False, init=False, repr=False)
     actual_hostname: str = field(default="", init=False, repr=False)
     platform: str = field(default="", init=False, repr=False)
     ip: str = field(default="127.0.0.1", init=False, repr=False)
@@ -140,35 +142,32 @@ class Server:
             self.ip = "127.0.0.1"
 
     def probe_wiki_family(
-        self, sitedir: str = "/var/www/mediawiki/sites"
+        self
     ) -> list[WikiSite]:
         """
         probe this server for a wiki
         family by scanning sitedir for LocalSettings.php files
 
-        Args:
-            sitedir: path to the site definitions directory
-
         Returns:
             List of WikiSites found
         """
-        self.sitedir = sitedir
         wikisites = []
 
-        stats = self.remote.get_file_stats(sitedir)
+        stats = self.remote.get_file_stats(self.sitedir)
         if stats is None or not stats.is_directory:
             return wikisites
 
-        site_files = self.remote.listdir(sitedir)
-        if site_files is None:
+        site_paths = self.remote.listdir(self.sitedir,dirs_only=True)
+        if site_paths is None:
             return wikisites
 
-        for site_file in site_files:
-            local_settings_path = f"{sitedir}/{site_file}/LocalSettings.php"
+        for site_path in site_paths:
+            site_path=site_path.rstrip('/')
+            site_name = os.path.basename(site_path)
+            local_settings_path = f"{site_path}/LocalSettings.php"
             settings_stats = self.remote.get_file_stats(local_settings_path)
 
             if settings_stats is not None and not settings_stats.is_directory:
-                site_name = site_file
                 if site_name not in self.wikis:
                     self.log.log(
                         "⚠️",
