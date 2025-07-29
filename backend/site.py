@@ -10,7 +10,6 @@ import socket
 from typing import Any, Dict, List, Optional
 
 from backend.remote import Remote
-from backend.server import Server
 from backend.wikibackup import WikiBackup
 from basemkit.yamlable import lod_storable
 from frontend.html_table import HtmlTables
@@ -111,7 +110,7 @@ class WikiSite(Site):
         super().__post_init__()
         pass
 
-    def configure_of_settings(self,family:Server=None,localSettings:str=None) -> None:
+    def configure_of_settings(self,family=None,localSettings:str=None) -> None:
         """
         Configure this site from the given settings
 
