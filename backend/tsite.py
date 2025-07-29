@@ -8,20 +8,20 @@ to a dockerized environment
 @author: wf
 """
 
-import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
+import sys
 
+from backend.remote import Remote
+from backend.server import Server, Servers
+from backend.site import Site, WikiSite
+from backend.wikibackup import WikiBackup
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from profiwiki.version import Version
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
-
-from backend.server import Server, Servers
-from backend.site import Site, WikiSite
-from backend.wikibackup import WikiBackup
 
 
 @dataclass
@@ -119,7 +119,10 @@ class TransferSite:
             self.check_wikisite(wiki, index)
 
     def get_wiki_user(self,wikisite:WikiSite,purpose:str):
-        wikiuser=wikisite.get_wikiuser()
+        """
+        get the wikiuser and set the remote
+        """
+        wikiuser=wikisite.init_wikiuser_and_backup()
         if wikiuser is None:
             self.log.log("❌", purpose, f"invalid wikiuser {wikisite.wikiId}")
         return wikiuser
@@ -131,8 +134,9 @@ class TransferSite:
         """
         for wikisite in self.get_selected_wikis():
             wiki_user=self.get_wiki_user(wikisite,"recent backups")
+
             if wiki_user is None:
-                return
+                continue
             wikisite.wiki_backup.show_age()
 
     def check_wikisite(self, site, index: int = None) -> bool:
@@ -152,7 +156,7 @@ class TransferSite:
         check the family probing
         """
         for server in self.get_selected_servers():
-            wikis = server.probe_wiki_family()
+            wikis = self.servers.probe_wiki_family(server)
 
     def check_tools(self):
         """
@@ -239,7 +243,8 @@ class TransferSite:
         else:
             if self.sitename:
                 wiki = self.servers.wikis_by_hostname.get(self.sitename)
-                yield wiki
+                if wiki:
+                    yield wiki
 
     def list_sites(self) -> None:
         """
@@ -257,10 +262,9 @@ class TransferSite:
         perform the backup
         """
         for wikisite in self.get_selected_wikis():
-            wikiuser=wikisite.get_wikiuser()
+            wikiuser=self.get_wiki_user(wikisite, "backup")
             if wikiuser is None:
-                self.log.log("❌", "backup", f"invalid wikiuser {wikisite.wikiId}")
-                return
+                continue
             wiki_backup=WikiBackup(wikiuser)
             wiki_backup.backup(days=self.args.days)
 
@@ -302,7 +306,7 @@ class TransferSiteCmd(BaseCmd):
             "-ce",
             "--check-endpoints",
             action="store_true",
-            help="check backup state of selected wikis",
+            help="check endpoints for sites",
         )
         parser.add_argument(
             "-cf",
@@ -390,7 +394,7 @@ class TransferSiteCmd(BaseCmd):
                 tsite.check_recent_backups()
                 handled = True
         if args.wikibackup:
-            if not args.sitename :
+            if not args.sitename:
                 print("need sitename for wikibackup!")
                 self.parser.print_help()
             else:

@@ -94,8 +94,6 @@ class Server:
             # Get hostname
             self.hostname = self.remote.get_output("hostname")
 
-
-
     def probe_remote(self):
         """
         Probe my properties by remote access
@@ -140,46 +138,6 @@ class Server:
             if self.debug:
                 print(str(ex))
             self.ip = "127.0.0.1"
-
-    def probe_wiki_family(self) -> list[WikiSite]:
-        """
-        probe this server for a wiki
-        family by scanning sitedir for LocalSettings.php files
-
-        Returns:
-            List of WikiSites found
-        """
-        wikisites = []
-
-        stats = self.remote.get_file_stats(self.sitedir)
-        if stats is None or not stats.is_directory:
-            return wikisites
-
-        site_paths = self.remote.listdir(self.sitedir, dirs_only=True)
-        if site_paths is None:
-            return wikisites
-
-        for site_path in site_paths:
-            site_path = site_path.rstrip("/")
-            site_name = os.path.basename(site_path)
-            local_settings_path = f"{site_path}/LocalSettings.php"
-            settings_stats = self.remote.get_file_stats(local_settings_path)
-
-            if settings_stats is not None and not settings_stats.is_directory:
-                if site_name not in self.wikis:
-                    self.log.log(
-                        "⚠️",
-                        "configure_wiki_family",
-                        f"Site {site_name} found but not declared",
-                    )
-                else:
-                    site = self.wikis.get(site_name)
-                    site.configure_of_settings(
-                        family=self, localSettings=local_settings_path
-                    )
-                    wikisites.append(site)
-
-        return wikisites
 
     def sqlGetDatabaseUrl(
         self, dbname: str, username: str, password: str, hostname: str = None
@@ -347,7 +305,6 @@ class Servers:
     """
     Collection of servers loaded from YAML configuration files
     """
-
     servers: Dict[str, Server] = field(default_factory=dict)
     tools: Optional[Tools] = None
 
@@ -437,3 +394,45 @@ class Servers:
                 else:
                     msg = f"invalid frontend wikiId {frontend.wikiId}"
                     self.log.log("❌", "frontend", msg)
+
+    def probe_wiki_family(self,server) -> list[WikiSite]:
+        """
+        probe the given server for a family of wikis
+        family by scanning sitedir for LocalSettings.php files
+
+        Returns:
+            List of WikiSites found
+        """
+        wikisites = []
+
+        stats = server.remote.get_file_stats(server.sitedir)
+        if stats is None or not stats.is_directory:
+            return wikisites
+
+        site_paths = server.remote.listdir(server.sitedir, dirs_only=True)
+        if site_paths is None:
+            return wikisites
+
+        for site_path in site_paths:
+            site_path = site_path.rstrip("/")
+            # fully qualifying site_name/hostname
+            site_name = os.path.basename(site_path)
+            local_settings_path = f"{site_path}/LocalSettings.php"
+            settings_stats = server.remote.get_file_stats(local_settings_path)
+
+            if settings_stats is not None and not settings_stats.is_directory:
+                if site_name not in self.wikis_by_hostname:
+                    self.log.log(
+                        "⚠️",
+                        "configure_wiki_family",
+                        f"{server.name}: Site {site_name} found but not declared",
+                    )
+                else:
+                    site = self.wikis_by_hostname.get(site_name)
+                    site.configure_of_settings(
+                        family=server, localSettings=local_settings_path
+                    )
+                    wikisites.append(site)
+
+        return wikisites
+

@@ -73,7 +73,6 @@ class Site:
         except Exception:
             self.ip = "?"
 
-
 @lod_storable
 class WikiSite(Site):
     """

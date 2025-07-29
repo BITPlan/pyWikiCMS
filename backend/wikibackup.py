@@ -27,12 +27,18 @@ class WikiBackup():
             remote(Remote): the remote access to use
         """
         self.wikiuser = wikiuser
-        self.remote=remote
+        self._remote=remote
         self.debug = debug
         home = str(Path.home())
         self.wikibackup_path = f"{home}/wikibackup/{wikiuser.wikiId}"
         self.git_path = f"{self.wikibackup_path}/.git"
         pass
+
+    @property
+    def remote(self)->Remote:
+        if self._remote is None:
+            self._remote=Remote("localhost")
+        return self._remote
 
     def exists(self) -> bool:
         """
@@ -55,9 +61,12 @@ class WikiBackup():
         return has_git
 
     def show_age(self):
+        """
+        show the age of this backup
+        """
         stats=self.remote.get_file_stats(self.wikibackup_path)
         age_days=stats.age_days
-        print(f"{self.wikiuser.wikiId}: {age_days} days")
+        print(f"{self.wikiuser.wikiId}: {age_days:.2f} days")
 
     def backup(
         self,
@@ -71,6 +80,7 @@ class WikiBackup():
         """
         perform the backup
         """
+        stats=self.remote.get_file_stats(self.wikibackup_path)
         if days < 0:
             query = "[[Modification date::+]]"
         else:
