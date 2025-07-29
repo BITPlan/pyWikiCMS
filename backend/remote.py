@@ -3,10 +3,15 @@ Created on 2025-07-21
 
 @author: wf
 """
-
-import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
+import grp
+import os
+import pwd
+import socket
+import stat
+import subprocess
+import sys
 from typing import Dict, Optional, Tuple
 
 from basemkit.persistent_log import Log
@@ -17,7 +22,6 @@ from basemkit.yamlable import lod_storable
 @lod_storable
 class Tool:
     """tool configuration."""
-
     name: Optional[str] = (
         None  # Tool identifier name will be set from dict keys if this tools is part of Tools
     )
@@ -34,7 +38,6 @@ class Tools:
     """
     assembly of tools
     """
-
     tools: Dict[str, Tool] = field(default_factory=dict)
 
     @classmethod
@@ -48,7 +51,8 @@ class Tools:
 class Stats:
     filepath: str
     size: int
-    mtime_int: int
+    mtime: int
+    ctime: int
     permissions: str
     owner: str
     group: str
@@ -69,10 +73,11 @@ class Stats:
         stats_obj = cls(
             filepath=filepath,
             size=int(parts[0]),
-            mtime_int=int(parts[1]),
+            mtime=int(parts[1]),
             permissions=parts[2],
             owner=parts[3],
             group=parts[4],
+            ctime= int(parts[5])
         )
         return stats_obj
 
@@ -117,27 +122,54 @@ class Stats:
         return filename
 
     @property
-    def mtime_iso(self) -> str:
+    def modified_iso(self) -> str:
         """
         Get modification time as ISO format string
 
         Returns:
             ISO formatted datetime string
         """
-        dt = datetime.fromtimestamp(self.mtime_int)
-        iso_str = dt.isoformat()
-        return iso_str
+        modified_iso=None
+        modified = self.modified_timestamp
+        if modified:
+            modified_iso = modified.isoformat()
+        return modified_iso
 
     @property
-    def mtime_timestamp(self) -> datetime:
+    def modified_timestamp(self) -> datetime:
         """
         Get modification time as datetime object
 
         Returns:
             datetime object
         """
-        timestamp_obj = datetime.fromtimestamp(self.mtime_int)
-        return timestamp_obj
+        modified = datetime.fromtimestamp(self.mtime)
+        return modified
+
+    @property
+    def created_timestamp(self) -> Optional[datetime]:
+        """
+        Get creation (ctime) time as datetime object
+
+        Returns:
+            datetime object if ctime_int is set, otherwise None
+        """
+        created=datetime.fromtimestamp(self.ctime)
+        return created
+
+    @property
+    def created_iso(self) -> Optional[str]:
+        """
+        Get creation (ctime) time as ISO format string
+
+        Returns:
+            ISO formatted string if ctime_int is set, otherwise None
+        """
+        created_iso=None
+        created = self.created_timestamp
+        if created:
+            created_iso = created.isoformat()
+        return created_iso
 
     @property
     def age_secs(self) -> float:
@@ -148,7 +180,7 @@ class Stats:
             Age in days as float
         """
         current_time = datetime.now()
-        age_secs = (current_time - self.mtime_timestamp).total_seconds()
+        age_secs = (current_time - self.modified_timestamp).total_seconds()
         return age_secs
 
     @property
@@ -165,8 +197,8 @@ class Stats:
 
 class Remote:
     """
-    Provides remote services for
-    a given server and potentially a docker container
+    Provides remote services for a given server and potentially a docker container,
+    with optimized local execution when the server is the machine this service runs on
     """
 
     def __init__(self, host: str, container: Optional[str] = None, timeout: int = 5):
@@ -179,6 +211,20 @@ class Remote:
             timeout: the timeout for the command
         """
         self.host = host
+        self._here_host=socket.gethostname()
+        self.is_local = False
+        self._ip=None
+        self._platform=None
+        try:
+            host_ip = socket.gethostbyname(host)
+            self._ip=host_ip
+            local_ips = socket.gethostbyname_ex(self._here_host)[2]
+            self.is_local = host_ip in local_ips or host_ip.startswith("127.") or host_ip == "::1"
+            if self.is_local:
+                self._platform=sys.platform
+        except Exception as _ex:
+            # keep None defaults
+            pass
         self.container = container
         self.shell = Shell()
         self.timeout = timeout
@@ -186,6 +232,20 @@ class Remote:
         self.ssh_options = (
             f"-o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host}"
         )
+
+    @property
+    def ip(self)->str:
+        if self._ip is None:
+            self._ip=self.get_output("hostname -I | awk '{print $1}'")
+        return self._ip
+
+    @property
+    def platform(self)->str:
+        if self._platform is None:
+            self._platform=self.get_output(
+                "python3 -c 'import sys; print(sys.platform)'"
+            )
+        return self._platform
 
     def run_cmds(self, cmds: Dict[str, str]) -> Dict[str, subprocess.CompletedProcess]:
         """
@@ -216,14 +276,23 @@ class Remote:
 
     def run(self, cmd: str, tee: bool = False) -> subprocess.CompletedProcess:
         """
-        run the given command remotely
-        """
-        remote_cmd = f"ssh  {self.ssh_options}"
-        if self.container:
-            remote_cmd += f" docker exec {self.container}"
+        Run the given command locally or remotely (optionally inside a container)
 
-        remote_cmd += f' "{cmd}"'
-        result = self.run_remote(remote_cmd, tee=tee)
+        Args:
+            cmd: The shell command to execute
+            tee: Whether to tee output
+
+        Returns:
+            CompletedProcess: the result of the command
+        """
+        full_cmd=cmd
+        if not self.is_local:
+            full_cmd = f"ssh  {self.ssh_options}"
+        if self.container:
+            full_cmd += f" docker exec {self.container}"
+
+        full_cmd += f' "{cmd}"'
+        result = self.run_remote(full_cmd, tee=tee)
         return result
 
     def trim_output(self, output: str, max_lines=5, max_len=500) -> str:
@@ -240,7 +309,19 @@ class Remote:
         return trimmed
 
     def run_remote(self, cmd: str, tee=False) -> subprocess.CompletedProcess:
-        """Run remote command with concise failure logging."""
+        """
+        Execute a command with optional output teeing.
+
+        The command may include ssh and docker exec parts to enable remote or
+        containerized execution. Local execution is also possible if applicable.
+
+        Args:
+            cmd: The full command string to execute.
+            tee: If True, tee the command's output to stdout/stderr.
+
+        Returns:
+            CompletedProcess: The result of the executed command, including output and return code.
+        """
         result = self.shell.run(cmd, tee=tee)
         status = "✅" if result.returncode == 0 else "❌"
 
@@ -285,19 +366,22 @@ class Remote:
             output = result.stdout.strip()
         return output
 
-    def ssh_able(self) -> Optional[datetime]:
+    def avail_check(self) -> Optional[datetime]:
         """
-        Returns current timestamp if SSH to server is possible, otherwise None.
+        Returns current timestamp if local server or if SSH to server is possible, otherwise None.
         """
-        result = self.run("echo ok")
         timestamp = None
-        if result.returncode == 0 and "ok" in result.stdout:
-            timestamp = datetime.now()
+        if self.is_local:
+            timestamp=datetime.now()
+        else:
+            result = self.run("echo ok")
+            if result.returncode == 0 and "ok" in result.stdout:
+                timestamp = datetime.now()
         return timestamp
 
-    def get_file_stats(self, filepath: str) -> Optional[Stats]:
+    def get_remote_file_stats(self, filepath: str) -> Optional[Stats]:
         """
-        Get file statistics for the given filepath
+        Get file statistics for the given filepath remotely
 
         Args:
             filepath: path to the file to check
@@ -305,12 +389,59 @@ class Remote:
         Returns:
             Stats object or None if file doesn't exist
         """
-        cmd = f"stat -c '%s %Y %A %U %G' {filepath}"
+        cmd = f"stat -c '%s %Y %A %U %G %Z' {filepath}"
         result = self.run(cmd)
         stats_obj = None
         if result.returncode == 0:
             stats_obj = Stats.of_stats(filepath, result.stdout)
         return stats_obj
+
+    def get_local_file_stats(self, filepath: str) -> Optional[Stats]:
+        """
+        Get file statistics for the given filepath remotely
+
+        Args:
+            filepath: path to the file to check
+
+        Returns:
+            Stats object or None if file doesn't exist
+        """
+        stats=None
+        try:
+            st = os.stat(filepath)
+            size = st.st_size
+            mtime = int(st.st_mtime)
+            ctime = int(st.st_ctime)
+            permissions = "-" + stat.filemode(st.st_mode)[1:]
+            owner = pwd.getpwuid(st.st_uid).pw_name
+            group = grp.getgrgid(st.st_gid).gr_name
+            stats=Stats(
+                filepath=filepath,
+                size=size,
+                mtime=mtime,
+                ctime=ctime,
+                permissions=permissions,
+                owner=owner,
+                group=group,
+
+            )
+        except Exception:
+            pass
+        return stats
+
+    def get_file_stats(self, filepath: str) -> Optional[Stats]:
+        """
+        Get file statistics for the given filepath remotely
+
+        Args:
+            filepath: path to the file to check
+
+        Returns:
+            Stats object or None if file doesn't exist
+        """
+        stats = self.get_local_file_stats(filepath) if self.is_local else self.get_remote_file_stats(filepath)
+        return stats
+
 
     def listdir(
         self, dirpath: str, wildcard: str = "*", dirs_only: bool = False

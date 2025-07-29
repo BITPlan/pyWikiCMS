@@ -61,6 +61,9 @@ class Site:
         return symbol
 
     def init_remote(self):
+        """
+        initialize my remote access
+        """
         self.remote = Remote(host=self.hostname, container=self.container)
 
     def _resolve_ip(self) -> None:
@@ -76,7 +79,6 @@ class WikiSite(Site):
     """
     A MediaWiki Site
     """
-
     wikiId: Optional[str] = None
     database: Optional[str] = None
     defaultPage: str = "Main Page"
@@ -97,6 +99,7 @@ class WikiSite(Site):
     wiki_url: str = field(default="", init=False)
     show_html: bool = field(default=False, init=False)
     wiki_user: WikiUser = field(default=None, init=False)
+    wiki_backup: WikiBackup = field(default=None, init=False)
     _wiki_client: WikiClient = field(default=None, init=False)
     # dgraph related fields
     _node_id: str = field(default=None, init=False)
@@ -177,13 +180,16 @@ class WikiSite(Site):
                 return value
         return None
 
-    def get_wikiuser(self)->WikiUser:
+    def init_wikiuser_and_backup(self,wikiUser:WikiUser=None)->WikiUser:
         """
-        initialize my wiki user
+        initialize my wiki user and wiki_backup
         """
-        self.wiki_user=WikiUser.ofWikiId(wikiId=self.wikiId, lenient=True)
+        if wikiUser is None:
+            wikiUser=WikiUser.ofWikiId(wikiId=self.wikiId, lenient=True)
+        self.wiki_user=wikiUser
         if self.wiki_user:
             self.wiki_url = self.wiki_user.url
+        self.wiki_backup=WikiBackup(self.wiki_user)
         return self.wiki_user
 
     def getLogo(self) -> Optional[str]:
@@ -218,11 +224,9 @@ class WikiSite(Site):
         """
         wiki_id = wiki_user.wikiId
         wiki = cls(name=wiki_id, wikiId=wiki_id)
-        wiki.wiki_user = wiki_user
-        wiki.wiki_url = wiki.wiki_user.url
+        wiki.init_wikiuser_and_backup(wiki_user)
         wiki.debug = debug
         wiki.show_html = show_html
-        wiki._wiki_client = None
         return wiki
 
     @property
@@ -250,7 +254,7 @@ class WikiSite(Site):
             "version": self.wiki_user.version,
             "pages": "",
             "backup": "✅" if self.wiki_backup.exists() else "❌",
-            "git": "✅" if self.wiki_backup.hasGit() else "❌",
+            "git": "✅" if self.wiki_backup.has_git() else "❌",
             "age": "",
             "login": "",
         }

@@ -30,7 +30,6 @@ class Server:
     either in legacy style with a directory layout or with multiple docker
     containers
     """
-
     name: str
     hostname: str
     admin_user: Optional[str] = None
@@ -84,6 +83,19 @@ class Server:
             if proc.returncode == 0:
                 self.endpoints = EndpointManager.getEndpoints(self.endpoint_yaml_path)
 
+    def probe_avail(self):
+        # Check if SSH is reachable
+        self.avail_timestamp = self.remote.avail_check()
+        if self.avail_timestamp:
+            # Get IP address from remote perspective
+            self.ip = self.remote.ip
+            # Get platform information
+            self.platform = self.remote.platform
+            # Get hostname
+            self.hostname = self.remote.get_output("hostname")
+
+
+
     def probe_remote(self):
         """
         Probe my properties by remote access
@@ -91,21 +103,8 @@ class Server:
         Args:
             timeout (int): SSH connection timeout in seconds
         """
-        # Check if SSH is reachable
-        ssh_timestamp = self.remote.ssh_able()
-
-        if ssh_timestamp:
-            # Get platform information
-            self.platform = self.remote.get_output(
-                "python3 -c 'import sys; print(sys.platform)'"
-            )
-
-            # Get hostname
-            self.hostname = self.remote.get_output("hostname")
-
-            # Get IP address from remote perspective
-            self.ip = self.remote.get_output("hostname -I | awk '{print $1}'")
-
+        self.probe_avail()
+        if self.avail_timestamp:
             self.probe_apache_configs()
 
     def probe_apache_configs(self):

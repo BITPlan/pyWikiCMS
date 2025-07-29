@@ -5,12 +5,9 @@ Created on 2025-07-21
 """
 
 import unittest
-
+import socket
 from basemkit.basetest import Basetest
-from wikibot3rd.wikiuser import WikiUser
-
 from backend.remote import Remote
-from backend.wikibackup import WikiBackup
 
 
 class TestRemote(Basetest):
@@ -43,21 +40,26 @@ class TestRemote(Basetest):
                     print(f"Host: {host}, Container: {container}")
                     print(f"File: {filepath}")
                     print(stats)
-                    print(f"Modified: {stats.mtime_iso}")
+                    print(f"Modified: {stats.modified_iso}")
                     remote.log.dump()
                 self.assertIsNotNone(stats, f"Stats should not be None for {filepath}")
                 self.assertIsInstance(stats.size, int)
-                self.assertIsInstance(stats.mtime_int, int)
+                self.assertIsInstance(stats.mtime, int)
+                self.assertIsInstance(stats.ctime, int)
                 self.assertIsInstance(stats.permissions, str)
                 self.assertIsInstance(stats.owner, str)
                 self.assertIsInstance(stats.group, str)
 
-    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testLocalMode(self):
         """
         test remote localmode
         """
-        contexts = WikiUser.ofWikiId("contexts", lenient=True)
-        wiki_backup = WikiBackup(contexts)
-        self.assertTrue(wiki_backup.exists())
-        #self.assertTrue(wiki_backup.has_git())
+        test_file = "/etc/hosts"
+        hostname=socket.gethostname()
+        for hostname in [hostname,"localhost"]:
+            remote=Remote(hostname)
+            self.assertTrue(remote.is_local)
+            stats = remote.get_file_stats(test_file)
+            debug=True
+            if debug:
+                print(f"{test_file}:created: {stats.created_iso} modified: {stats.modified_iso}{stats.size_str} {stats.age_days:.2f} days old")

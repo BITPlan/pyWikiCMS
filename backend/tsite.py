@@ -118,22 +118,22 @@ class TransferSite:
             index += 1
             self.check_wikisite(wiki, index)
 
+    def get_wiki_user(self,wikisite:WikiSite,purpose:str):
+        wikiuser=wikisite.get_wikiuser()
+        if wikiuser is None:
+            self.log.log("❌", purpose, f"invalid wikiuser {wikisite.wikiId}")
+        return wikiuser
+
     def check_recent_backups(self):
         """
         Check and display how many days ago the last backup was done for the selected wiki
         Returns the number of days since last backup
         """
         for wikisite in self.get_selected_wikis():
-            wikiuser=wikisite.get_wikiuser()
-            if wikiuser is None:
-                self.log.log("❌", "backup", f"invalid wikiuser {wikisite.wikiId}")
+            wiki_user=self.get_wiki_user(wikisite,"recent backups")
+            if wiki_user is None:
                 return
-            wiki_backup=WikiBackup(wikiuser)
-            backup_path = wiki_backup.wikibackup_path
-            stats=wikisite.remote.get_file_stats(backup_path)
-            age_days=stats.age_days
-            print(f"{wikisite.wikiId}: {age_days} days")
-
+            wikisite.wiki_backup.show_age()
 
     def check_wikisite(self, site, index: int = None) -> bool:
         """
