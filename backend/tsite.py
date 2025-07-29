@@ -23,7 +23,6 @@ from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 
-
 @dataclass
 class TransferTask:
     wiki_site: WikiSite
@@ -265,8 +264,7 @@ class TransferSite:
             wikiuser=self.get_wiki_user(wikisite, "backup")
             if wikiuser is None:
                 continue
-            wiki_backup=WikiBackup(wikiuser)
-            wiki_backup.backup(days=self.args.days)
+            wikisite.wiki_backup.backup(days=self.args.days,show_progress=self.args.progress)
 
 class TransferSiteCmd(BaseCmd):
     """

@@ -81,7 +81,7 @@ class WikiBackup():
         perform the backup
         """
         stats=self.remote.get_file_stats(self.wikibackup_path)
-        if days < 0:
+        if days < 0 or stats is None:
             query = "[[Modification date::+]]"
         else:
             cutoff = datetime.now() - timedelta(days=days)
