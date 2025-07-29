@@ -44,8 +44,7 @@ class TestSqlBackup(Basetest):
                     print(
                         f"exit code: {proc.returncode} on {server.name}\nstdout:{proc.stdout}\n{proc.stderr}"
                     )
-                db_list=sql_backup.list_all_databases()
+                db_list = sql_backup.list_all_databases()
                 if self.debug:
                     print(f"found {len(db_list)} databases")
                 sql_backup.show_backups()
-

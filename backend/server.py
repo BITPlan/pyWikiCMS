@@ -20,6 +20,7 @@ from lodstorage.query import EndpointManager
 
 from backend.remote import Remote, Tool, Tools
 from backend.site import FrontendSite, Site, WikiSite
+from backend.sql_backup import SqlBackup
 
 
 @lod_storable
@@ -141,9 +142,7 @@ class Server:
                 print(str(ex))
             self.ip = "127.0.0.1"
 
-    def probe_wiki_family(
-        self
-    ) -> list[WikiSite]:
+    def probe_wiki_family(self) -> list[WikiSite]:
         """
         probe this server for a wiki
         family by scanning sitedir for LocalSettings.php files
@@ -157,12 +156,12 @@ class Server:
         if stats is None or not stats.is_directory:
             return wikisites
 
-        site_paths = self.remote.listdir(self.sitedir,dirs_only=True)
+        site_paths = self.remote.listdir(self.sitedir, dirs_only=True)
         if site_paths is None:
             return wikisites
 
         for site_path in site_paths:
-            site_path=site_path.rstrip('/')
+            site_path = site_path.rstrip("/")
             site_name = os.path.basename(site_path)
             local_settings_path = f"{site_path}/LocalSettings.php"
             settings_stats = self.remote.get_file_stats(local_settings_path)

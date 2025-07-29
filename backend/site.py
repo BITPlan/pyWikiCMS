@@ -18,8 +18,8 @@ from tqdm import tqdm
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 
-from backend.backup import WikiBackup
 from backend.remote import Remote
+from backend.wikibackup import WikiBackup
 from frontend.html_table import HtmlTables
 
 
@@ -97,7 +97,6 @@ class WikiSite(Site):
     wiki_url: str = field(default="", init=False)
     show_html: bool = field(default=False, init=False)
     wiki_user: WikiUser = field(default=None, init=False)
-    wiki_backup: WikiBackup = field(default=None, init=False)
     _wiki_client: WikiClient = field(default=None, init=False)
     # dgraph related fields
     _node_id: str = field(default=None, init=False)
@@ -178,6 +177,15 @@ class WikiSite(Site):
                 return value
         return None
 
+    def get_wikiuser(self)->WikiUser:
+        """
+        initialize my wiki user
+        """
+        self.wiki_user=WikiUser.ofWikiId(wikiId=self.wikiId, lenient=True)
+        if self.wiki_user:
+            self.wiki_url = self.wiki_user.url
+        return self.wiki_user
+
     def getLogo(self) -> Optional[str]:
         """
         Get local filesystem path to logo file
@@ -214,7 +222,6 @@ class WikiSite(Site):
         wiki.wiki_url = wiki.wiki_user.url
         wiki.debug = debug
         wiki.show_html = show_html
-        wiki.wiki_backup = WikiBackup(wiki_user)
         wiki._wiki_client = None
         return wiki
 

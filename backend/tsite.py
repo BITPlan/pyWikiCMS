@@ -21,6 +21,7 @@ from wikibot3rd.wikiuser import WikiUser
 
 from backend.server import Server, Servers
 from backend.site import Site, WikiSite
+from backend.wikibackup import WikiBackup
 
 
 @dataclass
@@ -53,8 +54,6 @@ class TransferTask:
         self.site.version = (1, 35, 5)
         self.site.clientlogin(username=wu.user, password=wu.get_password())
         pass
-
-
 
 
 class TransferSite:
@@ -118,6 +117,23 @@ class TransferSite:
         for wiki in self.get_selected_wikis():
             index += 1
             self.check_wikisite(wiki, index)
+
+    def check_recent_backups(self):
+        """
+        Check and display how many days ago the last backup was done for the selected wiki
+        Returns the number of days since last backup
+        """
+        for wikisite in self.get_selected_wikis():
+            wikiuser=wikisite.get_wikiuser()
+            if wikiuser is None:
+                self.log.log("❌", "backup", f"invalid wikiuser {wikisite.wikiId}")
+                return
+            wiki_backup=WikiBackup(wikiuser)
+            backup_path = wiki_backup.wikibackup_path
+            stats=wikisite.remote.get_file_stats(backup_path)
+            age_days=stats.age_days
+            print(f"{wikisite.wikiId}: {age_days} days")
+
 
     def check_wikisite(self, site, index: int = None) -> bool:
         """
@@ -236,6 +252,17 @@ class TransferSite:
                 database_info = f" (DB: {wiki.database})" if wiki.database else ""
                 print(f"  - {wiki_name}{database_info}")
 
+    def wiki_backup(self):
+        """
+        perform the backup
+        """
+        for wikisite in self.get_selected_wikis():
+            wikiuser=wikisite.get_wikiuser()
+            if wikiuser is None:
+                self.log.log("❌", "backup", f"invalid wikiuser {wikisite.wikiId}")
+                return
+            wiki_backup=WikiBackup(wikiuser)
+            wiki_backup.backup(days=self.args.days)
 
 class TransferSiteCmd(BaseCmd):
     """
@@ -289,6 +316,10 @@ class TransferSiteCmd(BaseCmd):
             help="create a backup wiki",
         )
         parser.add_argument(
+            "--progress", action="store_true", help="show progress bars"
+        )
+
+        parser.add_argument(
             "--transfer",
             action="store_true",
             help="transfer the given site",
@@ -310,6 +341,15 @@ class TransferSiteCmd(BaseCmd):
 
         parser.add_argument("-s", "--source", help="specify the source server")
         parser.add_argument("-t", "--target", help="specify the target server")
+        parser.add_argument(
+            "-mrb", "--recent-backup", action="store_true", help="show most recent backup"
+        )
+        parser.add_argument(
+            "-wb", "--wikibackup", action="store_true", help="run wikibackup task"
+        )
+        parser.add_argument(
+            "--days", type=int, default=2, help="days of changes to include"
+        )
 
     def handle_args(self, args):
         handled = super().handle_args(args)
@@ -338,10 +378,24 @@ class TransferSiteCmd(BaseCmd):
 
         if args.transfer:
             if not args.sitename or not args.source or not args.target:
-                print("need sitename, source and target!")
+                print("need sitename, source and target for transfer!")
                 self.parser.print_help()
             else:
                 handled = tsite.transfer()
+        if args.recent_backup:
+            if not args.sitename and not args.all:
+                print("Need sitename or --all for recent backup check!")
+                self.parser.print_help()
+            else:
+                tsite.check_recent_backups()
+                handled = True
+        if args.wikibackup:
+            if not args.sitename :
+                print("need sitename for wikibackup!")
+                self.parser.print_help()
+            else:
+                tsite.wiki_backup()
+                handled = True
         return handled
 
 

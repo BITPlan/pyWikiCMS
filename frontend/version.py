@@ -19,7 +19,7 @@ class Version(object):
     description = "pyWikiCMS: python implementation of a Mediawiki based Content Management System"
     version = frontend.__version__
     date = "2022-11-16"
-    updated = "2025-06-16"
+    updated = "2025-07-29"
     authors = "Wolfgang Fahl"
     doc_url = "http://wiki.bitplan.com/index.php/PyWikiCMS"
     chat_url = "https://github.com/BITPlan/pyWikiCMS/discussions"

@@ -7,8 +7,10 @@ Created on 2025-07-21
 import unittest
 
 from basemkit.basetest import Basetest
+from wikibot3rd.wikiuser import WikiUser
 
 from backend.remote import Remote
+from backend.wikibackup import WikiBackup
 
 
 class TestRemote(Basetest):
@@ -49,3 +51,13 @@ class TestRemote(Basetest):
                 self.assertIsInstance(stats.permissions, str)
                 self.assertIsInstance(stats.owner, str)
                 self.assertIsInstance(stats.group, str)
+
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
+    def testLocalMode(self):
+        """
+        test remote localmode
+        """
+        contexts = WikiUser.ofWikiId("contexts", lenient=True)
+        wiki_backup = WikiBackup(contexts)
+        self.assertTrue(wiki_backup.exists())
+        #self.assertTrue(wiki_backup.has_git())

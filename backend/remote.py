@@ -4,9 +4,9 @@ Created on 2025-07-21
 @author: wf
 """
 
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
-import subprocess
 from typing import Dict, Optional, Tuple
 
 from basemkit.persistent_log import Log
@@ -89,7 +89,7 @@ class Stats:
         return unit
 
     @property
-    def size_str(self)->str:
+    def size_str(self) -> str:
         unit, divisor = self.get_size_unit(self.size)
         size_str = f"{self.size / divisor:.2f} {unit}"
         return size_str
@@ -208,9 +208,9 @@ class Remote:
         """
         procs = {}
         for key, cmd in cmds.items():
-            proc=self.run(cmd)
+            proc = self.run(cmd)
             procs[key] = proc
-            if proc.returncode!=0:
+            if proc.returncode != 0:
                 break
         return procs
 
@@ -231,14 +231,13 @@ class Remote:
         if not output:
             return ""
         all_lines = output.splitlines()
-        lines=all_lines[:max_lines]
+        lines = all_lines[:max_lines]
         trimmed = "\n".join(lines)
         if len(trimmed) > max_len:
             trimmed = trimmed[:max_len] + f"... of {len(all_lines)} lines"
         if len(lines) < len(output.splitlines()):
             trimmed += f"\n...[+{len(output.splitlines()) - max_lines} lines]"
         return trimmed
-
 
     def run_remote(self, cmd: str, tee=False) -> subprocess.CompletedProcess:
         """Run remote command with concise failure logging."""
@@ -313,7 +312,9 @@ class Remote:
             stats_obj = Stats.of_stats(filepath, result.stdout)
         return stats_obj
 
-    def listdir(self, dirpath: str, wildcard: str = "*", dirs_only: bool = False) -> Optional[list[str]]:
+    def listdir(
+        self, dirpath: str, wildcard: str = "*", dirs_only: bool = False
+    ) -> Optional[list[str]]:
         """
         List directory contents with optional wildcard pattern
 
@@ -325,10 +326,10 @@ class Remote:
         Returns:
             List of filenames or None if directory doesn't exist
         """
-        dirs_option=""
+        dirs_option = ""
         if dirs_only:
-            dirs_option="d"
-            wildcard+="/"
+            dirs_option = "d"
+            wildcard += "/"
         cmd = f"ls -1{dirs_option} {dirpath}/{wildcard}"
         result = self.run(cmd)
         files = None
