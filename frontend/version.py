@@ -14,7 +14,6 @@ class Version(object):
     """
     Version handling for pyWikiCMS
     """
-
     name = "pyWikiCMS"
     description = "pyWikiCMS: python implementation of a Mediawiki based Content Management System"
     version = frontend.__version__

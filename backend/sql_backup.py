@@ -192,9 +192,11 @@ class SqlBackup:
         else:
             databases = [database]
         iterator = (
-            tqdm(databases, desc="Backing up databases") if self.progress else databases
+            tqdm(databases, desc=f"{len(databases)} databases") if self.progress else databases
         )
         for database in iterator:
+            if self.progress:
+                iterator.set_description_str(f"{database}")
             proc = self.backup_database(database, full)
             if proc.returncode != 0:
                 errors += 1
