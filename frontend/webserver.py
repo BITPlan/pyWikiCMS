@@ -178,6 +178,10 @@ class CmsSolution(GraphNavigatorSolution):
             self.link_button(name="wikis", icon_name="menu_book", target="/wikis")
             self.link_button(name="servers", icon_name="cloud", target="/servers")
 
+    async def show_login(self):
+        """Show login page"""
+        await self.login.login(self)
+
     async def home(self):
         """
         provide the main content page
