@@ -80,7 +80,7 @@ class Server:
         ep_stats = self.remote.get_file_stats(remote_path)
         if ep_stats:
             os.makedirs(os.path.dirname(self.endpoint_yaml_path), exist_ok=True)
-            proc = self.remote.scp_from(remote_path, self.endpoint_yaml_path)
+            proc = self.remote.scp_copy(remote_path, self.endpoint_yaml_path)
             if proc.returncode == 0:
                 self.endpoints = EndpointManager.getEndpoints(self.endpoint_yaml_path)
 

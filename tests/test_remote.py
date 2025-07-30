@@ -67,3 +67,33 @@ class TestRemote(Basetest):
                 print(
                     f"{test_file}:created: {stats.created_iso} modified: {stats.modified_iso}{stats.size_str} {stats.age_days:.2f} days old"
                 )
+
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
+    def test_avail_check(self):
+        """
+        test avail_check functionality
+        """
+        test_cases = (
+            ("localhost",),
+            ("r.bitplan.com",),
+        )
+
+        for host, in test_cases:
+            with self.subTest(host=host):
+                remote = Remote(host=host)
+                timestamp = remote.avail_check()
+
+                if self.debug:
+                    print(f"Host: {host}")
+                    print(f"Timestamp: {timestamp}")
+                    print(f"Platform: {remote._platform}")
+                    print(f"UID: {remote.uid}")
+                    print(f"GID: {remote.gid}")
+                    print(f"Is local: {remote.is_local}")
+
+                self.assertIsNotNone(timestamp, f"Timestamp should not be None for {host}")
+                self.assertIsNotNone(remote._platform, f"Platform should be set for {host}")
+                self.assertIsNotNone(remote.uid, f"UID should be set for {host}")
+                self.assertIsNotNone(remote.gid, f"GID should be set for {host}")
+
+

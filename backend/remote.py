@@ -3,7 +3,7 @@ Created on 2025-07-21
 
 @author: wf
 """
-
+import glob
 import grp
 import os
 import pwd
@@ -356,21 +356,22 @@ class Remote:
         self.log.log(status, "remote", log_msg)
         return result
 
-    def scp_from(
-        self, remote_path: str, local_path: str
-    ) -> subprocess.CompletedProcess:
+    def scp_copy(self, source_path: str, target_path: str) -> subprocess.CompletedProcess:
         """
-        Copy file from remote host to local path using scp
+        Copy a file using scp between any combination of local or remote paths.
+        This method is executed locally, not on the remote.
 
         Args:
-            remote_path: full path to the remote file
-            local_path: full destination path on local machine
+            source_path: Source path (may include user@host:)
+            target_path: Target path (may include user@host:)
 
         Returns:
             subprocess.CompletedProcess result
         """
-        scp_cmd = f"scp {self.ssh_options}:{remote_path} {local_path}"
-        return self.run_remote(scp_cmd)
+        scp_cmd = f"scp {source_path} {target_path}"
+        proc = self.run(scp_cmd)
+        return proc
+
 
     def get_output(self, cmd: str) -> Optional[str]:
         """
@@ -391,16 +392,21 @@ class Remote:
     def avail_check(self) -> Optional[datetime]:
         """
         Returns current timestamp if local server or if SSH to server is possible.
-        Also sets platform info if available, otherwise returns None.
+        Also sets platform info and uid/gid if available, otherwise returns None.
         """
         timestamp = None
         if self.is_local:
             self._platform = sys.platform
+            self.uid = os.getuid()
+            self.gid = os.getgid()
             timestamp = datetime.now()
         else:
-            result = self.run("python3 -c 'import sys; print(sys.platform)'")
+            result = self.run("python3 -c 'import sys, os; print(sys.platform, os.getuid(), os.getgid())'")
             if result.returncode == 0:
-                self._platform = result.stdout.strip()
+                parts = result.stdout.strip().split()
+                self._platform = parts[0]
+                self.uid = parts[1]
+                self.gid = parts[2]
                 timestamp = datetime.now()
         return timestamp
 
@@ -470,7 +476,23 @@ class Remote:
         )
         return stats
 
-    def listdir(
+    def get_local_dir_list(self, dirpath: str, wildcard: str, dirs_only: bool) -> Optional[list[str]]:
+        """
+        List directory contents locally with optional wildcard and dir filter.
+        """
+        files = None
+        try:
+            pattern = os.path.join(dirpath, wildcard)
+            entries = glob.glob(pattern)
+            if dirs_only:
+                entries = [entry for entry in entries if os.path.isdir(entry)]
+            files = [os.path.basename(entry) for entry in entries]
+        except Exception:
+            files = None
+        return files
+
+
+    def get_remote_dir_list(
         self, dirpath: str, wildcard: str = "*", dirs_only: bool = False
     ) -> Optional[list[str]]:
         """
@@ -495,6 +517,24 @@ class Remote:
             files = result.stdout.splitlines()
         return files
 
+    def listdir(self, dirpath: str, wildcard: str = "*", dirs_only: bool = False) -> Optional[list[str]]:
+        """
+        List directory contents with optional wildcard pattern.
+
+        Args:
+            dirpath: path to the directory to list
+            wildcard: optional wildcard pattern (e.g., "*.sql")
+            dirs_only: if True, list directories only
+
+        Returns:
+            List of filenames or None if directory doesn't exist
+        """
+        if self.is_local:
+            return self.get_local_dir_list(dirpath, wildcard, dirs_only)
+        else:
+            return self.get_remote_dir_list(dirpath, wildcard, dirs_only)
+
+
     def readlines(self, filepath: str) -> Optional[list[str]]:
         """
         Read lines from the given filepath
@@ -505,9 +545,17 @@ class Remote:
         Returns:
             List of lines or None if file doesn't exist
         """
-        cmd = f"cat {filepath}"
-        result = self.run(cmd)
         lines = None
-        if result.returncode == 0:
-            lines = result.stdout.splitlines()
+        if self.is_local:
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    lines = f.read().splitlines()
+            except Exception:
+                lines = None
+        else:
+            cmd = f"cat {filepath}"
+            result = self.run(cmd)
+            if result.returncode == 0:
+                lines = result.stdout.splitlines()
         return lines
+

@@ -16,6 +16,7 @@ from typing import Iterator, List, Iterable, TypeVar
 from backend.remote import Remote
 from backend.server import Server, Servers
 from backend.site import Site, WikiSite
+from backend.sql_backup import SqlBackup
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from frontend.version import Version
@@ -23,22 +24,25 @@ from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
+
+
 # enable generic types
 T = TypeVar("T")
 
 class Checks:
 
     @classmethod
-    def check_age(cls,remote:Remote,filepath:str,days:float=1.0)->bool:
+    def check_age(cls,remote:Remote,filepath:str,days:float=1.0)->float:
         stats = remote.get_file_stats(filepath)
-        ok=False
+        age=None
         if stats:
+            age=stats.age_days
             ok=stats.age_days <= days
             age_marker = "✅" if ok else "❌"
             print(
                 f"{remote.host}:{filepath} {stats.age_days:.2f} d {age_marker}"
             )
-        return ok
+        return age
 
 @dataclass
 class TransferTask:
@@ -73,14 +77,48 @@ class TransferTask:
 
     def check_sql_backup(self):
         """
-        check the sql backup
+        Ensure a fresh SQL backup exists on the source.
+        If not, create it. Then check the target and copy the backup if needed.
         """
-        wiki=self.wiki_site
+        wiki = self.wiki_site
         wiki.configure_of_settings()
-        print(f"{wiki.database} vs {wiki.database_setting} dbUser:{wiki.dbUser}")
 
-        sql_backup=f"{self.source.sql_backup_path}/today/{wiki.database_setting}_full.sql"
-        Checks.check_age(self.source.remote, sql_backup)
+        source_base_path = f"{self.source.sql_backup_path}/today/"
+        target_base_path = f"{self.target.sql_backup_path}/today/"
+        source_backup_path = f"{source_base_path}{wiki.database_setting}_full.sql"
+        target_backup_path = f"{target_base_path}{wiki.database_setting}_full.sql"
+
+        source_age = Checks.check_age(self.source.remote, source_backup_path)
+        target_age = Checks.check_age(self.target.remote, target_backup_path)
+
+        if source_age is None or source_age > 1.0:
+            print(f"❌ No fresh backup found at {source_backup_path} — creating now")
+            sql_backup = SqlBackup(
+                backup_host=self.source.remote.host,
+                debug=self.debug,
+                progress=self.args.progress,
+            )
+            sql_backup.perform_backup(database=wiki.database_setting, full=True)
+            source_age = Checks.check_age(self.source.remote, source_backup_path)
+            if source_age is None or source_age > 1.0:
+                print("❌ Backup creation failed or still outdated.")
+                return
+
+        if target_age is None or target_age > source_age:
+            source_path = f"{self.source.remote.host}:{source_backup_path}"
+            target_path = f"{target_backup_path}"
+            print(f"⚠️ Copying backup from source to target: {source_path} → {target_path}")
+            # pull from target
+            self.target.remote.run_cmds(
+                {
+                    "create directory": f"sudo mkdir -p {target_base_path}",
+                    "chown": f"sudo chown {self.target.remote.uid} {target_base_path}",
+                    "chgrp": f"sudo chgrp {self.target.remote.gid} {target_base_path}"
+                }
+            )
+            self.target.remote.scp_copy(source_path, target_path)
+        else:
+            print(f"✅ Target backup is up to date.")
 
 
 class TransferSite:
