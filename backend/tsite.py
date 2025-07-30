@@ -8,11 +8,14 @@ to a dockerized environment
 @author: wf
 """
 
-import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
-from typing import Iterator
+import sys
+from typing import Iterator, List, Iterable, TypeVar
 
+from backend.remote import Remote
+from backend.server import Server, Servers
+from backend.site import Site, WikiSite
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from profiwiki.version import Version
@@ -20,9 +23,9 @@ from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
+# enable generic types
+T = TypeVar("T")
 
-from backend.server import Server, Servers
-from backend.site import Site, WikiSite
 
 
 @dataclass
@@ -171,6 +174,44 @@ class TransferSite:
         for server in self.get_selected_servers():
             wikis = self.servers.probe_wiki_family(server)
 
+    def check_lamp(self):
+        """
+        Check LAMP stack availability (Linux, Apache, MySQL, PHP) on selected remotes.
+        """
+        index = 0
+        for remote in self.get_selected_remotes():
+            cmds = {
+                "linux": "lsb_release -d",
+                "apache": "apachectl -v",
+                "mysql": "mysql --version",
+                "php": "php -v"
+            }
+            remote.log.do_log=self.args.debug
+            procs = remote.run_cmds(cmds,stop_on_error=False)
+            results = {}
+            for key, proc in procs.items():
+                if proc.returncode == 0:
+                    marker = "✅"
+                    if key == "php":
+                        version = proc.stdout.splitlines()[0] if proc.stdout else ""
+                    elif key == "apache":
+                        version = proc.stdout.splitlines()[0] if proc.stdout else ""
+                    elif key == "mysql":
+                        version = proc.stdout.strip()
+                    elif key == "linux":
+                        version = proc.stdout.strip()
+                else:
+                    marker = "❌"
+                    version = ""
+                results[key] = (marker, version)
+
+            host_kind = "📦" if remote.container else "🖧"
+            index += 1
+            print(f"{index:2}: {remote.host} {host_kind}")
+            for label in ["linux", "apache", "mysql", "php"]:
+                marker, version = results[label]
+                print(f"    {label:6}: {version} {marker}")
+
     def check_tools(self):
         """
         Check availability and versions of required tools on selected servers
@@ -185,6 +226,7 @@ class TransferSite:
         """
         Check tools on a specific server
         """
+        server.remote.log.do_log=self.args.debug
         for tool_name, tool in self.servers.tools.tools.items():
             cmd = f"source .profile;{tool.version_cmd}"
             output = server.remote.get_output(cmd)
@@ -227,12 +269,49 @@ class TransferSite:
         transferTask.login()
         self.log.log("✅", "transfer", transferTask.site.version)
 
-    def get_selected_servers(self) -> Iterator:
+
+    def as_iterator(self, items: Iterable[T], desc: str) -> Iterator[T]:
         """
-        Return an iterator over selected servers based on arguments.
+        Return an iterator over the items, using tqdm if progress is requested.
+
+        Args:
+            items (Iterable): the collection to iterate
+            desc (str): progress bar description
 
         Returns:
-            Iterator: selected servers, optionally shown with a progress bar
+            Iterator: tqdm or plain iterator
+        """
+        return tqdm(items, desc=desc) if self.args.progress else iter(items)
+
+    def get_selected_remotes_list(self)->List[Remote]:
+        """
+        get the selected remote server access API including
+        container and native options
+        """
+        remotes=[]
+        servers=self.get_selected_servers()
+        for server in servers:
+            remotes.append(server.remote)
+        for wiki in self.get_selected_wikis_list():
+            if wiki.container is not None:
+                remotes.append(wiki.remote)
+        return remotes
+
+    def get_selected_remotes(self) -> Iterator[Remote]:
+        """
+        Return an iterator over selected remote server access APIs, including container and native options.
+
+        Returns:
+            Iterator[Remote]: selected remotes, optionally shown with a progress bar
+        """
+        remotes = self.get_selected_remotes_list()
+        remote_iterator = self.as_iterator(remotes, "remotes")
+        return remote_iterator
+
+
+    def get_selected_servers_list(self):
+        """
+        get all selected servers
         """
         if self.args.all:
             servers = list(self.servers.servers.values())
@@ -242,21 +321,20 @@ class TransferSite:
                 servers.append(self.servers.servers.get(self.source))
             if self.target and self.target in self.servers.servers:
                 servers.append(self.servers.servers.get(self.target))
+        return servers
 
-        server_iter = (
-            tqdm(servers, desc="Processing servers")
-            if self.args.progress
-            else iter(servers)
-        )
-        return server_iter
-
-    def get_selected_wikis(self) -> Iterator:
+    def get_selected_servers(self) -> Iterator[Server]:
         """
-        Return an iterator over selected wikis based on arguments.
+        Return an iterator over selected servers based on arguments.
 
         Returns:
-            Iterator: selected wikis, optionally shown with a progress bar
-        """
+            Iterator[Server]: selected servers, optionally shown with a progress bar
+            """
+        servers = self.get_selected_servers_list()
+        server_iterator = self.as_iterator(servers, "Processing servers")
+        return server_iterator
+
+    def get_selected_wikis_list(self)->List[WikiSite]:
         wikis=[]
         if self.args.all:
             for server in self.servers.servers.values():
@@ -267,9 +345,19 @@ class TransferSite:
                 wiki = self.servers.wikis_by_hostname.get(self.sitename)
                 if wiki:
                     wikis.append(wiki)
+        return wikis
 
-        wiki_iter = tqdm(wikis, desc="wikis") if self.args.progress else iter(wikis)
+    def get_selected_wikis(self) -> Iterator[WikiSite]:
+        """
+        Return an iterator over selected wikis based on arguments.
+
+        Returns:
+            Iterator[WikiSite]: selected wikis, optionally shown with a progress bar
+        """
+        wikis = self.get_selected_wikis_list()
+        wiki_iter = self.as_iterator(wikis, "wikis")
         return wiki_iter
+
 
     def list_sites(self) -> None:
         """
@@ -322,6 +410,12 @@ class TransferSiteCmd(BaseCmd):
             "--check-site",
             action="store_true",
             help="check site state of selected sites",
+        )
+        parser.add_argument(
+            "-cl",
+            "--check-lamp",
+            action="store_true",
+            help="check LAMP state of selected servers/sites",
         )
         parser.add_argument(
             "-ct",
@@ -408,6 +502,9 @@ class TransferSiteCmd(BaseCmd):
             handled = True
         if args.check_family:
             tsite.check_family()
+            handled = True
+        if args.check_lamp:
+            tsite.check_lamp()
             handled = True
         if args.check_site:
             tsite.check_site()

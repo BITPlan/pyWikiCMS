@@ -252,13 +252,14 @@ class Remote:
             )
         return self._platform
 
-    def run_cmds(self, cmds: Dict[str, str]) -> Dict[str, subprocess.CompletedProcess]:
+    def run_cmds(self, cmds: Dict[str, str], stop_on_error:bool=True) -> Dict[str, subprocess.CompletedProcess]:
         """
         Runs a given map of commands
         as long as the return code of the previous command is zero
 
         Args:
             cmds: key->remote command map
+            stop_on_error: if True do not continue when an error occurs
 
         Returns:
             key->subprocess.CompletedProcess
@@ -276,7 +277,10 @@ class Remote:
             proc = self.run(cmd)
             procs[key] = proc
             if proc.returncode != 0:
-                break
+                if stop_on_error:
+                    break
+                else:
+                    continue
         return procs
 
     def run(self, cmd: str, tee: bool = False) -> subprocess.CompletedProcess:
