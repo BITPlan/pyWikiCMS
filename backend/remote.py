@@ -238,6 +238,21 @@ class Remote:
             f"-o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host}"
         )
 
+    def __str__(self):
+        text= f"{self.host}{self.symbol}"
+        return text
+
+    @property
+    def symbol(self)->str:
+        host_kind = "🐳" if self.container else "  " # 2 spaces for width of whale
+        os_symbol = {
+            "linux": "🐧",
+            "darwin": "🍏",
+            "win32": "🪟"
+        }.get(self._platform, "❓")
+        symbol= f"{os_symbol}{host_kind}"
+        return symbol
+
     def get_ip(self) -> str:
         """
         """
@@ -247,9 +262,7 @@ class Remote:
 
     def get_platform(self) -> str:
         if self._platform is None:
-            self._platform = self.get_output(
-                "python3 -c 'import sys; print(sys.platform)'"
-            )
+            self.avail_check()
         return self._platform
 
     def run_cmds(self, cmds: Dict[str, str], stop_on_error:bool=True) -> Dict[str, subprocess.CompletedProcess]:
@@ -377,14 +390,17 @@ class Remote:
 
     def avail_check(self) -> Optional[datetime]:
         """
-        Returns current timestamp if local server or if SSH to server is possible, otherwise None.
+        Returns current timestamp if local server or if SSH to server is possible.
+        Also sets platform info if available, otherwise returns None.
         """
         timestamp = None
         if self.is_local:
+            self._platform = sys.platform
             timestamp = datetime.now()
         else:
-            result = self.run("echo ok")
-            if result.returncode == 0 and "ok" in result.stdout:
+            result = self.run("python3 -c 'import sys; print(sys.platform)'")
+            if result.returncode == 0:
+                self._platform = result.stdout.strip()
                 timestamp = datetime.now()
         return timestamp
 

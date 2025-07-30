@@ -26,7 +26,19 @@ from wikibot3rd.wikiuser import WikiUser
 # enable generic types
 T = TypeVar("T")
 
+class Checks:
 
+    @classmethod
+    def check_age(cls,remote:Remote,filepath:str,days:float=1.0)->bool:
+        stats = remote.get_file_stats(filepath)
+        ok=False
+        if stats:
+            ok=stats.age_days <= days
+            age_marker = "✅" if ok else "❌"
+            print(
+                f"{remote.host}:{filepath} {stats.age_days:.2f} d {age_marker}"
+            )
+        return ok
 
 @dataclass
 class TransferTask:
@@ -59,6 +71,17 @@ class TransferTask:
         self.site.clientlogin(username=wu.user, password=wu.get_password())
         pass
 
+    def check_sql_backup(self):
+        """
+        check the sql backup
+        """
+        wiki=self.wiki_site
+        wiki.configure_of_settings()
+        print(f"{wiki.database} vs {wiki.database_setting} dbUser:{wiki.dbUser}")
+
+        sql_backup=f"{self.source.sql_backup_path}/today/{wiki.database_setting}_full.sql"
+        Checks.check_age(self.source.remote, sql_backup)
+
 
 class TransferSite:
     """
@@ -88,7 +111,7 @@ class TransferSite:
                     print(f"{server.hostname}:{site.apache_config}")
         pass
 
-    def check_backup(self):
+    def check_sql_backup(self):
         """
         check the backup state of the selected servers sites
         """
@@ -96,12 +119,7 @@ class TransferSite:
             files = server.remote.listdir(server.sql_backup_path + "/today", "*.sql")
             if files:
                 for filepath in files:
-                    stats = server.remote.get_file_stats(filepath)
-                    if stats:
-                        age_marker = "✅" if stats.age_days < 1.0 else "❌"
-                        print(
-                            f"{server.hostname}:{filepath} {stats.age_days:.2f} d {age_marker}"
-                        )
+                    Checks.check_age(server.remote,filepath,1.0)
 
     def check_database(self):
         """
@@ -132,7 +150,7 @@ class TransferSite:
         index = 0
         for wiki in self.get_selected_wikis():
             index += 1
-            self.check_wikisite(wiki, index)
+            self.check_remote(wiki.remote, index)
 
     def get_wiki_user(self, wikisite: WikiSite, purpose: str):
         """
@@ -155,16 +173,16 @@ class TransferSite:
                 continue
             wikisite.wiki_backup.show_age()
 
-    def check_wikisite(self, site, index: int = None) -> bool:
+    def check_remote(self,remote:Remote,index:int=None)->bool:
         """
-        check the given wiki
+        check the availability of the given remote
         """
-        avail_timestamp=site.remote.avail_check()
+        avail_timestamp=remote.avail_check()
         ok = Site.state_symbol(avail_timestamp is not None)
         index_str = f"{index:02d}:" if index else ""
-        print(f"{index_str}{site.hostname:<26} {ok} {avail_timestamp or ''}")
+        print(f"{index_str}{remote.host:<26} {ok} {remote.symbol}  {avail_timestamp or ''}")
         if self.args.debug:
-            site.remote.log.dump()
+            remote.log.dump()
         return ok
 
     def check_family(self):
@@ -205,9 +223,8 @@ class TransferSite:
                     version = ""
                 results[key] = (marker, version)
 
-            host_kind = "📦" if remote.container else "🖧"
             index += 1
-            print(f"{index:2}: {remote.host} {host_kind}")
+            print(f"{index:2}: {remote}")
             for label in ["linux", "apache", "mysql", "php"]:
                 marker, version = results[label]
                 print(f"    {label:6}: {version} {marker}")
@@ -243,20 +260,20 @@ class TransferSite:
         if wiki is None:
             self.log.log("❌", "transfer", f"invalid wiki {self.sitename}")
             return
-        self.check_site(wiki)
+        self.check_remote(wiki.remote)
         source_ok = self.source and self.source in self.servers.servers
         if not source_ok:
             self.log.log("❌", "transfer", f"invalid source {self.source}")
             return
         source_server = self.servers.servers.get(self.source)
-        if not self.check_site(source_server):
+        if not self.check_remote(source_server.remote):
             return
         target_ok = self.target and self.target in self.servers.servers
         if not target_ok:
             self.log.log("❌", "transfer", f"invalid target {self.target}")
             return
         target_server = self.servers.servers.get(self.target)
-        if not self.check_site(target_server):
+        if not self.check_remote(target_server.remote):
             return
         transferTask = TransferTask(wiki, source_server, target_server)
         return transferTask
@@ -268,6 +285,7 @@ class TransferSite:
         transferTask = self.create_TransferTask()
         transferTask.login()
         self.log.log("✅", "transfer", transferTask.site.version)
+        transferTask.check_sql_backup()
 
 
     def as_iterator(self, items: Iterable[T], desc: str) -> Iterator[T]:
