@@ -9,7 +9,9 @@ to a dockerized environment
 """
 
 from argparse import ArgumentParser
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
+import subprocess
 import sys
 from typing import Iterator, List, Iterable, TypeVar
 
@@ -50,8 +52,12 @@ class TransferTask:
     source: Server
     target: Server
     debug: bool = False
+    force: bool = False
     progress: bool = True
+    use_git: bool=False
     query_division: int = 50
+    # Non-persistent calculated fields
+    log: Log = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
@@ -75,11 +81,76 @@ class TransferTask:
         self.site.clientlogin(username=wu.user, password=wu.get_password())
         pass
 
+    def git_target(self, target_path: str) -> subprocess.CompletedProcess:
+        """
+        Handle git initialization and commit workflow for target path
+
+        Args:
+            target_path: Path to work in for git operations
+        """
+        remote=self.target.remote
+        remote.log.do_log=self.debug
+        git_dir = f"{target_path}/.git"
+        git_stats = remote.get_file_stats(git_dir)
+
+        if git_stats is None or not git_stats.is_directory:
+            self.log.log("❌", "git", "git not initialized yet")
+
+            git_cmds = {
+                'init': f'cd {target_path} && git init',
+                'add': f'cd {target_path} && git add *'
+            }
+            proc = remote.run_cmds_as_single_cmd(git_cmds)
+            if proc.returncode != 0:
+                return proc
+        else:
+            self.log.log("✅", "git", "git initialized")
+
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H_%M_%S")
+        commit_cmd = f"cd {target_path} && git commit -a -m 'tsite commit at {timestamp}'"
+        proc = remote.run(commit_cmd)
+        # Git returns 1 when nothing to commit - this is not an error
+        is_nothing_to_commit = proc.returncode == 1 and "nothing to commit" in proc.stdout
+        success = proc.returncode == 0 or is_nothing_to_commit
+        # fix return code for downstream
+        if is_nothing_to_commit: proc.returncode=0
+        status = "✅" if success else "❌"
+        message = "nothing to commit" if is_nothing_to_commit else f"commit changes at {timestamp}"
+        self.log.log(status, "git", message)
+
+        return proc
+
+    def check_site_sync(self):
+        """
+        check the site synchronization
+        """
+        if self.source.sitedir is not None:
+            site_path=f"{self.source.sitedir}/{self.wiki_site.hostname}"
+            print(f"site sync check {site_path}...")
+            marker_file="LocalSettings.php"
+            source_path=f"{self.source.hostname}:{site_path}"
+            proc=self.target.remote.rsync(
+                source_path=source_path,
+                target_path=site_path,
+                marker_file=marker_file,
+                message=f"{self.wiki_site.hostname}",
+                update=self.force,
+                do_mkdir=True,
+                do_permissions=True
+            )
+            if proc.returncode==0:
+                print("✅ sync done")
+            if self.use_git:
+                proc=self.git_target(target_path=site_path)
+                if proc.returncode==0:
+                    print("✅ git committed")
+
     def check_sql_backup(self):
         """
         Ensure a fresh SQL backup exists on the source.
         If not, create it. Then check the target and copy the backup if needed.
         """
+        print("SQL Backup check ...")
         wiki = self.wiki_site
         wiki.configure_of_settings()
 
@@ -90,13 +161,16 @@ class TransferTask:
 
         source_age = Checks.check_age(self.source.remote, source_backup_path)
         target_age = Checks.check_age(self.target.remote, target_backup_path)
-
+        source_display = f"{source_age:.1f}" if source_age is not None else "❌"
+        target_display = f"{target_age:.1f}" if target_age is not None else "❌"
+        age_hint = f"{source_display}d → {target_display}d"
+        print(f"found backups with age {age_hint}")
         if source_age is None or source_age > 1.0:
-            print(f"❌ No fresh backup found at {source_backup_path} — creating now")
+            print(f"❌ no {source_backup_path} — creating now")
             sql_backup = SqlBackup(
                 backup_host=self.source.remote.host,
                 debug=self.debug,
-                progress=self.args.progress,
+                progress=self.progress,
             )
             sql_backup.perform_backup(database=wiki.database_setting, full=True)
             source_age = Checks.check_age(self.source.remote, source_backup_path)
@@ -104,7 +178,9 @@ class TransferTask:
                 print("❌ Backup creation failed or still outdated.")
                 return
 
-        if target_age is None or target_age > source_age:
+        age_diff_secs=(target_age-source_age)*86400
+        # more than 1 minute difference
+        if target_age is None or age_diff_secs>60:
             source_path = f"{self.source.remote.host}:{source_backup_path}"
             target_path = f"{target_backup_path}"
             print(f"⚠️ Copying backup from source to target: {source_path} → {target_path}")
@@ -313,7 +389,8 @@ class TransferSite:
         target_server = self.servers.servers.get(self.target)
         if not self.check_remote(target_server.remote):
             return
-        transferTask = TransferTask(wiki, source_server, target_server)
+        transferTask = TransferTask(wiki, source_server, target_server,force=self.args.force,use_git=self.args.git)
+        transferTask.log=self.log
         return transferTask
 
     def transfer(self):
@@ -324,6 +401,7 @@ class TransferSite:
         transferTask.login()
         self.log.log("✅", "transfer", transferTask.site.version)
         transferTask.check_sql_backup()
+        transferTask.check_site_sync()
 
 
     def as_iterator(self, items: Iterable[T], desc: str) -> Iterator[T]:
@@ -505,6 +583,9 @@ class TransferSiteCmd(BaseCmd):
         parser.add_argument(
             "--progress", action="store_true", help="show progress bars"
         )
+        parser.add_argument(
+            "-g", "--git", action="store_true", help="use git for site directory"
+        )
 
         parser.add_argument(
             "--transfer",
@@ -523,7 +604,14 @@ class TransferSiteCmd(BaseCmd):
             help="perform action on all sites",
         )
         parser.add_argument(
-            "-sn", "--sitename", help="specify the site name (also used as conf name)"
+            "-sn", "--sitename", help="specify the site name (also used to derive apache config name)"
+        )
+        parser.add_argument(
+            "-al", "--alias", help="specify the alias website hostname to use e.g. for backup sites"
+
+        )
+        parser.add_argument(
+            "-cn", "--container", help="specify the container name"
         )
 
         parser.add_argument("-s", "--source", help="specify the source server")

@@ -265,7 +265,10 @@ class Remote:
             self.avail_check()
         return self._platform
 
-    def run_cmds(self, cmds: Dict[str, str], stop_on_error:bool=True) -> Dict[str, subprocess.CompletedProcess]:
+    def run_cmds(self,
+        cmds: Dict[str, str],
+        stop_on_error:bool=True,
+        as_single_cmd: bool=False) -> Dict[str, subprocess.CompletedProcess]:
         """
         Runs a given map of commands
         as long as the return code of the previous command is zero
@@ -273,9 +276,10 @@ class Remote:
         Args:
             cmds: key->remote command map
             stop_on_error: if True do not continue when an error occurs
+            as_single_cmd: if True combine all commands with ';' separator to a single long command
 
         Returns:
-            key->subprocess.CompletedProcess
+            key->subprocess.CompletedProcess with a single "all" key if as_single_cmd is True
 
         Example:
             >>> results = run_cmds({
@@ -286,15 +290,35 @@ class Remote:
             'Filesystem      Size  Used Avail Use% Mounted on...'
         """
         procs = {}
-        for key, cmd in cmds.items():
-            proc = self.run(cmd)
-            procs[key] = proc
-            if proc.returncode != 0:
-                if stop_on_error:
-                    break
-                else:
-                    continue
+        if as_single_cmd:
+            combined_cmd = "; ".join(cmds.values())
+            proc=self.run(combined_cmd)
+            procs["all"]=proc
+        else:
+            for key, cmd in cmds.items():
+                proc = self.run(cmd)
+                procs[key] = proc
+                if proc.returncode != 0:
+                    if stop_on_error:
+                        break
+                    else:
+                        continue
         return procs
+
+    def run_cmds_as_single_cmd(self, cmds: Dict[str, str], stop_on_error: bool = True) -> subprocess.CompletedProcess:
+        """
+        Run commands as single combined command and return the result directly
+
+        Args:
+            cmds: key->remote command map
+            stop_on_error: if True do not continue when an error occurs
+
+        Returns:
+            subprocess.CompletedProcess result of combined command
+        """
+        procs = self.run_cmds(cmds, stop_on_error=stop_on_error, as_single_cmd=True)
+        proc = procs["all"]
+        return proc
 
     def run(self, cmd: str, tee: bool = False) -> subprocess.CompletedProcess:
         """
@@ -356,6 +380,63 @@ class Remote:
         self.log.log(status, "remote", log_msg)
         return result
 
+    def rsync(self, source_path: str, target_path: str, marker_file: str,
+          message: str, update: bool = False, uid: Optional[int] = None,
+          gid: Optional[int] = None, do_mkdir: bool = True,
+          do_permissions: bool = True) -> subprocess.CompletedProcess:
+        """
+        Args:
+            source_path: Source path (must include server)
+            target_path: Target path (must be local)
+            marker_file: file to check for existence as indicator for sync completion
+            message: Log message for sync operation
+            update: Force update even if sentinel_file exists
+            uid: User ID for ownership (optional)
+            gid: Group ID for ownership (optional)
+            do_mkdir: Whether to create directory if missing
+            do_permissions: Whether to change ownership/permissions
+        """
+        marker_path = f"{target_path}/{marker_file}"
+        marker_stats = self.get_file_stats(marker_path)
+        needs_sync = marker_stats is None or update
+
+        if not needs_sync:
+            self.log.log("✅", "sync", f"{marker_path} already exists")
+            return subprocess.CompletedProcess([], 0, "", "")
+
+        target_uid = uid if uid is not None else getattr(self, 'uid', None)
+        target_gid = gid if gid is not None else getattr(self, 'gid', None)
+        should_set_permissions = do_permissions and target_uid and target_gid
+
+        if do_mkdir:
+            needs_mkdir=self.get_file_stats(target_path) is None
+            if needs_mkdir:
+                proc=self.run(f"sudo mkdir -p {target_path}")
+                if proc.returncode!=0:
+                    return proc
+
+        if should_set_permissions:
+            perm_cmds = {
+                'chown_pre': f"sudo chown {target_uid}:{target_gid} {target_path}",
+                'chmod_pre': f"sudo chmod g+w {target_path}"
+            }
+            proc = self.run_cmds_as_single_cmd(perm_cmds)
+            if proc.returncode != 0:
+                return proc
+
+        rsync_cmd = f"rsync -avz --no-perms --omit-dir-times {source_path}/* {target_path}"
+        proc = self.run(rsync_cmd)
+
+        if should_set_permissions and proc.returncode == 0:
+            chown_cmd=f"sudo chown -R {target_uid}:{target_gid} {target_path}"
+            self.run(chown_cmd)
+
+        status = "✅" if proc.returncode == 0 else "❌"
+        self.log.log(status, "sync", f"synching {message}")
+
+        return proc
+
+
     def scp_copy(self, source_path: str, target_path: str) -> subprocess.CompletedProcess:
         """
         Copy a file using scp between any combination of local or remote paths.
@@ -368,7 +449,7 @@ class Remote:
         Returns:
             subprocess.CompletedProcess result
         """
-        scp_cmd = f"scp {source_path} {target_path}"
+        scp_cmd = f"scp -p {source_path} {target_path}"
         proc = self.run(scp_cmd)
         return proc
 
