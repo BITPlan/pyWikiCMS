@@ -169,6 +169,7 @@ class TransferTask:
             print(f"❌ no {source_backup_path} — creating now")
             sql_backup = SqlBackup(
                 backup_host=self.source.remote.host,
+                backup_path=self.source.sql_backup_path,
                 debug=self.debug,
                 progress=self.progress,
             )
@@ -178,7 +179,8 @@ class TransferTask:
                 print("❌ Backup creation failed or still outdated.")
                 return
 
-        age_diff_secs=(target_age-source_age)*86400
+        if target_age:
+            age_diff_secs=(target_age-source_age)*86400
         # more than 1 minute difference
         if target_age is None or age_diff_secs>60:
             source_path = f"{self.source.remote.host}:{source_backup_path}"
