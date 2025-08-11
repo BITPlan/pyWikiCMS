@@ -20,6 +20,16 @@ class TestRemote(Basetest):
     def setUp(self, debug=True, profile=True):
         Basetest.setUp(self, debug=debug, profile=profile)
 
+    def genTestRemotes(self):
+        test_cases = (
+            ("localhost",),
+            ("r.bitplan.com",),
+        )
+
+        for host, in test_cases:
+            remote = Remote(host=host)
+            yield host,remote
+
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testStats(self):
         """
@@ -73,27 +83,33 @@ class TestRemote(Basetest):
         """
         test avail_check functionality
         """
-        test_cases = (
-            ("localhost",),
-            ("r.bitplan.com",),
-        )
+        for host, remote in self.genTestRemotes():
+            timestamp = remote.avail_check()
+            if self.debug:
+                print(f"Host: {host}")
+                print(f"Timestamp: {timestamp}")
+                print(f"Platform: {remote._platform}")
+                print(f"UID: {remote.uid}")
+                print(f"GID: {remote.gid}")
+                print(f"Is local: {remote.is_local}")
 
-        for host, in test_cases:
-            with self.subTest(host=host):
-                remote = Remote(host=host)
-                timestamp = remote.avail_check()
+            self.assertIsNotNone(timestamp, f"Timestamp should not be None for {host}")
+            self.assertIsNotNone(remote._platform, f"Platform should be set for {host}")
+            self.assertIsNotNone(remote.uid, f"UID should be set for {host}")
+            self.assertIsNotNone(remote.gid, f"GID should be set for {host}")
 
-                if self.debug:
-                    print(f"Host: {host}")
-                    print(f"Timestamp: {timestamp}")
-                    print(f"Platform: {remote._platform}")
-                    print(f"UID: {remote.uid}")
-                    print(f"GID: {remote.gid}")
-                    print(f"Is local: {remote.is_local}")
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
+    def test_copy_string_to_file(self):
+        """
+        test copy_string_to_file functionality
+        """
+        test_lines = ["Line 1", "Line 2", "Line 3"]
+        test_content = "\n".join(test_lines)
+        test_file = "/tmp/test_copy_string.txt"
+        for host, remote in self.genTestRemotes():
+            proc = remote.copy_string_to_file(test_content, test_file)
+            self.assertEqual(proc.returncode, 0, f"copy_string_to_file failed on {host}")
 
-                self.assertIsNotNone(timestamp, f"Timestamp should not be None for {host}")
-                self.assertIsNotNone(remote._platform, f"Platform should be set for {host}")
-                self.assertIsNotNone(remote.uid, f"UID should be set for {host}")
-                self.assertIsNotNone(remote.gid, f"GID should be set for {host}")
-
-
+            # Read back the content
+            lines = remote.readlines(test_file)
+            self.assertEqual(test_lines,lines)

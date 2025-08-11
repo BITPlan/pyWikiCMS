@@ -28,6 +28,8 @@ class SqlBackup:
         backup_user: str = "backup",
         backup_host: str = "localhost",
         backup_dir: str = "/var/backup/sqlbackup",
+        mysql_root_script = "sudo mysql -u root",
+        mysql_dump_script = "sudo mysqldump -u root",
         verbose: bool = False,
         debug: bool = False,
         progress: bool = False,
@@ -40,6 +42,8 @@ class SqlBackup:
             backup_host: Database host name
             login_path: MySQL login path name
             backup_dir: Base backup directory path
+            mysql_root_script: the script to use for mysql root access
+            mysql_dump_script: the script to use for mysql dump (with root permissions)
             verbose: Enable verbose output
             debug: Enable debug output
             progress: show progress
@@ -47,6 +51,8 @@ class SqlBackup:
         self.backup_user = backup_user
         self.backup_host = backup_host
         self.backup_dir = Path(backup_dir)
+        self.mysql_root_script=mysql_root_script
+        self.mysql_dump_script=mysql_dump_script
         self.verbose = verbose
         self.debug = debug
         self.progress = progress
@@ -67,6 +73,21 @@ class SqlBackup:
                 self.version = result.stdout
         return self.version
 
+    def run_mysql_root_command(self, cmd: str, as_script: bool = False) -> subprocess.CompletedProcess:
+        """
+        Run the given MySQL command as root.
+        - as_script=False: pipe a single line (canonical echo)
+        - as_script=True : create .sql file and run it
+        """
+        if as_script:
+            sql_file = self.remote.gen_tmp("sql_cmd.sql")
+            self.remote.copy_string_to_file(cmd, sql_file)
+            proc = self.remote.run(f"{self.mysql_root_script} < {sql_file}")
+            self.remote.run(f"rm -f {sql_file}")  # cleanup
+        else:
+            proc = self.remote.run(f"echo '{cmd}' | {self.mysql_root_script}")
+        return proc
+
     def run_show_databases_command(self) -> subprocess.CompletedProcess:
         """
         Execute show databases MySQL command
@@ -76,9 +97,8 @@ class SqlBackup:
         """
         if not self.version:
             raise ValueError("get_version must be called first")
-        cmd = f"sudo mysql -u root -e 'show databases;'"
-        result = self.remote.run(cmd)
-        return result
+        proc=self.run_mysql_root_command("show databases")
+        return proc;
 
     def parse_database_list(self, result) -> List[str]:
         """
@@ -164,7 +184,7 @@ class SqlBackup:
 
         create_option = "" if full else "--no-create-db --no-create-info"
         cmds = {
-            "backup": f'sudo mysqldump -u root --quick --routines {create_option} --skip-add-locks --complete-insert --opt "{database}" > {backup_tmp_path}',
+            "backup": f'{self.mysql_dump_script} --quick --routines {create_option} --skip-add-locks --complete-insert --opt "{database}" > {backup_tmp_path}',
             "move": f"sudo mv {backup_tmp_path} {backup_path}",
             "owner": f"sudo chown {self.backup_user} {backup_path}",
             "permissions": f"sudo chmod 440 {backup_path}",
@@ -172,6 +192,55 @@ class SqlBackup:
         procs = self.remote.run_cmds(cmds)
         proc = procs.get("backup")
         return proc
+
+    def restore_database(self, database_name: str, backup_path: str = None, force: bool = False) -> subprocess.CompletedProcess:
+        """
+        Restore a database from a .sql dump.
+
+        Args:
+            database_name: the name of the database
+            backup_path: absolute path to the .sql file on backup_host; if None, use today's full backup
+            force: drop and recreate the target database before import
+
+        Returns:
+            subprocess.CompletedProcess of the restore command
+        """
+        # resolve backup path
+        if backup_path is None:
+            backup_path = str(self.get_backup_path(database_name, self.today_dir, full=True))
+
+        # verify backup exists
+        if self.remote.get_file_stats(backup_path) is None:
+            raise FileNotFoundError(f"backup not found: {backup_path}")
+
+        # prepare database
+        if force:
+            drop_proc = self.run_mysql_root_command(f"DROP DATABASE IF EXISTS `{database_name}`")
+            if drop_proc.returncode != 0:
+                raise RuntimeError(f"Failed to drop database {database_name}: {drop_proc.stderr}")
+
+        # create DB only if missing
+        exist_cmd= f"USE {database_name}";
+        exists_proc = self.run_mysql_root_command(exist_cmd)
+        # Non-existence is possible here, MySQL returns:
+        # ERROR 1049 (42000) at line 1: Unknown database '...'
+        if exists_proc.returncode != 0:
+            create_proc = self.run_mysql_root_command(f"CREATE DATABASE {database_name}")
+            if create_proc.returncode != 0:
+                raise RuntimeError(
+                    f"Failed to create database {database_name}: {create_proc.stderr}"
+                )
+
+        # restore with optional pv
+        if self.progress:
+            restore_cmd = f"sudo pv '{backup_path}' | {self.mysql_root_script} {database_name}"
+        else:
+            restore_cmd = f"sudo mysql -u root {database_name} < '{backup_path}'"
+
+        proc = self.remote.run(restore_cmd)
+        return proc
+
+
 
     def perform_backup(self, database: str = "all", full: bool = True) -> int:
         """Perform backups of one or more databases.
@@ -234,33 +303,17 @@ class SqlBackup:
         }
         self.remote.run_cmds(cmds)
 
-    def grant_permissions(self, password: str, mysql_root_password: str) -> bool:
+    def grant_permissions(self, password: str) -> subprocess.CompletedProcess:
         """
-        Grant database permissions for backup user
-
-        Args:
-            password: Password for the backup user
-            mysql_root_password: MySQL root password
-
-        Returns:
-            True if grants successful, False otherwise
+        Grant database permissions for backup user (no mysql_config_editor; use mysql_root_script)
         """
-        grant_sql = f"GRANT SELECT,EXECUTE,PROCESS,SHOW VIEW,SHOW DATABASES ON *.* TO '{self.backup_user}'@'{self.backup_host}' IDENTIFIED BY '{password}';"
-        lock_sql = f"GRANT LOCK TABLES ON *.* TO '{self.backup_user}'@'{self.backup_host}' IDENTIFIED BY '{password}';"
+        grant_sql = (
+            f"GRANT SELECT,EXECUTE,PROCESS,SHOW VIEW,SHOW DATABASES,LOCK TABLES "
+            f"ON *.* TO '{self.backup_user}'@'{self.backup_host}' IDENTIFIED BY '{password}';"
+        )
+        proc = self.run_mysql_root_command(grant_sql,as_script=True)
+        return proc
 
-        mysql_cmd = f'mysql -u root --password="{mysql_root_password}" -e "{grant_sql}"'
-        result1 = self.remote.run(mysql_cmd)
-
-        mysql_cmd = f'mysql -u root --password="{mysql_root_password}" -e "{lock_sql}"'
-        result2 = self.remote.run(mysql_cmd)
-
-        success = result1.returncode == 0 and result2.returncode == 0
-        if success and self.is_mysql():
-            config_cmd = f"mysql_config_editor set --login-path={self.login_path} --host={self.backup_host} --user={self.backup_user} --password"
-            self.remote.run(config_cmd)
-            self.show_result(f"Login path {self.login_path} configured")
-
-        return success
 
 
 def create_argument_parser() -> argparse.ArgumentParser:

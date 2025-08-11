@@ -3,6 +3,7 @@ Created on 2025-07-21
 
 @author: wf
 """
+import tempfile
 import glob
 import grp
 import os
@@ -235,7 +236,7 @@ class Remote:
         self.timeout = timeout
         self.log = Log()
         self.ssh_options = (
-            f"-o ConnectTimeout={self.timeout}  -o StrictHostKeyChecking=no {self.host}"
+            f"-o ConnectTimeout={self.timeout} {self.host}"
         )
 
     def __str__(self):
@@ -406,7 +407,7 @@ class Remote:
 
         target_uid = uid if uid is not None else getattr(self, 'uid', None)
         target_gid = gid if gid is not None else getattr(self, 'gid', None)
-        should_set_permissions = do_permissions and target_uid and target_gid
+        should_set_permissions = do_permissions and target_uid is not None and target_gid is not None
 
         if do_mkdir:
             needs_mkdir=self.get_file_stats(target_path) is None
@@ -436,21 +437,56 @@ class Remote:
 
         return proc
 
-
-    def scp_copy(self, source_path: str, target_path: str) -> subprocess.CompletedProcess:
+    def gen_tmp(self, source_path: str) -> str:
         """
-        Copy a file using scp between any combination of local or remote paths.
+        Generate temporary file path with timestamp
+
+        Args:
+            source_path: Source file path to extract basename from
+
+        Returns:
+            Temporary file path with timestamp preserving extension
+        """
+        basename = os.path.basename(source_path)
+        name, ext = os.path.splitext(basename)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        tmp_path = f"/tmp/{name}_{timestamp}{ext}"
+        return tmp_path
+
+    def remote_copy(self, source_path: str, target_path: str, ignore_container: bool = False) -> subprocess.CompletedProcess:
+        """
+        Copy a file between local and remote paths, handling docker containers.
         This method is executed locally, not on the remote.
 
         Args:
             source_path: Source path (may include user@host:)
             target_path: Target path (may include user@host:)
+            ignore_container: If True, ignore container and use direct scp
 
         Returns:
             subprocess.CompletedProcess result
         """
-        scp_cmd = f"scp -p {source_path} {target_path}"
-        proc = self.run(scp_cmd)
+        if self.container and not ignore_container:
+            # For containers: copy to host first, then to container
+            host_temp=self.gen_tmp(source_path)
+            host_target = f"{self.host}:{host_temp}"
+
+            # Use recursion with ignore_container=True
+            proc = self.remote_copy(source_path, host_target, ignore_container=True)
+            if proc.returncode != 0:
+                return proc
+
+            # Copy from host to container
+            docker_cmd = f"docker cp {host_temp} {self.container}:{target_path}"
+            proc = self.run(docker_cmd)
+
+            # Cleanup temp file on host
+            self.run(f"rm -f {host_temp}")
+        else:
+            # Regular scp copy
+            scp_cmd = f"scp -p {source_path} {target_path}"
+            proc = self.shell.run(scp_cmd)
+
         return proc
 
 
@@ -615,6 +651,33 @@ class Remote:
         else:
             return self.get_remote_dir_list(dirpath, wildcard, dirs_only)
 
+
+    def copy_string_to_file(self, content: str, filepath: str) -> subprocess.CompletedProcess:
+        """
+        Copy string content to file locally or remotely using scp
+
+        Args:
+            content: The string content to write to the file
+            filepath: The target file path where content will be written
+
+        Returns:
+            subprocess.CompletedProcess: Result of the copy operation
+        """
+        if self.is_local:
+            with open(filepath, 'w') as f:
+                f.write(content)
+            proc=subprocess.CompletedProcess([], 0, "", "")
+        else:
+            with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
+                tmp.write(content)
+                tmp_path = tmp.name
+            try:
+                target_path = f"{self.host}:{filepath}"
+                proc = self.remote_copy(tmp_path, target_path)
+            finally:
+                os.unlink(tmp_path)
+
+        return proc
 
     def readlines(self, filepath: str) -> Optional[list[str]]:
         """

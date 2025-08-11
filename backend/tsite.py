@@ -53,6 +53,7 @@ class TransferTask:
     target: Server
     debug: bool = False
     force: bool = False
+    update: bool= False,
     progress: bool = True
     use_git: bool=False
     query_division: int = 50
@@ -134,7 +135,7 @@ class TransferTask:
                 target_path=site_path,
                 marker_file=marker_file,
                 message=f"{self.wiki_site.hostname}",
-                update=self.force,
+                update=self.force or self.update,
                 do_mkdir=True,
                 do_permissions=True
             )
@@ -391,7 +392,7 @@ class TransferSite:
         target_server = self.servers.servers.get(self.target)
         if not self.check_remote(target_server.remote):
             return
-        transferTask = TransferTask(wiki, source_server, target_server,force=self.args.force,use_git=self.args.git)
+        transferTask = TransferTask(wiki, source_server, target_server,force=self.args.force,update=self.args.update,use_git=self.args.git)
         transferTask.log=self.log
         return transferTask
 
@@ -581,6 +582,11 @@ class TransferSiteCmd(BaseCmd):
             "--backup",
             action="store_true",
             help="create a backup wiki",
+        )
+        parser.add_argument(
+            "--update",
+            action="store_true",
+            help="update pages and images",
         )
         parser.add_argument(
             "--progress", action="store_true", help="show progress bars"

@@ -40,6 +40,8 @@ class Server:
     purpose: Optional[str] = None
     logo: str = "https://wiki.bitplan.com/images/wiki/6/63/Profiwikiicon.png"
     sql_backup_path: str = "/var/backup/sqlbackup"
+    mysql_root_script: str = "sudo mysql -u root"
+    mysql_dump_script: str = "sudo mysqldump -u root"
     # if a family is configured we expect e.g.
     # /var/www/mediawiki/sites
     sitedir: Optional[str] = None
@@ -80,7 +82,7 @@ class Server:
         ep_stats = self.remote.get_file_stats(remote_path)
         if ep_stats:
             os.makedirs(os.path.dirname(self.endpoint_yaml_path), exist_ok=True)
-            proc = self.remote.scp_copy(remote_path, self.endpoint_yaml_path)
+            proc = self.remote.remote_copy(remote_path, self.endpoint_yaml_path,ignore_container=True)
             if proc.returncode == 0:
                 self.endpoints = EndpointManager.getEndpoints(self.endpoint_yaml_path)
 
