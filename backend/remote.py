@@ -12,7 +12,7 @@ import socket
 import stat
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Dict, Optional, Tuple
 
@@ -198,6 +198,14 @@ class Stats:
         age_days = self.age_secs / 86400.0
         return age_days
 
+@dataclass
+class RunConfig:
+    tee:bool=False
+    do_log: bool=True
+    # options for multi command handling
+    stop_on_error:bool=True # if True do not continue when an error occurs
+    as_single_cmd: bool=False # if True combine all commands with ';' separator to a single long command
+
 
 class Remote:
     """
@@ -219,6 +227,7 @@ class Remote:
         self.is_local = False
         self._ip = None
         self._platform = None
+        self.run_config=RunConfig()
         try:
             host_ip = socket.gethostbyname(host)
             self._ip = host_ip
@@ -268,16 +277,14 @@ class Remote:
 
     def run_cmds(self,
         cmds: Dict[str, str],
-        stop_on_error:bool=True,
-        as_single_cmd: bool=False) -> Dict[str, subprocess.CompletedProcess]:
+        run_config: RunConfig | None = None) -> Dict[str, subprocess.CompletedProcess]:
         """
         Runs a given map of commands
         as long as the return code of the previous command is zero
 
         Args:
             cmds: key->remote command map
-            stop_on_error: if True do not continue when an error occurs
-            as_single_cmd: if True combine all commands with ';' separator to a single long command
+            run_config: configuration options how to run the commands
 
         Returns:
             key->subprocess.CompletedProcess with a single "all" key if as_single_cmd is True
@@ -291,43 +298,46 @@ class Remote:
             'Filesystem      Size  Used Avail Use% Mounted on...'
         """
         procs = {}
-        if as_single_cmd:
+        if run_config is None:
+            run_config = self.run_config
+        if run_config.as_single_cmd:
             combined_cmd = "; ".join(cmds.values())
-            proc=self.run(combined_cmd)
+            proc=self.run(combined_cmd,run_config=run_config)
             procs["all"]=proc
         else:
             for key, cmd in cmds.items():
                 proc = self.run(cmd)
                 procs[key] = proc
                 if proc.returncode != 0:
-                    if stop_on_error:
+                    if run_config.stop_on_error:
                         break
                     else:
                         continue
         return procs
 
-    def run_cmds_as_single_cmd(self, cmds: Dict[str, str], stop_on_error: bool = True) -> subprocess.CompletedProcess:
+    def run_cmds_as_single_cmd(self, cmds: Dict[str, str],run_config: RunConfig | None = None) -> subprocess.CompletedProcess:
         """
         Run commands as single combined command and return the result directly
 
         Args:
             cmds: key->remote command map
-            stop_on_error: if True do not continue when an error occurs
+            run_config: configuration options how to run the command
 
         Returns:
             subprocess.CompletedProcess result of combined command
         """
-        procs = self.run_cmds(cmds, stop_on_error=stop_on_error, as_single_cmd=True)
+        run_config = replace(run_config or self.run_config, as_single_cmd=True)
+        procs = self.run_cmds(cmds, run_config=run_config)
         proc = procs["all"]
         return proc
 
-    def run(self, cmd: str, tee: bool = False) -> subprocess.CompletedProcess:
+    def run(self, cmd: str, run_config:RunConfig = None) -> subprocess.CompletedProcess:
         """
         Run the given command locally or remotely (optionally inside a container)
 
         Args:
             cmd: The shell command to execute
-            tee: Whether to tee output
+            run_config: configuration options how to run the command
 
         Returns:
             CompletedProcess: the result of the command
@@ -339,7 +349,7 @@ class Remote:
             full_cmd += f" docker exec {self.container}"
 
         full_cmd += f' "{cmd}"'
-        result = self.run_remote(full_cmd, tee=tee)
+        result = self.run_remote(full_cmd, run_config=run_config)
         return result
 
     def trim_output(self, output: str, max_lines=5, max_len=500) -> str:
@@ -355,31 +365,41 @@ class Remote:
             trimmed += f"\n...[+{len(output.splitlines()) - max_lines} lines]"
         return trimmed
 
-    def run_remote(self, cmd: str, tee=False) -> subprocess.CompletedProcess:
+    def log_shell_result(self,cmd:str,proc,run_config:RunConfig):
         """
-        Execute a command with optional output teeing.
+        log the given shell result
+        """
+        status = "✅" if proc.returncode == 0 else "❌"
+
+        log_msg = (
+            f"{cmd}\n"
+            f"code:{proc.returncode}\n"
+            f"out:{self.trim_output(proc.stdout)}\n"
+            f"err:{self.trim_output(proc.stderr)}"
+        )
+        if run_config.do_log:
+            self.log.log(status, "remote", log_msg)
+
+
+    def run_remote(self, cmd: str, run_config:RunConfig=None) -> subprocess.CompletedProcess:
+        """
+        Execute a command
 
         The command may include ssh and docker exec parts to enable remote or
         containerized execution. Local execution is also possible if applicable.
 
         Args:
             cmd: The full command string to execute.
-            tee: If True, tee the command's output to stdout/stderr.
+            run_config: configuration options how to run the command
 
         Returns:
             CompletedProcess: The result of the executed command, including output and return code.
         """
-        result = self.shell.run(cmd, tee=tee)
-        status = "✅" if result.returncode == 0 else "❌"
-
-        log_msg = (
-            f"{cmd}\n"
-            f"code:{result.returncode}\n"
-            f"out:{self.trim_output(result.stdout)}\n"
-            f"err:{self.trim_output(result.stderr)}"
-        )
-        self.log.log(status, "remote", log_msg)
-        return result
+        if run_config is None:
+            run_config=self.run_config
+        proc = self.shell.run(cmd, tee=run_config.tee)
+        self.log_shell_result(cmd,proc,run_config)
+        return proc
 
     def rsync(self, source_path: str, target_path: str, marker_file: str,
           message: str, update: bool = False, uid: Optional[int] = None,
