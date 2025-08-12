@@ -121,10 +121,18 @@ class TransferTask:
 
         return proc
 
-    def check_site_sync(self):
+    def check_ssh(self)->bool:
+        """
+        check the target site is available via ssh
+        """
+        avail=self.target.remote.avail_check() is not None
+        return avail
+
+    def check_site_sync(self)->bool:
         """
         check the site synchronization
         """
+        result=False
         if self.source.sitedir is not None:
             site_path=f"{self.source.sitedir}/{self.wiki_site.hostname}"
             print(f"site sync check {site_path}...")
@@ -141,16 +149,21 @@ class TransferTask:
             )
             if proc.returncode==0:
                 print("✅ sync done")
+                result=True
             if self.use_git:
                 proc=self.git_target(target_path=site_path)
                 if proc.returncode==0:
                     print("✅ git committed")
+                else:
+                    result=False
+        return result
 
-    def check_sql_backup(self):
+    def check_sql_backup(self)->bool:
         """
         Ensure a fresh SQL backup exists on the source.
         If not, create it. Then check the target and copy the backup if needed.
         """
+        result=False
         print("SQL Backup check ...")
         wiki = self.wiki_site
         wiki.configure_of_settings()
@@ -178,7 +191,7 @@ class TransferTask:
             source_age = Checks.check_age(self.source.remote, source_backup_path)
             if source_age is None or source_age > 1.0:
                 print("❌ Backup creation failed or still outdated.")
-                return
+                return False
 
         if target_age:
             age_diff_secs=(target_age-source_age)*86400
@@ -195,10 +208,17 @@ class TransferTask:
                     "chgrp": f"sudo chgrp {self.target.remote.gid} {target_base_path}"
                 }
             )
-            self.target.remote.scp_copy(source_path, target_path)
+            proc=self.target.remote.remote_copy(source_path, target_path)
+            result=proc.returncode==0
+            if not result:
+                msg=f"❌ Backup copy {source_path}→{target_path} failed:{proc.stderr}"
+            else:
+                msg=f"✅ Backup copy {target_path} created"
+            print(msg)
         else:
             print(f"✅ Target backup is up to date.")
-
+            result=True
+        return result
 
 class TransferSite:
     """
@@ -403,8 +423,12 @@ class TransferSite:
         transferTask = self.create_TransferTask()
         transferTask.login()
         self.log.log("✅", "transfer", transferTask.site.version)
-        transferTask.check_sql_backup()
-        transferTask.check_site_sync()
+        if not transferTask.check_ssh():
+            return
+        if not transferTask.check_sql_backup():
+            return
+        if not  transferTask.check_site_sync():
+            return
 
 
     def as_iterator(self, items: Iterable[T], desc: str) -> Iterator[T]:

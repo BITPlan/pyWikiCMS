@@ -202,6 +202,10 @@ class Stats:
 class RunConfig:
     tee:bool=False
     do_log: bool=True
+    # to docker or not to docker that's the question
+    # if True target the host not the docker container
+    # e.g use direct scp to host not docker copy
+    ignore_container: bool = False
     # options for multi command handling
     stop_on_error:bool=True # if True do not continue when an error occurs
     as_single_cmd: bool=False # if True combine all commands with ';' separator to a single long command
@@ -473,7 +477,7 @@ class Remote:
         tmp_path = f"/tmp/{name}_{timestamp}{ext}"
         return tmp_path
 
-    def remote_copy(self, source_path: str, target_path: str, ignore_container: bool = False) -> subprocess.CompletedProcess:
+    def remote_copy(self, source_path: str, target_path: str, run_config:RunConfig=None) -> subprocess.CompletedProcess:
         """
         Copy a file between local and remote paths, handling docker containers.
         This method is executed locally, not on the remote.
@@ -481,31 +485,34 @@ class Remote:
         Args:
             source_path: Source path (may include user@host:)
             target_path: Target path (may include user@host:)
-            ignore_container: If True, ignore container and use direct scp
+            run_config: configuration options how to run the commands
 
         Returns:
             subprocess.CompletedProcess result
         """
-        if self.container and not ignore_container:
+        if run_config is None:
+            run_config = self.run_config
+        if self.container and not run_config.ignore_container:
             # For containers: copy to host first, then to container
             host_temp=self.gen_tmp(source_path)
             host_target = f"{self.host}:{host_temp}"
+            ignore_container_run_config = replace(run_config, ignore_container=True)
 
             # Use recursion with ignore_container=True
-            proc = self.remote_copy(source_path, host_target, ignore_container=True)
+            proc = self.remote_copy(source_path, host_target, run_config=ignore_container_run_config)
             if proc.returncode != 0:
                 return proc
 
             # Copy from host to container
             docker_cmd = f"docker cp {host_temp} {self.container}:{target_path}"
-            proc = self.run(docker_cmd)
+            proc = self.run(docker_cmd,run_config=ignore_container_run_config)
 
             # Cleanup temp file on host
-            self.run(f"rm -f {host_temp}")
+            self.run(f"rm -f {host_temp}",run_config=ignore_container_run_config)
         else:
             # Regular scp copy
             scp_cmd = f"scp -p {source_path} {target_path}"
-            proc = self.shell.run(scp_cmd)
+            proc = self.run(scp_cmd, run_config)
 
         return proc
 
