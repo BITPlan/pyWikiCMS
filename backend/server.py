@@ -49,7 +49,7 @@ class Server:
     sites: Dict[str, Site] = field(default_factory=dict)
     wikis: Dict[str, WikiSite] = field(default_factory=dict)
     frontends: Dict[str, FrontendSite] = field(default_factory=dict)
-
+    apache_configs: Dict[str,str] = field(default_factory=dict)
     # Non-persistent calculated fields
     actual_hostname: str = field(default="", init=False, repr=False)
     platform: str = field(default="", init=False, repr=False)
@@ -120,6 +120,7 @@ class Server:
                 if match:
                     hostname = match.group(1)
                     config_file = match.group(2)
+                    self.apache_configs[hostname]=config_file
                     for site in self.wikis.values():
                         if site.name in hostname:
                             site.apache_config = config_file

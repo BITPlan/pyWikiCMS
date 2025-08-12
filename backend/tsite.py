@@ -8,14 +8,14 @@ to a dockerized environment
 @author: wf
 """
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass, field
 from datetime import datetime
 import subprocess
 import sys
 from typing import Iterator, List, Iterable, TypeVar
 
-from backend.remote import Remote
+from backend.remote import Remote, RunConfig
 from backend.server import Server, Servers
 from backend.site import Site, WikiSite
 from backend.sql_backup import SqlBackup
@@ -51,6 +51,7 @@ class TransferTask:
     wiki_site: WikiSite
     source: Server
     target: Server
+    args:Namespace
     debug: bool = False
     force: bool = False
     update: bool= False,
@@ -61,6 +62,9 @@ class TransferTask:
     log: Log = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
+        self.force=self.args.force
+        self.update=self.args.update
+        self.use_git=self.args.git
         self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
         self.wikiClient = WikiClient.ofWikiUser(self.wikiUser)
         self.smwClient = SMWClient(
@@ -138,14 +142,15 @@ class TransferTask:
             print(f"site sync check {site_path}...")
             marker_file="LocalSettings.php"
             source_path=f"{self.source.hostname}:{site_path}"
+            run_config=RunConfig(update=self.force or self.update,
+                do_mkdir=True,
+                do_permissions=True)
             proc=self.target.remote.rsync(
                 source_path=source_path,
                 target_path=site_path,
                 marker_file=marker_file,
                 message=f"{self.wiki_site.hostname}",
-                update=self.force or self.update,
-                do_mkdir=True,
-                do_permissions=True
+                run_config=run_config
             )
             if proc.returncode==0:
                 print("✅ sync done")
@@ -218,6 +223,67 @@ class TransferTask:
         else:
             print(f"✅ Target backup is up to date.")
             result=True
+        return result
+
+    def get_apache_config(self,server_name:str,hostname:str,port:int=9880)->str:
+        """
+        get the apache configuration for the given server_name and hostname
+        """
+        created_iso= datetime.now().isoformat()
+        config_str=f"""#
+# Apache site alumni
+# Virtualhost {server_name}
+# created {created_iso} by tsite script {Version.version}
+<VirtualHost *:80>
+    ServerName {server_name}
+
+    ProxyPreserveHost On
+    ProxyRequests Off
+
+    ProxyPass / http://localhost:{port}/
+    ProxyPassReverse / http://localhost:{port}/
+
+    <Location />
+        # forwarded
+        Header set X-Forwarded-Host "{server_name}"
+        Header set X-Forwarded-For "%{{REMOTE_ADDR}}s"
+        Header set X-Forwarded-Proto "http"
+    </Location>
+
+    ErrorLog ${{APACHE_LOG_DIR}}/{hostname}_error.log
+    CustomLog ${{APACHE_LOG_DIR}}/{hostname}_access.log combined
+</VirtualHost>"""
+        return config_str
+
+    def check_apache(self)->bool:
+        """
+        check apache configuration or create new one
+        """
+        result=False
+        server_name=f"{self.wiki_site.hostname}"
+        if self.args.backup:
+            server_name=f"{self.wiki_site.name}_{self.target.hostname}"
+        self.target.probe_apache_configs()
+        config_path=self.target.apache_configs.get(server_name)
+        if config_path is None or self.args.force:
+            config_path=f"/etc/apache2/sites-available/{self.wiki_site.name}.conf"
+            apache_config=self.get_apache_config(server_name, self.wiki_site.hostname)
+            run_config=RunConfig()
+            run_config.sudo_viatemp=True
+            run_config.force_local=True
+            run_config.ignore_container=True
+            run_config.uid=33 # www-data
+            run_config.gid=33 # www-data
+            proc=self.target.remote.copy_string_to_file(apache_config, config_path,run_config=run_config)
+            if proc.returncode==0:
+                msg=f"✅ apache config {config_path} for {server_name} created"
+                result=True
+            else:
+                msg=f"❌ apache config {config_path} for {server_name}: {proc.stderr}"
+        else:
+            msg=f"✅ apache config {config_path} for {server_name} exists"
+            result=True
+        print(msg)
         return result
 
 class TransferSite:
@@ -412,7 +478,7 @@ class TransferSite:
         target_server = self.servers.servers.get(self.target)
         if not self.check_remote(target_server.remote):
             return
-        transferTask = TransferTask(wiki, source_server, target_server,force=self.args.force,update=self.args.update,use_git=self.args.git)
+        transferTask = TransferTask(wiki, source_server, target_server,args=self.args)
         transferTask.log=self.log
         return transferTask
 
@@ -425,11 +491,15 @@ class TransferSite:
         self.log.log("✅", "transfer", transferTask.site.version)
         if not transferTask.check_ssh():
             return
-        if not transferTask.check_sql_backup():
-            return
-        if not  transferTask.check_site_sync():
-            return
-
+        if self.args.transfer_all or self.args.transfer_sql:
+            if not transferTask.check_sql_backup():
+                return
+        if self.args.transfer_all or self.args.transfer_site:
+            if not  transferTask.check_site_sync():
+                return
+        if self.args.transfer_all or self.args.transfer_apache:
+            if not transferTask.check_apache():
+                return
 
     def as_iterator(self, items: Iterable[T], desc: str) -> Iterator[T]:
         """
@@ -625,6 +695,30 @@ class TransferSiteCmd(BaseCmd):
             help="transfer the given site",
         )
         parser.add_argument(
+            "-tall",
+            "--transfer-all",
+            action="store_true",
+            help="perform all transfer steps for for selected sites",
+        )
+        parser.add_argument(
+            "-tapa",
+            "--transfer-apache",
+            action="store_true",
+            help="transfer/create Apache configuration for selected sites",
+        )
+        parser.add_argument(
+            "-tsql",
+            "--transfer-sql",
+            action="store_true",
+            help="transfer sql",
+        )
+        parser.add_argument(
+            "-tsit",
+            "--transfer-site",
+            action="store_true",
+            help="rsync site directory including images",
+        )
+        parser.add_argument(
             "-ls",
             "--list-sites",
             action="store_true",
@@ -666,7 +760,7 @@ class TransferSiteCmd(BaseCmd):
         tsite = TransferSite(args)
         if args.check_apache:
             tsite.check_apache()
-            handled = True
+            handled=True
         if args.check_backup:
             tsite.check_backup()
             handled = True
