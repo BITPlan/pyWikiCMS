@@ -487,6 +487,9 @@ class TransferSite:
         transfer the given site from the source to the target server
         """
         transferTask = self.create_TransferTask()
+        if not transferTask:
+            self.log.log("❌","transfer","aborted before login")
+            return 
         transferTask.login()
         self.log.log("✅", "transfer", transferTask.site.version)
         if not transferTask.check_ssh():
