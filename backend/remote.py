@@ -572,12 +572,12 @@ class Remote:
                     mv_cmd=f"sudo mv {viatemp.tmp_path} {path_on_target}"
                     proc=self.run(mv_cmd)
                 if run_config.should_set_permissions and proc.returncode == 0:
-                    chown_cmd=f"sudo chown {run_config.uid}:{run_config.gid} {target_path}"
+                    chown_cmd=f"sudo chown {run_config.uid}:{run_config.gid} {path_on_target}"
                     proc=self.run(chown_cmd)
                 # Cleanup temp file locally
                 self.run(f"rm -f {viatemp.tmp_path}",run_config=run_config)
             else:
-                proc=self.scp_copy(source_path, target_path)
+                proc=self.scp_copy(source_path, target_path,run_config=run_config)
 
         return proc
 

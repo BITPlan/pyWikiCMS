@@ -5,6 +5,7 @@ Created on 2021-01-01
 """
 
 from dataclasses import dataclass, field
+import platform
 import re
 import socket
 from typing import Any, Dict, List, Optional
@@ -71,6 +72,16 @@ class Site:
             self.ip = socket.gethostbyname(self.name)
         except Exception:
             self.ip = "?"
+
+    def ping(self):
+        # https://stackoverflow.com/a/34455969/1497139
+        try:
+            option="-n" if platform.system().lower()=="windows" else "-c"
+            cmd=f"ping {option} 1 -t 1 {self.name}"
+            proc=self.remote.shell.run(cmd)
+            pass
+        except Exception as ex:
+            pass
 
 
 @lod_storable

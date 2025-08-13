@@ -20,7 +20,6 @@ from lodstorage.query import EndpointManager
 
 from backend.remote import Remote, Tool, Tools
 from backend.site import FrontendSite, Site, WikiSite
-from backend.sql_backup import SqlBackup
 
 
 @lod_storable

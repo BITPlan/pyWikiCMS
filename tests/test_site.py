@@ -6,10 +6,9 @@ Created on 2021-01-01
 
 import unittest
 
-from basemkit.basetest import Basetest
-
 from backend.server import Servers
-from backend.site import WikiSite
+from backend.site import WikiSite, Site
+from basemkit.basetest import Basetest
 
 
 class TestSite(Basetest):
@@ -48,6 +47,14 @@ class TestSite(Basetest):
         wiki = self.configure_wiki("wiki.bitplan.com")
         statusCode = wiki.getStatusCode(5.0)
         self.assertEqual(200, statusCode)
+
+    def testPing(self):
+        """
+        test getting the status code for the a wiki
+        """
+        site=Site("www.wikipedia.de")
+        site.ping()
+
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testGetSetting(self):
