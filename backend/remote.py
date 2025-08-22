@@ -472,19 +472,19 @@ class Remote:
         path_on_target=self.get_path_on_target(target_path)
         dir_path = os.path.dirname(path_on_target)
         if dir_path:
+            uid=run_config.uid
+            gid=run_config.gid
             if run_config.do_mkdir:
                 needs_mkdir=self.get_file_stats(dir_path) is None
                 if needs_mkdir:
-                    proc=self.run(f"sudo mkdir -p {dir_path}")
+                    proc=self.run(f"sudo install -d -m 2775 -o {uid} -g {gid} {dir_path}")
                     if proc.returncode!=0:
                         return proc
 
             if run_config.should_set_permissions:
-                uid=run_config.uid
-                gid=run_config.gid
                 perm_cmds = {
-                    'chown_pre': f"sudo chown {uid}:{gid} {dir_path}",
-                    'chmod_pre': f"sudo chmod g+w {dir_path}"
+                    'chown_pre': f"sudo chown -R {uid}:{gid} {dir_path}",
+                    'chmod_pre': f"sudo chmod -R g+rw  {dir_path}"
                 }
                 proc = self.run_cmds_as_single_cmd(perm_cmds)
         return proc
@@ -511,8 +511,11 @@ class Remote:
             proc = self.run(rsync_cmd)
 
         if run_config.should_set_permissions and proc.returncode == 0:
-            chown_cmd=f"sudo chown -R {run_config.uid}:{run_config.gid} {target_path}"
-            self.run(chown_cmd)
+            perm_cmds = {
+                    'chown_post': f"sudo chown -R {run_config.uid}:{run_config.gid} {target_path}",
+                    'chmod_pre': f"sudo chmod -R g+w {target_path}"
+            }
+            proc = self.run_cmds_as_single_cmd(perm_cmds)
 
         status = "✅" if proc.returncode == 0 else "❌"
         self.log.log(status, "sync", f"synching {message}")

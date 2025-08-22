@@ -28,7 +28,6 @@ class Site:
     """
     an Apache Site
     """
-
     name: str
     # if container is set the site is provided by a docker container
     container: Optional[str] = None
@@ -44,6 +43,8 @@ class Site:
         """
         initialize
         """
+        if self.hostname is None:
+            self.hostname=self.name
         self._resolve_ip()
 
     @classmethod
@@ -64,7 +65,8 @@ class Site:
         """
         initialize my remote access
         """
-        self.remote = Remote(host=self.hostname, container=self.container)
+        if self.remote is None:
+            self.remote = Remote(host=self.hostname, container=self.container)
 
     def _resolve_ip(self) -> None:
         """Resolve IP address for the site name"""
@@ -75,13 +77,15 @@ class Site:
 
     def ping(self):
         # https://stackoverflow.com/a/34455969/1497139
+        proc=None
         try:
             option="-n" if platform.system().lower()=="windows" else "-c"
             cmd=f"ping {option} 1 -t 1 {self.name}"
+            self.init_remote()
             proc=self.remote.shell.run(cmd)
-            pass
         except Exception as ex:
             pass
+        return proc
 
 
 @lod_storable

@@ -187,7 +187,7 @@ class SqlBackup:
             "backup": f'{self.mysql_dump_script} --quick --routines {create_option} --skip-add-locks --complete-insert --opt "{database}" > {backup_tmp_path}',
             "move": f"sudo mv {backup_tmp_path} {backup_path}",
             "owner": f"sudo chown {self.backup_user} {backup_path}",
-            "permissions": f"sudo chmod 440 {backup_path}",
+            "permissions": f"sudo chmod 640 {backup_path}",
         }
         procs = self.remote.run_cmds(cmds)
         proc = procs.get("backup")

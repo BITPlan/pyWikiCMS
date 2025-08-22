@@ -53,7 +53,8 @@ class TestSite(Basetest):
         test getting the status code for the a wiki
         """
         site=Site("www.wikipedia.de")
-        site.ping()
+        proc=site.ping()
+        self.assertEqual(0,proc.returncode)
 
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")

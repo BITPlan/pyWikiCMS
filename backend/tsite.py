@@ -107,12 +107,13 @@ class TransferTask:
             }
             proc = remote.run_cmds_as_single_cmd(git_cmds)
             if proc.returncode != 0:
+                self.log.log("❌","git",proc.stderr)
                 return proc
         else:
             self.log.log("✅", "git", "git initialized")
 
         timestamp = datetime.now().strftime("%Y-%m-%d-%H_%M_%S")
-        commit_cmd = f"cd {target_path} && git commit -a -m 'tsite commit at {timestamp}'"
+        commit_cmd = f"cd {target_path} && git add *&& git commit -a -m 'tsite commit at {timestamp}'"
         proc = remote.run(commit_cmd)
         # Git returns 1 when nothing to commit - this is not an error
         is_nothing_to_commit = proc.returncode == 1 and "nothing to commit" in proc.stdout
@@ -121,6 +122,8 @@ class TransferTask:
         if is_nothing_to_commit: proc.returncode=0
         status = "✅" if success else "❌"
         message = "nothing to commit" if is_nothing_to_commit else f"commit changes at {timestamp}"
+        if not success:
+            message+=f"\n{proc.stdout}\n{proc.stderr}"
         self.log.log(status, "git", message)
 
         return proc
@@ -230,30 +233,46 @@ class TransferTask:
         get the apache configuration for the given server_name and hostname
         """
         created_iso= datetime.now().isoformat()
-        config_str=f"""#
-# Apache site alumni
+        wiki_site=hostname
+        config_str = f"""#
+# Apache site {server_name}
 # Virtualhost {server_name}
 # created {created_iso} by tsite script {Version.version}
+# HTTP → HTTPS redirect
 <VirtualHost *:80>
     ServerName {server_name}
+    Redirect permanent / https://{server_name}/
+    ErrorLog ${{APACHE_LOG_DIR}}/{hostname}_error.log
+    CustomLog ${{APACHE_LOG_DIR}}/{hostname}_access.log combined
+</VirtualHost>
+# HTTPS reverse proxy
+<VirtualHost *:443>
+    ServerName {server_name}
+    include ssl.conf
 
     ProxyPreserveHost On
     ProxyRequests Off
 
+    # serve images locally and bypass proxy
+    Alias /images/ "/var/www/mediawiki/sites/{wiki_site}/images/"
+    <Directory "/var/www/mediawiki/sites/{wiki_site}/images/">
+        Options -Indexes +FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+    ProxyPass /images/ !
+
     ProxyPass / http://localhost:{port}/
     ProxyPassReverse / http://localhost:{port}/
 
-    <Location />
-        # forwarded
-        Header set X-Forwarded-Host "{server_name}"
-        Header set X-Forwarded-For "%{{REMOTE_ADDR}}s"
-        Header set X-Forwarded-Proto "http"
-    </Location>
+    # add WikiSite info for family
+    RequestHeader set X-Wiki-Site "{wiki_site}"
 
     ErrorLog ${{APACHE_LOG_DIR}}/{hostname}_error.log
     CustomLog ${{APACHE_LOG_DIR}}/{hostname}_access.log combined
 </VirtualHost>"""
         return config_str
+
 
     def check_apache(self)->bool:
         """
@@ -264,6 +283,7 @@ class TransferTask:
         if self.args.backup:
             server_name=f"{self.wiki_site.name}_{self.target.hostname}"
         self.target.probe_apache_configs()
+        # first check the configuration
         config_path=self.target.apache_configs.get(server_name)
         if config_path is None or self.args.force:
             config_path=f"/etc/apache2/sites-available/{self.wiki_site.name}.conf"
@@ -283,6 +303,20 @@ class TransferTask:
         else:
             msg=f"✅ apache config {config_path} for {server_name} exists"
             result=True
+        print(msg)
+        # then check whether server is available
+        vhost_site=Site(server_name)
+        proc=vhost_site.ping()
+        if proc.returncode==0:
+            msg=f"✅ ping {server_name} {proc.stdout}"
+        else:
+            cmd=f"sudo a2ensite {self.wiki_site.name}"
+            proc=self.target.remote.run(cmd)
+            if proc.returncode==0:
+                msg=f"✅ {proc.stdout}"
+            else:
+                msg=f"❌ {proc.stderr}"
+            pass
         print(msg)
         return result
 
@@ -489,7 +523,7 @@ class TransferSite:
         transferTask = self.create_TransferTask()
         if not transferTask:
             self.log.log("❌","transfer","aborted before login")
-            return 
+            return
         transferTask.login()
         self.log.log("✅", "transfer", transferTask.site.version)
         if not transferTask.check_ssh():
