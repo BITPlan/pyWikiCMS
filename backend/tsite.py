@@ -21,6 +21,7 @@ from backend.site import Site, WikiSite
 from backend.sql_backup import SqlBackup
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
+from basemkit.profiler import Profiler
 from frontend.version import Version
 from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
@@ -527,6 +528,7 @@ class TransferSite:
         """
         transfer the given site from the source to the target server
         """
+        total_prof = Profiler("transfer", profile=self.args.profile)
         transferTask = self.create_TransferTask()
         if not transferTask:
             self.log.log("❌","transfer","aborted before login")
@@ -536,14 +538,21 @@ class TransferSite:
         if not transferTask.check_ssh():
             return
         if self.args.transfer_all or self.args.transfer_sql:
+            sql_prof = Profiler("sql backup", profile=self.args.profile)
             if not transferTask.check_sql_backup():
                 return
+            sql_prof.time()
         if self.args.transfer_all or self.args.transfer_site:
+            sync_prof = Profiler("site sync", profile=self.args.profile)
             if not  transferTask.check_site_sync():
                 return
+            sync_prof.time()
         if self.args.transfer_all or self.args.transfer_apache:
+            apache_prof = Profiler("apache config", profile=self.args.profile)
             if not transferTask.check_apache():
                 return
+            apache_prof.time()
+        total_prof.time(" total")
 
     def as_iterator(self, items: Iterable[T], desc: str) -> Iterator[T]:
         """
@@ -725,6 +734,9 @@ class TransferSiteCmd(BaseCmd):
             "--update",
             action="store_true",
             help="update pages and images",
+        )
+        parser.add_argument(
+            "--profile", action="store_true", help="profile timing of steps"
         )
         parser.add_argument(
             "--progress", action="store_true", help="show progress bars"
