@@ -80,10 +80,13 @@ class TransferTask:
         login to the source wiki
         """
         wu = self.wikiUser
-        # self.wikiClient.login()
-        # just fake a compatible version to allow client login
-        self.site.version = (1, 35, 5)
-        self.site.clientlogin(username=wu.user, password=wu.get_password())
+        # bot login
+        if "@" in wu.user:
+            self.wikiClient.login()
+        else:
+            # just fake a compatible version to allow client login
+            self.site.version = (1, 35, 5)
+            self.site.clientlogin(username=wu.user, password=wu.get_password())
         pass
 
     def git_target(self, target_path: str) -> subprocess.CompletedProcess:
@@ -145,9 +148,13 @@ class TransferTask:
             print(f"site sync check {site_path}...")
             marker_file="LocalSettings.php"
             source_path=f"{self.source.hostname}:{site_path}"
-            run_config=RunConfig(update=self.force or self.update,
+            run_config=RunConfig(
+                update=self.force or self.update,
                 do_mkdir=True,
-                do_permissions=True)
+                do_permissions=True,
+                uid=33, # www-data
+                gid=33 # www-data
+            )
             proc=self.target.remote.rsync(
                 source_path=source_path,
                 target_path=site_path,
