@@ -201,6 +201,7 @@ class Stats:
 @dataclass
 class RunConfig:
     tee:bool=False
+    progress:bool=False
     do_log: bool=True
     force_local: bool=False
     sudo_viatemp: bool=False # use a temporary file and move to final with sudo

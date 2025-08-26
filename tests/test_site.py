@@ -48,6 +48,7 @@ class TestSite(Basetest):
         statusCode = wiki.getStatusCode(5.0)
         self.assertEqual(200, statusCode)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testPing(self):
         """
         test getting the status code for the a wiki
