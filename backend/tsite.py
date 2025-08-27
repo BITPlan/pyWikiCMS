@@ -242,6 +242,7 @@ class TransferTask:
         """
         created_iso= datetime.now().isoformat()
         wiki_site=hostname
+        site_name = wiki_site.split(".")[0]
         config_str = f"""#
 # Apache site {server_name}
 # Virtualhost {server_name}
@@ -262,12 +263,14 @@ class TransferTask:
     ProxyRequests Off
 
     # serve images locally and bypass proxy
+    Alias /images/{site_name}/ "/var/www/mediawiki/sites/{wiki_site}/images/"
     Alias /images/ "/var/www/mediawiki/sites/{wiki_site}/images/"
     <Directory "/var/www/mediawiki/sites/{wiki_site}/images/">
         Options -Indexes +FollowSymLinks
         AllowOverride None
         Require all granted
     </Directory>
+    ProxyPass /images/{site_name}/ !
     ProxyPass /images/ !
 
     ProxyPass / http://localhost:{port}/
