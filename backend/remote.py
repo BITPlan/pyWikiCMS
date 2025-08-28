@@ -20,7 +20,6 @@ from basemkit.persistent_log import Log
 from basemkit.shell import Shell
 from basemkit.yamlable import lod_storable
 
-
 @lod_storable
 class Tool:
     """tool configuration."""
@@ -532,7 +531,10 @@ class Remote:
 
     def scp_copy(self,source_path,target_path,run_config:RunConfig)->subprocess.CompletedProcess:
         # Regular scp copy
-        scp_cmd = f"scp -p {source_path} {target_path}"
+        if self.is_local:
+            scp_cmd = f"cp -p {source_path} {target_path}"
+        else:
+            scp_cmd = f"scp -p {source_path} {target_path}"
         proc = self.run(scp_cmd, run_config)
         return proc
 
@@ -796,4 +798,3 @@ class Remote:
             if result.returncode == 0:
                 lines = result.stdout.splitlines()
         return lines
-

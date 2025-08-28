@@ -188,6 +188,27 @@ class WikiSite(Site):
             pass
         return status_code
 
+    @staticmethod
+    def getVarFromSettings(varName: str,settingLines:List[str]) -> Optional[str]:
+        """
+        Extract setting value from LocalSettings.php lines
+
+        Args:
+            varName: variable name to extract
+            settingsLines: the lines to extract a setting from
+
+        Returns:
+            Variable value or None if not found
+        """
+        pattern = rf'[^#]*\${varName}\s*=\s*"(.*)"'
+        if settingLines:
+            for line in settingLines:
+                match = re.match(pattern, line)
+                if match:
+                    value = match.group(1)
+                    return value
+        return None
+
     def getSetting(self, varName: str) -> Optional[str]:
         """
         Extract setting value from LocalSettings.php lines
@@ -198,14 +219,9 @@ class WikiSite(Site):
         Returns:
             Variable value or None if not found
         """
-        pattern = rf'[^#]*\${varName}\s*=\s*"(.*)"'
-        if self.settingLines:
-            for line in self.settingLines:
-                match = re.match(pattern, line)
-                if match:
-                    value = match.group(1)
-                    return value
-        return None
+        setting=WikiSite.getVarFromSettings(varName, self.settingLines)
+        return setting
+
 
     def init_wikiuser_and_backup(self, wikiUser: WikiUser = None) -> WikiUser:
         """

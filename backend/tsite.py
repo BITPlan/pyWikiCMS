@@ -9,11 +9,12 @@ to a dockerized environment
 """
 
 from argparse import ArgumentParser, Namespace
+import base64
 from dataclasses import dataclass, field
 from datetime import datetime
 import subprocess
 import sys
-from typing import Iterator, List, Iterable, TypeVar
+from typing import Iterator, List, Iterable, TypeVar, Dict
 
 from backend.remote import Remote, RunConfig
 from backend.server import Server, Servers
@@ -174,6 +175,92 @@ class TransferTask:
                     result=False
         return result
 
+    def get_wiki_sql(self):
+        wiki = self.wiki_site
+        wiki.configure_of_settings()
+        self.source_base_path = f"{self.source.sql_backup_path}/today/"
+        self.target_base_path = f"{self.target.sql_backup_path}/today/"
+        self.source_backup_path = f"{self.source_base_path}{wiki.database_setting}_full.sql"
+        self.target_backup_path = f"{self.target_base_path}{wiki.database_setting}_full.sql"
+
+        return wiki
+
+    def run_sql_cmds(self,sql_cmds)->Dict[str,str]:
+        """
+        Run the given SQL commands and return a dict of results.
+
+        Args:
+            sql_cmds: list of (name, sql_cmd, db_for_cmd) tuples
+
+        Returns:
+            dict mapping name -> stdout
+        """
+        mysqlr=self.target.mysql_root_script
+        sql_results={}
+        for name, sql_cmd, db_for_cmd in sql_cmds:
+            mysql_cmd = f"{mysqlr}" + (f" -D {db_for_cmd}" if db_for_cmd else "")
+            b64=base64.b64encode(sql_cmd.encode()).decode()
+            remote_cmd=f"printf %s {b64!r} | base64 -d | {mysql_cmd}"
+            proc=self.target.remote.run(remote_cmd)
+            success=proc.returncode==0
+            if success:
+                print(f"✅ {sql_cmd}:{proc.stdout}")
+                sql_results[name]=proc.stdout
+            else:
+                print(f"❌ {sql_cmd}:{proc.stderr}")
+                break
+        return sql_results
+
+    def check_sql_restore(self)->bool:
+        """
+        Ensure the SQL restore is done if need be
+        """
+        result=False
+        print("SQL_Restore check ...")
+        _wiki=self.get_wiki_sql()
+        mysqlr=self.target.mysql_root_script
+
+        database=self.wiki_site.database
+        dbUser=self.wiki_site.dbUser
+        dbPassword=self.wiki_site.dbPassword
+        sql_cmds = [
+            ("ping",       "SELECT 1 AS COL1", None),
+            ("show_tables","SHOW TABLES", database),
+        ]
+        sql_results=self.run_sql_cmds(sql_cmds)
+        # ping means the database is accessible
+        if "ping" in sql_results:
+            result=True
+            # if show_tables fails the database does not exist
+            if "show_tables" not in sql_results:
+                # (name, sql, database)
+                sql_cmds = [
+                    ("create_db",  f"CREATE DATABASE IF NOT EXISTS `{database}`", None),
+                    ("grant",      f"GRANT ALL PRIVILEGES ON `{database}`.* TO '{dbUser}'@'%' IDENTIFIED BY '{dbPassword}';", None),
+                    ("show_tables","SHOW TABLES", database),
+                    ("rev_count",  "SELECT COUNT(*) AS rev_count FROM revision;", database),
+                ]
+                sql_results=self.run_sql_cmds(sql_cmds)
+                # restore if update flag is set or no rev_count
+                do_restore=result and self.args.update or "rev_count" not in sql_results
+                if do_restore:
+                    restore_cmd=f"pv {self.target_backup_path} | {mysqlr} -D {database}"
+                    proc=self.target.remote.run(restore_cmd)
+                    success = proc.returncode == 0
+                    result = result and success
+                    if success:
+                        print(f"✅ restore:{proc.stdout}")
+                    else:
+                        print(f"❌ restore:{proc.stderr}")
+        if result:
+            sql_cmds = [
+                ("user_count",  "SELECT COUNT(*) AS user_count FROM user;", database),
+                ("rev_count",  "SELECT COUNT(*) AS rev_count FROM revision;", database),
+            ]
+            sql_results=self.run_sql_cmds(sql_cmds)
+            result=len(sql_results)==2
+        return result
+
     def check_sql_backup(self)->bool:
         """
         Ensure a fresh SQL backup exists on the source.
@@ -181,22 +268,16 @@ class TransferTask:
         """
         result=False
         print("SQL Backup check ...")
-        wiki = self.wiki_site
-        wiki.configure_of_settings()
+        wiki=self.get_wiki_sql()
 
-        source_base_path = f"{self.source.sql_backup_path}/today/"
-        target_base_path = f"{self.target.sql_backup_path}/today/"
-        source_backup_path = f"{source_base_path}{wiki.database_setting}_full.sql"
-        target_backup_path = f"{target_base_path}{wiki.database_setting}_full.sql"
-
-        source_age = Checks.check_age(self.source.remote, source_backup_path)
-        target_age = Checks.check_age(self.target.remote, target_backup_path)
+        source_age = Checks.check_age(self.source.remote, self.source_backup_path)
+        target_age = Checks.check_age(self.target.remote, self.target_backup_path)
         source_display = f"{source_age:.1f}" if source_age is not None else "❌"
         target_display = f"{target_age:.1f}" if target_age is not None else "❌"
         age_hint = f"{source_display}d → {target_display}d"
         print(f"found backups with age {age_hint}")
         if source_age is None or source_age > 1.0:
-            print(f"❌ no {source_backup_path} — creating now")
+            print(f"❌ no {self.source_backup_path} — creating now")
             sql_backup = SqlBackup(
                 backup_host=self.source.remote.host,
                 backup_path=self.source.sql_backup_path,
@@ -204,7 +285,7 @@ class TransferTask:
                 progress=self.progress,
             )
             sql_backup.perform_backup(database=wiki.database_setting, full=True)
-            source_age = Checks.check_age(self.source.remote, source_backup_path)
+            source_age = Checks.check_age(self.source.remote, self.source_backup_path)
             if source_age is None or source_age > 1.0:
                 print("❌ Backup creation failed or still outdated.")
                 return False
@@ -213,15 +294,15 @@ class TransferTask:
             age_diff_secs=(target_age-source_age)*86400
         # more than 1 minute difference
         if target_age is None or age_diff_secs>60:
-            source_path = f"{self.source.remote.host}:{source_backup_path}"
-            target_path = f"{target_backup_path}"
+            source_path = f"{self.source.remote.host}:{self.source_backup_path}"
+            target_path = f"{self.target_backup_path}"
             print(f"⚠️ Copying backup from source to target: {source_path} → {target_path}")
             # pull from target
             self.target.remote.run_cmds(
                 {
-                    "create directory": f"sudo mkdir -p {target_base_path}",
-                    "chown": f"sudo chown {self.target.remote.uid} {target_base_path}",
-                    "chgrp": f"sudo chgrp {self.target.remote.gid} {target_base_path}"
+                    "create directory": f"sudo mkdir -p {self.target_base_path}",
+                    "chown": f"sudo chown {self.target.remote.uid} {self.target_base_path}",
+                    "chgrp": f"sudo chgrp {self.target.remote.gid} {self.target_base_path}"
                 }
             )
             proc=self.target.remote.remote_copy(source_path, target_path)
@@ -545,6 +626,12 @@ class TransferSite:
             if not transferTask.check_sql_backup():
                 return
             sql_prof.time()
+        if self.args.transfer_all or self.args.transfer_sql:
+            sql_prof = Profiler("sql restore", profile=self.args.profile)
+            if not transferTask.check_sql_restore():
+                return
+            sql_prof.time()
+
         if self.args.transfer_all or self.args.transfer_site:
             sync_prof = Profiler("site sync", profile=self.args.profile)
             if not  transferTask.check_site_sync():
