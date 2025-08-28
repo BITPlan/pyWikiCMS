@@ -762,19 +762,14 @@ class Remote:
         """
         if run_config is None:
             run_config=self.run_config
-        if self.is_local:
-            with open(filepath, 'w') as f:
-                f.write(content)
-            proc=subprocess.CompletedProcess([], 0, "", "")
-        else:
-            with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
-                tmp.write(content)
-                tmp_path = tmp.name
-            try:
-                target_path = f"{self.host}:{filepath}"
-                proc = self.remote_copy(tmp_path, target_path,run_config=run_config)
-            finally:
-                os.unlink(tmp_path)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+        try:
+            target_path = f"{self.host}:{filepath}"
+            proc = self.remote_copy(tmp_path, target_path,run_config=run_config)
+        finally:
+            os.unlink(tmp_path)
 
         return proc
 
