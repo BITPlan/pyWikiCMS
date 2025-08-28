@@ -104,7 +104,7 @@ class TransferTask:
         git_stats = remote.get_file_stats(git_dir)
 
         if git_stats is None or not git_stats.is_directory:
-            self.log.log("❌", "git", "git not initialized yet")
+            self.log.log("⚠️", "git", "git not initialized yet")
 
             git_cmds = {
                 'init': f'cd {target_path} && git init',
@@ -116,6 +116,11 @@ class TransferTask:
                 return proc
         else:
             self.log.log("✅", "git", "git initialized")
+        # https://stackoverflow.com/questions/71849415/i-cannot-add-the-parent-directory-to-safe-directory-in-git
+        git_relax=f"git config --global --add safe.directory {target_path}"
+        proc = remote.run(git_relax)
+        if proc.returncode != 0:
+            self.log.log("❌","git",proc.stderr)
 
         timestamp = datetime.now().strftime("%Y-%m-%d-%H_%M_%S")
         commit_cmd = f"cd {target_path} && git add *&& git commit -a -m 'tsite commit at {timestamp}'"
