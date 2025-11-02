@@ -203,7 +203,7 @@ class TransferTask:
         mysqlr=self.target.mysql_root_script
         sql_results={}
         for name, sql_cmd, db_for_cmd in sql_cmds:
-            mysql_cmd = f"{mysqlr}" + (f" -D {db_for_cmd}" if db_for_cmd else "")
+            mysql_cmd = f"{mysqlr} --no-tty" + (f" -D {db_for_cmd}" if db_for_cmd else "")
             b64=base64.b64encode(sql_cmd.encode()).decode()
             remote_cmd=f"printf %s {b64!r} | base64 -d | {mysql_cmd}"
             proc=self.target.remote.run(remote_cmd)
@@ -249,7 +249,7 @@ class TransferTask:
                 # restore if update flag is set or no rev_count
                 do_restore=result and self.args.update or "rev_count" not in sql_results
                 if do_restore:
-                    restore_cmd=f"pv {self.target_backup_path} | {mysqlr} -D {database}"
+                    restore_cmd=f"pv {self.target_backup_path} | {mysqlr} --no-tty -D {database}"
                     proc=self.target.remote.run(restore_cmd)
                     success = proc.returncode == 0
                     result = result and success
@@ -378,7 +378,7 @@ class TransferTask:
         result=False
         server_name=f"{self.wiki_site.hostname}"
         if self.args.backup:
-            server_name=f"{self.wiki_site.name}_{self.target.hostname}"
+            server_name=f"{self.wiki_site.name}-{self.target.hostname}"
         self.target.probe_apache_configs()
         # first check the configuration
         config_path=self.target.apache_configs.get(server_name)
