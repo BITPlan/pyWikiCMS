@@ -310,7 +310,9 @@ class TransferTask:
                     "chgrp": f"sudo chgrp {self.target.remote.gid} {self.target_base_path}"
                 }
             )
-            proc=self.target.remote.remote_copy(source_path, target_path)
+            run_config=RunConfig(force_local=True, ignore_container=True)
+            scp_cmd = f"scp -p {source_path} {target_path}"
+            proc=self.target.remote.run(scp_cmd, run_config=run_config)
             result=proc.returncode==0
             if not result:
                 msg=f"❌ Backup copy {source_path}→{target_path} failed:{proc.stderr}"
