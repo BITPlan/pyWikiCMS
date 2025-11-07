@@ -532,7 +532,8 @@ class Remote:
     def scp_copy(self,source_path,target_path,run_config:RunConfig)->subprocess.CompletedProcess:
         # Regular scp copy
         if self.is_local:
-            scp_cmd = f"cp -p {source_path} {target_path}"
+            target_path_local = self.get_path_on_target(target_path)
+            scp_cmd = f"cp -p {source_path} {target_path_local}"
         else:
             scp_cmd = f"scp -p {source_path} {target_path}"
         proc = self.run(scp_cmd, run_config)
@@ -768,8 +769,7 @@ class Remote:
             tmp.write(content)
             tmp_path = tmp.name
         try:
-            is_local_op = self.is_local or (run_config and run_config.force_local)
-            target_path = filepath if is_local_op else f"{self.host}:{filepath}"
+            target_path = f"{self.host}:{filepath}"
             proc = self.remote_copy(tmp_path, target_path,run_config=run_config)
         finally:
             os.unlink(tmp_path)
