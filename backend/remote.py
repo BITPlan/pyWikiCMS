@@ -768,7 +768,8 @@ class Remote:
             tmp.write(content)
             tmp_path = tmp.name
         try:
-            target_path = f"{self.host}:{filepath}"
+            is_local_op = self.is_local or (run_config and run_config.force_local)
+            target_path = filepath if is_local_op else f"{self.host}:{filepath}"
             proc = self.remote_copy(tmp_path, target_path,run_config=run_config)
         finally:
             os.unlink(tmp_path)
