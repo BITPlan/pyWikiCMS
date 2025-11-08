@@ -602,7 +602,7 @@ class TransferSite:
         wiki = self.servers.wikis_by_hostname.get(self.sitename)
         if wiki is None:
             available_count = len(self.servers.wikis_by_hostname)
-            hint = f"invalid wiki '{self.sitename}' - use --list-sites to see {available_count} available sites or add it to {Servers.get_config_path()}"
+            hint = f"invalid wiki '{self.sitename}' - use --list-sites to see {available_count} available sites or add {self.source}.yaml to {Servers.get_config_path()}"
             self.log.log("❌", "transfer", hint)
             return
         self.check_remote(wiki.remote)
