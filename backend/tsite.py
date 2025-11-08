@@ -62,6 +62,7 @@ class TransferTask:
     query_division: int = 50
     # Non-persistent calculated fields
     log: Log = field(default=None, init=False, repr=False)
+    error: Exception= field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         self.force=self.args.force
@@ -69,13 +70,19 @@ class TransferTask:
         self.use_git=self.args.git
         self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
         self.wikiClient = WikiClient.ofWikiUser(self.wikiUser)
-        self.smwClient = SMWClient(
-            self.wikiClient.getSite(),
-            showProgress=self.progress,
-            queryDivision=self.query_division,
-            debug=self.debug,
-        )
-        self.site = self.wikiClient.get_site()
+        self.site=None
+        self.smwClient=None
+        try:
+            self.site=self.wikiClient.get_site()
+        except Exception as ex:
+            self.error=ex
+        if self.site:
+            self.smwClient = SMWClient(
+                self.site,
+                showProgress=self.progress,
+                queryDivision=self.query_division,
+                debug=self.debug,
+            )
 
     def login(self):
         """
@@ -624,8 +631,11 @@ class TransferSite:
         if not transferTask:
             self.log.log("❌","transfer","aborted before login")
             return
-        transferTask.login()
-        self.log.log("✅", "transfer", transferTask.site.version)
+        if transferTask.error:
+            self.log.log("❌","transfer",str(transferTask.error))
+        else:
+            transferTask.login()
+            self.log.log("✅", "transfer", transferTask.site.version)
         if not transferTask.check_ssh():
             return
         if self.args.transfer_all or self.args.transfer_sql:
