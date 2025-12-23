@@ -253,11 +253,11 @@ class CronBackup(BaseCmd):
             mysql_root_cmd = self.args.mysql_root_cmd
             if mysql_root_cmd is None:
                 # Default: use mysqlr wrapper with container
-                mysql_root_cmd = f"mysqlr -cn {self.container}"
+                mysql_root_cmd = f"mysqlr --no-tty -cn {self.container}"
 
             mysqldump_cmd = self.args.mysqldump_cmd
             if mysqldump_cmd is None:
-                mysqldump_cmd = f"mysqlr -cn {self.container} --dump"
+                mysqldump_cmd = f"mysqlr --no-tty -cn {self.container} --dump"
 
             # Create SqlBackup instance
             sql_backup = SqlBackup(
