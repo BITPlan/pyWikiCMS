@@ -347,6 +347,9 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="the database to backup 'all' if all databases should be backed up",
         default="all",
     )
+    parser.add_argument("--mysql-root-cmd", help="Command for MySQL root access (e.g. 'mysqlr -cn db')")
+    parser.add_argument("--mysqldump-cmd", help="Command for mysqldump (e.g. 'mysqlr -cn db --dump')")
+
     parser.add_argument("-u", "--user", help="Backup user")
     return parser
 
@@ -361,6 +364,8 @@ def main():
     backup = SqlBackup(
         backup_user=args.user or "backup",
         backup_host=args.host or "localhost",
+        mysql_root_script=args.mysql_root_cmd or "sudo mysql -u root",
+        mysql_dump_script=args.mysqldump_cmd or "sudo mysqldump -u root",
         verbose=args.verbose,
         debug=args.debug,
         progress=args.progress,
