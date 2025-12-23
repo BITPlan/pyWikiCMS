@@ -57,6 +57,11 @@ class CronBackup(BaseCmd):
             action="store_true",
             help="run all operations (expiration + backup)"
         )
+        parser.add_argument(
+            "--full",
+            action="store_true",
+            help="run in full mode"
+        )
 
         # Backup configuration
         parser.add_argument(
