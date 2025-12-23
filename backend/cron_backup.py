@@ -53,7 +53,7 @@ class CronBackup(BaseCmd):
             help="run backup process"
         )
         parser.add_argument(
-            " --all",
+            "--all",
             action="store_true",
             help="run all operations (expiration + backup)"
         )
