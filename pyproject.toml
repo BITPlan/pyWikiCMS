@@ -40,7 +40,9 @@ dependencies = [
     # https://pypi.org/project/pyMogwai/
     "pyMogwai>=0.1.1",
     # https://github.com/BITPlan/nicegraph/,
-    "nicegraph>=0.0.2"
+    "nicegraph>=0.0.2",
+    # https://github.com/WolfgangFahl/PyExpireBackups
+    "pyExpireBackups>=0.1.0"
  ]
 
 requires-python = ">=3.10"
@@ -85,3 +87,4 @@ only-include = ["frontend","backend"]
 wikicms = "frontend.cmsmain:main"
 tsite = "backend.tsite:main"
 sqlbackup = "backend.sql_backup:main"
+cronbackup = "backend.cron_backup:main"

@@ -1,0 +1,368 @@
+"""
+Created on 2025-12-23
+
+@author: wf
+"""
+import subprocess
+import sys
+from argparse import ArgumentParser
+from datetime import datetime
+from pathlib import Path
+from expirebackups.expire import ExpireBackups, Expiration
+from basemkit.base_cmd import BaseCmd
+
+
+class CronBackup(BaseCmd):
+    """
+    Backup to be performed by entries in crontab.
+    Combines SQL database backup and backup expiration functionality.
+    """
+
+    def __init__(self, version):
+        """
+        Initialize CronBackup with version information
+
+        Args:
+            version: Version metadata object
+        """
+        super().__init__(version)
+        self.backup_dir = None
+        self.log_file = None
+        self.container = None
+        self.full_backup = False
+
+    def add_arguments(self, parser: ArgumentParser):
+        """
+        Add CronBackup specific arguments to the parser
+
+        Args:
+            parser (ArgumentParser): The parser to add arguments to
+        """
+        # Add standard BaseCmd arguments first
+        super().add_arguments(parser)
+
+        # Backup operation selection
+        parser.add_argument(
+            "-e", "--expire",
+            action="store_true",
+            help="run backup expiration rules"
+        )
+        parser.add_argument(
+            "-b", "--backup",
+            action="store_true",
+            help="run backup process"
+        )
+        parser.add_argument(
+            " --all",
+            action="store_true",
+            help="run all operations (expiration + backup)"
+        )
+
+        # Backup configuration
+        parser.add_argument(
+            "--backup-dir",
+            default="/var/backup/sqlbackup",
+            help="backup directory path [default: %(default)s]"
+        )
+        parser.add_argument(
+            "--log-file",
+            default="/var/log/sqlbackup.log",
+            help="log file path [default: %(default)s]"
+        )
+        parser.add_argument(
+            "--container",
+            default="family-db",
+            help="docker container name [default: %(default)s]"
+        )
+        parser.add_argument(
+            "--mysql-root-cmd",
+            help="command for MySQL root access (e.g., 'mysqlr -cn family-db')"
+        )
+        parser.add_argument(
+            "--mysqldump-cmd",
+            help="command for mysqldump (e.g., 'mysqlr -cn family-db --dump')"
+        )
+        parser.add_argument(
+            "--database",
+            default="all",
+            help="database to backup [default: %(default)s]"
+        )
+
+        # Expiration rules
+        parser.add_argument(
+            "--days",
+            type=int,
+            default=7,
+            help="number of daily backups to keep [default: %(default)s]"
+        )
+        parser.add_argument(
+            "--weeks",
+            type=int,
+            default=6,
+            help="number of weekly backups to keep [default: %(default)s]"
+        )
+        parser.add_argument(
+            "--months",
+            type=int,
+            default=8,
+            help="number of monthly backups to keep [default: %(default)s]"
+        )
+        parser.add_argument(
+            "--years",
+            type=int,
+            default=4,
+            help="number of yearly backups to keep [default: %(default)s]"
+        )
+
+    def log_message(self, message: str):
+        """
+        Log a message to the log file and optionally to stdout
+
+        Args:
+            message (str): Message to log
+        """
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"[{timestamp}] {message}\n"
+
+        if self.verbose:
+            print(log_entry.strip())
+
+        try:
+            # Ensure log directory exists
+            self.log_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.log_file, "a") as f:
+                f.write(log_entry)
+        except Exception as e:
+            if not self.quiet:
+                print(f"Warning: Could not write to log file: {e}", file=sys.stderr)
+
+    def run_expire(self) -> int:
+        """
+        Run backup expiration rules using ExpireBackups module
+
+        Returns:
+            int: 0 on success, non-zero on failure
+        """
+        self.log_message("Running expiration rules...")
+
+        try:
+            expiration = Expiration(
+                days=self.args.days,
+                weeks=self.args.weeks,
+                months=self.args.months,
+                years=self.args.years,
+                minFileSize=1,
+                debug=self.debug
+            )
+
+            expire_backups = ExpireBackups(
+                rootPath=str(self.backup_dir),
+                baseName="sql_backup",
+                ext=".tgz",
+                expiration=expiration,
+                dryRun=not self.force,
+                debug=self.debug
+            )
+
+            expire_backups.doexpire(
+                withDelete=self.force,
+                show=self.verbose,
+                showLimit=None
+            )
+
+            self.log_message("Expiration rules completed")
+            return 0
+
+        except Exception as e:
+            self.log_message(f"Expiration failed: {e}")
+            if self.debug:
+                import traceback
+                self.log_message(traceback.format_exc())
+            return 1
+
+    def create_archive(self) -> int:
+        """
+        Create tar.gz archive of today's backup
+
+        Returns:
+            int: 0 on success, non-zero on failure
+        """
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        archive_name = f"sql_backup.{date_str}.tgz"
+        archive_path = self.backup_dir / archive_name
+
+        self.log_message(f"Creating archive {archive_name}...")
+
+        try:
+            cmd = [
+                "tar",
+                "--create",
+                "--gzip",
+                "-p",
+                "-f", str(archive_path),
+                "-C", str(self.backup_dir),
+                "today"
+            ]
+
+            if self.verbose:
+                cmd.insert(1, "-v")
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                stderr=subprocess.STDOUT
+            )
+
+            if result.returncode == 0:
+                self.log_message(f"Archive {archive_name} created successfully")
+                return 0
+            else:
+                error_msg = result.stdout.strip() if result.stdout else "Unknown error"
+                self.log_message(f"Archive creation failed: {error_msg}")
+                return 1
+
+        except Exception as e:
+            self.log_message(f"Archive creation error: {e}")
+            if self.debug:
+                import traceback
+                self.log_message(traceback.format_exc())
+            return 1
+
+    def run_backup(self) -> int:
+        """
+        Run database backup using SqlBackup module
+
+        Returns:
+            int: 0 on success, non-zero on failure
+        """
+        try:
+            from backend.sqlbackup import SqlBackup
+        except ImportError:
+            # Try alternative import path
+            from sqlbackup import SqlBackup
+
+        self.log_message("Starting backup...")
+
+        try:
+            # Ensure backup directory exists
+            self.backup_dir.mkdir(parents=True, exist_ok=True)
+
+            # Construct MySQL commands
+            mysql_root_cmd = self.args.mysql_root_cmd
+            if mysql_root_cmd is None:
+                # Default: use mysqlr wrapper with container
+                mysql_root_cmd = f"mysqlr -cn {self.container}"
+
+            mysqldump_cmd = self.args.mysqldump_cmd
+            if mysqldump_cmd is None:
+                mysqldump_cmd = f"mysqlr -cn {self.container} --dump"
+
+            # Create SqlBackup instance
+            sql_backup = SqlBackup(
+                backup_user="backup",
+                backup_host="localhost",
+                backup_dir=str(self.backup_dir),
+                mysql_root_script=mysql_root_cmd,
+                mysql_dump_script=mysqldump_cmd,
+                verbose=self.verbose,
+                debug=self.debug,
+                progress=False
+            )
+
+            # Initialize if needed
+            sql_backup.init()
+
+            # Perform backup
+            errors = sql_backup.perform_backup(
+                database=self.args.database,
+                full=self.full_backup
+            )
+
+            if errors == 0:
+                self.log_message("Backup completed successfully")
+
+                # Create archive
+                archive_result = self.create_archive()
+                return archive_result
+            else:
+                self.log_message(f"Backup failed with {errors} error(s)")
+                return 1
+
+        except Exception as e:
+            self.log_message(f"Backup error: {e}")
+            if self.debug:
+                import traceback
+                self.log_message(traceback.format_exc())
+            return 1
+
+    def handle_args(self, args) -> bool:
+        """
+        Handle parsed arguments and execute operations
+
+        Args:
+            args: Parsed argument namespace
+
+        Returns:
+            bool: True if argument was handled and no further processing is required
+        """
+        # Let BaseCmd handle standard arguments first
+        handled = super().handle_args(args)
+        if handled:
+            return True
+
+        # Store configuration
+        self.backup_dir = Path(args.backup_dir)
+        self.log_file = Path(args.log_file)
+        self.container = args.container
+        self.full_backup = args.full
+
+        # Determine what operations to run
+        run_expire = args.expire or args.all
+        run_backup = args.backup or args.all
+
+        # If no operation specified, show help
+        if not (run_expire or run_backup):
+            self.parser.print_help()
+            return True
+
+        self.exit_code = 0
+
+        # Run operations in order: expire first, then backup
+        if run_expire:
+            result = self.run_expire()
+            if result != 0:
+                self.exit_code = result
+
+        if run_backup and self.exit_code == 0:
+            result = self.run_backup()
+            if result != 0:
+                self.exit_code = result
+
+        return True
+
+
+def main(argv=None):
+    """
+    Main entry point for CronBackup
+
+    Args:
+        argv: Command line arguments
+
+    Returns:
+        int: Exit code (0 = success, non-zero = failure)
+    """
+    # Create a version object
+    class Version:
+        name = "CronBackup"
+        version = "0.1.0"
+        description = "Database backup with expiration management for cron"
+        updated = "2025-12-23"
+        doc_url = "https://github.com/WolfgangFahl/pyWikiCMS"
+
+    exit_code = CronBackup.main(Version(), argv)
+    return exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(main())
