@@ -3,7 +3,6 @@ Created on 2025-12-23
 
 @author: wf
 """
-import subprocess
 import sys
 from argparse import ArgumentParser
 from datetime import date
@@ -12,6 +11,7 @@ from expirebackups.expire import ExpireBackups, Expiration
 from basemkit.base_cmd import BaseCmd
 from datetime import datetime
 from backend.sql_backup import SqlBackup
+from basemkit.shell import Shell
 
 class CronBackup(BaseCmd):
     """
@@ -31,7 +31,8 @@ class CronBackup(BaseCmd):
         self.log_file = None
         self.container = None
         self.full_backup = False
-        self.today=date.today().isoformat()
+        self.today = date.today().isoformat()
+        self.shell = None
 
     def add_arguments(self, parser: ArgumentParser):
         """
@@ -121,6 +122,12 @@ class CronBackup(BaseCmd):
             help="number of yearly backups to keep [default: %(default)s]"
         )
 
+        # Shell configuration
+        parser.add_argument(
+            "--profile",
+            help="shell profile to source (e.g., ~/.zprofile)"
+        )
+
     def log_message(self, message: str):
         """
         Log a message to the log file and optionally to stdout
@@ -189,7 +196,7 @@ class CronBackup(BaseCmd):
 
     def create_archive(self) -> int:
         """
-        Create tar.gz archive of today's backup
+        Create tar.gz archive of today's backup using Shell
 
         Returns:
             int: 0 on success, non-zero on failure
@@ -201,32 +208,40 @@ class CronBackup(BaseCmd):
         self.log_message(f"Creating archive {archive_name}...")
 
         try:
-            cmd = [
+            # Build tar command
+            cmd_parts = [
                 "tar",
                 "--create",
                 "--gzip",
                 "-p",
-                "-f", str(archive_path),
-                "-C", str(self.backup_dir),
+                f"-f {archive_path}",
+                f"-C {self.backup_dir}",
                 "today"
             ]
 
             if self.verbose:
-                cmd.insert(1, "-v")
+                cmd_parts.insert(1, "-v")
 
-            result = subprocess.run(
+            cmd = " ".join(cmd_parts)
+
+            # Run with Shell and tee output if verbose
+            result = self.shell.run(
                 cmd,
-                capture_output=True,
                 text=True,
-                stderr=subprocess.STDOUT
+                debug=self.debug,
+                tee=self.verbose
             )
 
             if result.returncode == 0:
                 self.log_message(f"Archive {archive_name} created successfully")
+                if self.verbose and result.stdout:
+                    self.log_message(f"Archive output:\n{result.stdout}")
                 return 0
             else:
-                error_msg = result.stdout.strip() if result.stdout else "Unknown error"
+                error_msg = result.stderr.strip() if result.stderr else "Unknown error"
                 self.log_message(f"Archive creation failed: {error_msg}")
+                if self.debug:
+                    self.log_message(f"Stdout: {result.stdout}")
                 return 1
 
         except Exception as e:
@@ -311,6 +326,9 @@ class CronBackup(BaseCmd):
         handled = super().handle_args(args)
         if handled:
             return True
+
+        # Initialize Shell with profile from args
+        self.shell = Shell.ofArgs(args)
 
         # Store configuration
         self.backup_dir = Path(args.backup_dir)
