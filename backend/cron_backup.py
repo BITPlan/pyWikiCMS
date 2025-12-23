@@ -11,6 +11,7 @@ from pathlib import Path
 from expirebackups.expire import ExpireBackups, Expiration
 from basemkit.base_cmd import BaseCmd
 from datetime import datetime
+from backend.sql_backup import SqlBackup
 
 class CronBackup(BaseCmd):
     """
@@ -242,12 +243,6 @@ class CronBackup(BaseCmd):
         Returns:
             int: 0 on success, non-zero on failure
         """
-        try:
-            from backend.sqlbackup import SqlBackup
-        except ImportError:
-            # Try alternative import path
-            from sqlbackup import SqlBackup
-
         self.log_message("Starting backup...")
 
         try:
