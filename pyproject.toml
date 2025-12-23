@@ -19,13 +19,13 @@ dependencies = [
 	# https://pypi.org/project/pybasemkit/
   	# https://github.com/WolfgangFahl/pybasemkit
   	# Python base module kit: YAML/JSON I/O, structured logging, CLI tooling, shell execution, and remote pydevd debug support.
- 	"pybasemkit>=0.1.1",
+ 	"pybasemkit>=0.1.6",
     # https://github.com/WolfgangFahl/nicegui_widgets
-    "ngwidgets>=0.29.4",
+    "ngwidgets>=0.30.3",
     # https://pypi.org/project/pyLodStorage/
-	"pyLodStorage>=0.17.5",
+	"pyLodStorage>=0.18.7",
     # https://pypi.org/project/py-3rdparty-mediawiki/
-    'py-3rdparty-mediawiki>=0.17.0',
+    'py-3rdparty-mediawiki>=0.18.1',
     # Beautiful Soup HTML parser
     # https://pypi.org/project/beautifulsoup4/
     'beautifulsoup4>=4.9.3',
@@ -34,11 +34,11 @@ dependencies = [
     #https://pypi.org/project/pydevd/
     'pydevd',
     # https://pypi.org/project/rdflib/
-    'rdflib>=7.0.0',
+    'rdflib>=7.5.0',
     # https://pypi.org/project/PyMySQL/
     'PyMySQL>=1.1.1',
     # https://pypi.org/project/pyMogwai/
-    "pyMogwai>=0.1.0",
+    "pyMogwai>=0.1.1",
     # https://github.com/BITPlan/nicegraph/,
     "nicegraph>=0.0.2"
  ]

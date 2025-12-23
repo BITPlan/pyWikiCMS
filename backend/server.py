@@ -383,23 +383,25 @@ class Servers:
             for tool_name, tool in self.tools.tools.items():
                 tool.name = tool_name
         for server in self.servers.values():
-            for hostname, wiki in server.wikis.items():
-                self.wikis_by_hostname[hostname] = wiki
-                self.wikis_by_id[wiki.wikiId] = wiki
-                wiki.hostname = hostname
-                wiki.init_remote()
-                if server.sitedir:
-                    wiki.family=server
-            for hostname, frontend in server.frontends.items():
-                self.frontends_by_hostname[hostname] = frontend
-                self.frontends_by_name[frontend.name] = frontend
-                frontend.hostname = hostname
-                frontend.init_remote()
-                if frontend.wikiId in self.wikis_by_id:
-                    frontend.wikisite = self.wikis_by_id.get(frontend.wikiId)
-                else:
-                    msg = f"invalid frontend wikiId {frontend.wikiId}"
-                    self.log.log("❌", "frontend", msg)
+            if server.wikis:
+                for hostname, wiki in server.wikis.items():
+                    self.wikis_by_hostname[hostname] = wiki
+                    self.wikis_by_id[wiki.wikiId] = wiki
+                    wiki.hostname = hostname
+                    wiki.init_remote()
+                    if server.sitedir:
+                        wiki.family=server
+            if server.frontends:
+                for hostname, frontend in server.frontends.items():
+                    self.frontends_by_hostname[hostname] = frontend
+                    self.frontends_by_name[frontend.name] = frontend
+                    frontend.hostname = hostname
+                    frontend.init_remote()
+                    if frontend.wikiId in self.wikis_by_id:
+                        frontend.wikisite = self.wikis_by_id.get(frontend.wikiId)
+                    else:
+                        msg = f"invalid frontend wikiId {frontend.wikiId}"
+                        self.log.log("❌", "frontend", msg)
 
     def probe_wiki_family(self, server) -> list[WikiSite]:
         """
