@@ -6,11 +6,11 @@ Created on 2025-12-23
 import subprocess
 import sys
 from argparse import ArgumentParser
-from datetime import datetime
+from datetime import date
 from pathlib import Path
 from expirebackups.expire import ExpireBackups, Expiration
 from basemkit.base_cmd import BaseCmd
-
+from datetime import datetime
 
 class CronBackup(BaseCmd):
     """
@@ -30,6 +30,7 @@ class CronBackup(BaseCmd):
         self.log_file = None
         self.container = None
         self.full_backup = False
+        self.today=date.today().isoformat()
 
     def add_arguments(self, parser: ArgumentParser):
         """
@@ -71,7 +72,7 @@ class CronBackup(BaseCmd):
         )
         parser.add_argument(
             "--log-file",
-            default="/var/log/sqlbackup.log",
+            default=f"/var/log/sqlbackup/sqlbackup-{self.today}.log",
             help="log file path [default: %(default)s]"
         )
         parser.add_argument(
