@@ -152,18 +152,6 @@ class CronBackup(BaseCmd):
             if not self.quiet:
                 print(f"Warning: Could not write to log file: {e}", file=sys.stderr)
 
-    def handle_exception(self, title: str, ex: Exception):
-        """
-        Handle the given exception
-
-        Args:
-            title (str): Title/context of the exception
-            ex (Exception): The exception to handle
-        """
-        self.log(f"{title} failed: {ex}")
-        if self.debug:
-            self.log(traceback.format_exc())
-
     def run_expire(self) -> int:
         """
         Run backup expiration rules using ExpireBackups module
@@ -200,7 +188,7 @@ class CronBackup(BaseCmd):
             self.log("Expiration rules completed")
 
         except Exception as ex:
-            self.handle_exception("Expiration", ex)
+            self.handle_exception(ex)
             exit_code = 1
 
         return exit_code
@@ -252,7 +240,7 @@ class CronBackup(BaseCmd):
                 exit_code = 1
 
         except Exception as ex:
-            self.handle_exception("Archive creation", ex)
+            self.handle_exception(ex)
             exit_code = 1
 
         return exit_code
@@ -310,7 +298,7 @@ class CronBackup(BaseCmd):
                 exit_code = 1
 
         except Exception as ex:
-            self.handle_exception("Backup", ex)
+            self.handle_exception(ex)
             exit_code = 1
 
         return exit_code
