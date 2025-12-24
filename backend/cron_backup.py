@@ -208,35 +208,38 @@ class CronBackup(BaseCmd):
         self.log(f"Creating archive {archive_name}...")
 
         try:
-            # Build tar command
             cmd_parts = [
                 "tar",
                 "--create",
                 "--gzip",
                 "-p",
-                f"-f {archive_path}",
-                f"-C {self.backup_dir}",
-                "today",
             ]
 
             if self.verbose:
-                cmd_parts.insert(1, "-v")
+                cmd_parts.append("-v")
+
+            # Add progress if requested
+            if self.args.progress:
+                cmd_parts.extend([
+                    "--checkpoint=1000",
+                    "--checkpoint-action=echo='%T'",
+                ])
+
+            cmd_parts.extend([
+                f"-f {archive_path}",
+                f"-C {self.backup_dir}",
+                "today",
+            ])
 
             cmd = " ".join(cmd_parts)
-
-            # Run with Shell and tee output if verbose
             result = self.shell.run(cmd, text=True, debug=self.debug, tee=self.verbose)
 
             if result.returncode == 0:
                 self.log(f"Archive {archive_name} created successfully")
-                if self.verbose and result.stdout:
-                    self.log(f"Archive output:\n{result.stdout}")
                 exit_code = 0
             else:
                 error_msg = result.stderr.strip() if result.stderr else "Unknown error"
                 self.log(f"Archive creation failed: {error_msg}")
-                if self.debug:
-                    self.log(f"Stdout: {result.stdout}")
                 exit_code = 1
 
         except Exception as ex:
