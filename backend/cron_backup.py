@@ -182,7 +182,7 @@ class CronBackup(BaseCmd):
             )
 
             expire_backups.doexpire(
-                withDelete=self.force, show=self.verbose, showLimit=None
+                withDelete=self.force, show=self.verbose
             )
 
             self.log("Expiration rules completed")
