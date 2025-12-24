@@ -6,10 +6,11 @@ Created on 2025-07-28
 
 import unittest
 
-from backend.server import Servers
-from backend.sql_backup import SqlBackup
 from basemkit.basetest import Basetest
 from basemkit.shell import ShellResult
+
+from backend.server import Servers
+from backend.sql_backup import SqlBackup
 
 
 class TestSqlBackup(Basetest):
@@ -32,9 +33,9 @@ class TestSqlBackup(Basetest):
                 backup_host=server.hostname,
                 mysql_root_script=server.mysql_root_script,
                 mysql_dump_script=server.mysql_dump_script,
-                verbose=self.debug)
+                verbose=self.debug,
+            )
             yield server, sql_backup
-
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testSqlBackup(self):
@@ -57,7 +58,9 @@ class TestSqlBackup(Basetest):
                     print(f"found {len(db_list)} databases")
                 sql_backup.show_backups()
 
-    def check_sqlrestore(self,sql_backup,db_name:str="test_backup",table:str="t1"):
+    def check_sqlrestore(
+        self, sql_backup, db_name: str = "test_backup", table: str = "t1"
+    ):
         """
         test sqlrestore handling with a small one-row table
         """
@@ -85,8 +88,12 @@ class TestSqlBackup(Basetest):
         self.assertEqual(0, bproc.returncode, bproc.stderr)
 
         # verify backup file exists
-        backup_path = str(sql_backup.get_backup_path(db_name, sql_backup.today_dir, full=True))
-        self.assertIsNotNone(sql_backup.remote.get_file_stats(backup_path), f"missing: {backup_path}")
+        backup_path = str(
+            sql_backup.get_backup_path(db_name, sql_backup.today_dir, full=True)
+        )
+        self.assertIsNotNone(
+            sql_backup.remote.get_file_stats(backup_path), f"missing: {backup_path}"
+        )
 
         # remove DB to require restore
         rc = sql_backup.run_mysql_root_command(f"DROP DATABASE IF EXISTS {db_name}")
@@ -97,15 +104,14 @@ class TestSqlBackup(Basetest):
         sql_backup.progress = pv_available
 
         # restore uses today’s full backup when backup_path=None
-        rproc = sql_backup.restore_database(database_name=db_name, backup_path=None, force=False)
+        rproc = sql_backup.restore_database(
+            database_name=db_name, backup_path=None, force=False
+        )
         self.assertEqual(0, rproc.returncode, rproc.stderr)
 
         # verify data is back
-        q = (
-            f'SELECT COUNT(*) AS c FROM {db_name}.{table} '
-            f"WHERE id=1 AND value=42"
-        )
-        sel = sql_backup.run_mysql_root_command(q,as_script=True)
+        q = f"SELECT COUNT(*) AS c FROM {db_name}.{table} " f"WHERE id=1 AND value=42"
+        sel = sql_backup.run_mysql_root_command(q, as_script=True)
         self.assertEqual(0, sel.returncode, sel.stderr)
         # mysql -e output: header + value; last non-empty line should be the count
         lines = [ln.strip() for ln in sel.stdout.splitlines() if ln.strip()]
@@ -123,13 +129,14 @@ class TestSqlBackup(Basetest):
             if self.debug:
                 print(f"✅ Database version {sql_backup.version} on {server.name}")
             if sql_backup.version and server.has_sqldb:
-                sql_cmd="SELECT 1;"
+                sql_cmd = "SELECT 1;"
                 proc = sql_backup.run_mysql_root_command(sql_cmd)
                 if self.debug:
-                    sh_result=ShellResult(proc,proc.returncode==0)
+                    sh_result = ShellResult(proc, proc.returncode == 0)
                     print(f"{sql_cmd}:{sh_result}{proc.stdout}{proc.stderr}")
-                self.assertEqual(proc.returncode, 0, f"MySQL root access failed on {server.name}")
-
+                self.assertEqual(
+                    proc.returncode, 0, f"MySQL root access failed on {server.name}"
+                )
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testSqlRestore(self):
@@ -142,8 +149,8 @@ class TestSqlBackup(Basetest):
             if self.debug:
                 print(f"✅ Database version {sql_backup.version} on {server.name}")
             if sql_backup.version and server.has_sqldb:
-                db_name:str="test_backup"
-                self.check_sqlrestore(sql_backup,db_name=db_name)
+                db_name: str = "test_backup"
+                self.check_sqlrestore(sql_backup, db_name=db_name)
                 sql_backup.grant_permissions(password="justSomeTestPassword!")
                 # cleanup
                 sql_backup.run_mysql_root_command(f"DROP DATABASE IF EXISTS {db_name}")

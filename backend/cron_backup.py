@@ -3,15 +3,19 @@ Created on 2025-12-23
 
 @author: wf
 """
+
 import sys
+import traceback
 from argparse import ArgumentParser
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
-from expirebackups.expire import ExpireBackups, Expiration
+
 from basemkit.base_cmd import BaseCmd
-from datetime import datetime
-from backend.sql_backup import SqlBackup
 from basemkit.shell import Shell
+from expirebackups.expire import Expiration, ExpireBackups
+
+from backend.sql_backup import SqlBackup
+
 
 class CronBackup(BaseCmd):
     """
@@ -46,54 +50,53 @@ class CronBackup(BaseCmd):
 
         # Backup operation selection
         parser.add_argument(
-            "-e", "--expire",
-            action="store_true",
-            help="run backup expiration rules"
+            "-e", "--expire", action="store_true", help="run backup expiration rules"
         )
         parser.add_argument(
-            "-b", "--backup",
-            action="store_true",
-            help="run backup process"
+            "-b", "--backup", action="store_true", help="run backup process"
         )
         parser.add_argument(
             "--all",
             action="store_true",
-            help="run all operations (expiration + backup)"
+            help="run all operations (expiration + backup)",
         )
+        parser.add_argument("--full", action="store_true", help="run in full mode")
         parser.add_argument(
-            "--full",
+            "-p",
+            "--progress",
             action="store_true",
-            help="run in full mode"
+            help="Show progress bars for operations",
         )
-
         # Backup configuration
         parser.add_argument(
             "--backup-dir",
             default="/var/backup/sqlbackup",
-            help="backup directory path [default: %(default)s]"
+            help="backup directory path [default: %(default)s]",
         )
         parser.add_argument(
             "--log-file",
             default=f"/var/log/sqlbackup/sqlbackup-{self.today}.log",
-            help="log file path [default: %(default)s]"
+            help="log file path [default: %(default)s]",
         )
+        # database settings
+        # the database container running the mysql instance
         parser.add_argument(
             "--container",
             default="family-db",
-            help="docker container name [default: %(default)s]"
+            help="docker container name [default: %(default)s]",
         )
         parser.add_argument(
             "--mysql-root-cmd",
-            help="command for MySQL root access (e.g., 'mysqlr -cn family-db')"
+            help="command for MySQL root access (e.g., 'mysqlr -cn family-db')",
         )
         parser.add_argument(
             "--mysqldump-cmd",
-            help="command for mysqldump (e.g., 'mysqlr -cn family-db --dump')"
+            help="command for mysqldump (e.g., 'mysqlr -cn family-db --dump')",
         )
         parser.add_argument(
             "--database",
             default="all",
-            help="database to backup [default: %(default)s]"
+            help="database to backup [default: %(default)s]",
         )
 
         # Expiration rules
@@ -101,34 +104,33 @@ class CronBackup(BaseCmd):
             "--days",
             type=int,
             default=7,
-            help="number of daily backups to keep [default: %(default)s]"
+            help="number of daily backups to keep [default: %(default)s]",
         )
         parser.add_argument(
             "--weeks",
             type=int,
             default=6,
-            help="number of weekly backups to keep [default: %(default)s]"
+            help="number of weekly backups to keep [default: %(default)s]",
         )
         parser.add_argument(
             "--months",
             type=int,
             default=8,
-            help="number of monthly backups to keep [default: %(default)s]"
+            help="number of monthly backups to keep [default: %(default)s]",
         )
         parser.add_argument(
             "--years",
             type=int,
             default=4,
-            help="number of yearly backups to keep [default: %(default)s]"
+            help="number of yearly backups to keep [default: %(default)s]",
         )
 
         # Shell configuration
         parser.add_argument(
-            "--profile",
-            help="shell profile to source (e.g., ~/.zprofile)"
+            "--profile", help="shell profile to source (e.g., ~/.zprofile)"
         )
 
-    def log_message(self, message: str):
+    def log(self, message: str):
         """
         Log a message to the log file and optionally to stdout
 
@@ -150,6 +152,18 @@ class CronBackup(BaseCmd):
             if not self.quiet:
                 print(f"Warning: Could not write to log file: {e}", file=sys.stderr)
 
+    def handle_exception(self, title: str, ex: Exception):
+        """
+        Handle the given exception
+
+        Args:
+            title (str): Title/context of the exception
+            ex (Exception): The exception to handle
+        """
+        self.log(f"{title} failed: {ex}")
+        if self.debug:
+            self.log(traceback.format_exc())
+
     def run_expire(self) -> int:
         """
         Run backup expiration rules using ExpireBackups module
@@ -157,7 +171,8 @@ class CronBackup(BaseCmd):
         Returns:
             int: 0 on success, non-zero on failure
         """
-        self.log_message("Running expiration rules...")
+        exit_code = 0
+        self.log("Running expiration rules...")
 
         try:
             expiration = Expiration(
@@ -166,7 +181,7 @@ class CronBackup(BaseCmd):
                 months=self.args.months,
                 years=self.args.years,
                 minFileSize=1,
-                debug=self.debug
+                debug=self.debug,
             )
 
             expire_backups = ExpireBackups(
@@ -175,24 +190,20 @@ class CronBackup(BaseCmd):
                 ext=".tgz",
                 expiration=expiration,
                 dryRun=not self.force,
-                debug=self.debug
+                debug=self.debug,
             )
 
             expire_backups.doexpire(
-                withDelete=self.force,
-                show=self.verbose,
-                showLimit=None
+                withDelete=self.force, show=self.verbose, showLimit=None
             )
 
-            self.log_message("Expiration rules completed")
-            return 0
+            self.log("Expiration rules completed")
 
-        except Exception as e:
-            self.log_message(f"Expiration failed: {e}")
-            if self.debug:
-                import traceback
-                self.log_message(traceback.format_exc())
-            return 1
+        except Exception as ex:
+            self.handle_exception("Expiration", ex)
+            exit_code = 1
+
+        return exit_code
 
     def create_archive(self) -> int:
         """
@@ -201,11 +212,12 @@ class CronBackup(BaseCmd):
         Returns:
             int: 0 on success, non-zero on failure
         """
+        exit_code = 1
         date_str = datetime.now().strftime("%Y-%m-%d")
         archive_name = f"sql_backup.{date_str}.tgz"
         archive_path = self.backup_dir / archive_name
 
-        self.log_message(f"Creating archive {archive_name}...")
+        self.log(f"Creating archive {archive_name}...")
 
         try:
             # Build tar command
@@ -216,7 +228,7 @@ class CronBackup(BaseCmd):
                 "-p",
                 f"-f {archive_path}",
                 f"-C {self.backup_dir}",
-                "today"
+                "today",
             ]
 
             if self.verbose:
@@ -225,31 +237,25 @@ class CronBackup(BaseCmd):
             cmd = " ".join(cmd_parts)
 
             # Run with Shell and tee output if verbose
-            result = self.shell.run(
-                cmd,
-                text=True,
-                debug=self.debug,
-                tee=self.verbose
-            )
+            result = self.shell.run(cmd, text=True, debug=self.debug, tee=self.verbose)
 
             if result.returncode == 0:
-                self.log_message(f"Archive {archive_name} created successfully")
+                self.log(f"Archive {archive_name} created successfully")
                 if self.verbose and result.stdout:
-                    self.log_message(f"Archive output:\n{result.stdout}")
-                return 0
+                    self.log(f"Archive output:\n{result.stdout}")
+                exit_code = 0
             else:
                 error_msg = result.stderr.strip() if result.stderr else "Unknown error"
-                self.log_message(f"Archive creation failed: {error_msg}")
+                self.log(f"Archive creation failed: {error_msg}")
                 if self.debug:
-                    self.log_message(f"Stdout: {result.stdout}")
-                return 1
+                    self.log(f"Stdout: {result.stdout}")
+                exit_code = 1
 
-        except Exception as e:
-            self.log_message(f"Archive creation error: {e}")
-            if self.debug:
-                import traceback
-                self.log_message(traceback.format_exc())
-            return 1
+        except Exception as ex:
+            self.handle_exception("Archive creation", ex)
+            exit_code = 1
+
+        return exit_code
 
     def run_backup(self) -> int:
         """
@@ -258,7 +264,8 @@ class CronBackup(BaseCmd):
         Returns:
             int: 0 on success, non-zero on failure
         """
-        self.log_message("Starting backup...")
+        exit_code = 1
+        self.log("Starting backup...")
 
         try:
             # Ensure backup directory exists
@@ -283,7 +290,7 @@ class CronBackup(BaseCmd):
                 mysql_dump_script=mysqldump_cmd,
                 verbose=self.verbose,
                 debug=self.debug,
-                progress=False
+                progress=self.args.progress,
             )
 
             # Initialize if needed
@@ -291,26 +298,22 @@ class CronBackup(BaseCmd):
 
             # Perform backup
             errors = sql_backup.perform_backup(
-                database=self.args.database,
-                full=self.full_backup
+                database=self.args.database, full=self.full_backup
             )
 
             if errors == 0:
-                self.log_message("Backup completed successfully")
-
+                self.log("Backup completed successfully")
                 # Create archive
-                archive_result = self.create_archive()
-                return archive_result
+                exit_code = self.create_archive()
             else:
-                self.log_message(f"Backup failed with {errors} error(s)")
-                return 1
+                self.log(f"Backup failed with {errors} error(s)")
+                exit_code = 1
 
-        except Exception as e:
-            self.log_message(f"Backup error: {e}")
-            if self.debug:
-                import traceback
-                self.log_message(traceback.format_exc())
-            return 1
+        except Exception as ex:
+            self.handle_exception("Backup", ex)
+            exit_code = 1
+
+        return exit_code
 
     def handle_args(self, args) -> bool:
         """
@@ -322,43 +325,47 @@ class CronBackup(BaseCmd):
         Returns:
             bool: True if argument was handled and no further processing is required
         """
+        handled = True
+
         # Let BaseCmd handle standard arguments first
-        handled = super().handle_args(args)
-        if handled:
-            return True
+        base_handled = super().handle_args(args)
+        if base_handled:
+            handled = True
+        else:
+            # Initialize Shell with profile from args
+            self.shell = Shell.ofArgs(args)
 
-        # Initialize Shell with profile from args
-        self.shell = Shell.ofArgs(args)
+            # Store configuration
+            self.backup_dir = Path(args.backup_dir)
+            self.log_file = Path(args.log_file)
+            self.container = args.container
+            self.full_backup = args.full
 
-        # Store configuration
-        self.backup_dir = Path(args.backup_dir)
-        self.log_file = Path(args.log_file)
-        self.container = args.container
-        self.full_backup = args.full
+            # Determine what operations to run
+            run_expire = args.expire or args.all
+            run_backup = args.backup or args.all
 
-        # Determine what operations to run
-        run_expire = args.expire or args.all
-        run_backup = args.backup or args.all
+            # If no operation specified, show help
+            if not (run_expire or run_backup):
+                self.parser.print_help()
+                handled = True
+            else:
+                self.exit_code = 0
 
-        # If no operation specified, show help
-        if not (run_expire or run_backup):
-            self.parser.print_help()
-            return True
+                # Run operations in order: expire first, then backup
+                if run_expire:
+                    result = self.run_expire()
+                    if result != 0:
+                        self.exit_code = result
 
-        self.exit_code = 0
+                if run_backup and self.exit_code == 0:
+                    result = self.run_backup()
+                    if result != 0:
+                        self.exit_code = result
 
-        # Run operations in order: expire first, then backup
-        if run_expire:
-            result = self.run_expire()
-            if result != 0:
-                self.exit_code = result
+                handled = True
 
-        if run_backup and self.exit_code == 0:
-            result = self.run_backup()
-            if result != 0:
-                self.exit_code = result
-
-        return True
+        return handled
 
 
 def main(argv=None):
@@ -371,11 +378,14 @@ def main(argv=None):
     Returns:
         int: Exit code (0 = success, non-zero = failure)
     """
+
     # Create a version object
     class Version:
         name = "CronBackup"
-        version = "0.1.0"
-        description = "Database backup with expiration management for cron"
+        version = "0.1.1"
+        description = (
+            "Database backup with expiration management to be started from cron"
+        )
         updated = "2025-12-23"
         doc_url = "https://github.com/WolfgangFahl/pyWikiCMS"
 

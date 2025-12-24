@@ -6,9 +6,10 @@ Created on 2021-01-01
 
 import unittest
 
-from backend.server import Servers
-from backend.site import WikiSite, Site
 from basemkit.basetest import Basetest
+
+from backend.server import Servers
+from backend.site import Site, WikiSite
 
 
 class TestSite(Basetest):
@@ -24,7 +25,7 @@ class TestSite(Basetest):
         wiki = self.servers.wikis_by_hostname.get(hostname)
         family = self.servers.servers.get("q")
         self.assertIsNotNone(family)
-        self.assertEqual(wiki.family,family)
+        self.assertEqual(wiki.family, family)
         wiki.configure_of_settings()
         return wiki
 
@@ -53,10 +54,9 @@ class TestSite(Basetest):
         """
         test getting the status code for the a wiki
         """
-        site=Site("www.wikipedia.de")
-        proc=site.ping()
-        self.assertEqual(0,proc.returncode)
-
+        site = Site("www.wikipedia.de")
+        proc = site.ping()
+        self.assertEqual(0, proc.returncode)
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testGetSetting(self):

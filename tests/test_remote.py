@@ -26,9 +26,9 @@ class TestRemote(Basetest):
             ("r.bitplan.com",),
         )
 
-        for host, in test_cases:
+        for (host,) in test_cases:
             remote = Remote(host=host)
-            yield host,remote
+            yield host, remote
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testStats(self):
@@ -108,8 +108,10 @@ class TestRemote(Basetest):
         test_file = "/tmp/test_copy_string.txt"
         for host, remote in self.genTestRemotes():
             proc = remote.copy_string_to_file(test_content, test_file)
-            self.assertEqual(proc.returncode, 0, f"copy_string_to_file failed on {host}")
+            self.assertEqual(
+                proc.returncode, 0, f"copy_string_to_file failed on {host}"
+            )
 
             # Read back the content
             lines = remote.readlines(test_file)
-            self.assertEqual(test_lines,lines)
+            self.assertEqual(test_lines, lines)

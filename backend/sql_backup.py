@@ -28,8 +28,8 @@ class SqlBackup:
         backup_user: str = "backup",
         backup_host: str = "localhost",
         backup_dir: str = "/var/backup/sqlbackup",
-        mysql_root_script = "sudo mysql -u root",
-        mysql_dump_script = "sudo mysqldump -u root",
+        mysql_root_script="sudo mysql -u root",
+        mysql_dump_script="sudo mysqldump -u root",
         verbose: bool = False,
         debug: bool = False,
         progress: bool = False,
@@ -51,8 +51,8 @@ class SqlBackup:
         self.backup_user = backup_user
         self.backup_host = backup_host
         self.backup_dir = Path(backup_dir)
-        self.mysql_root_script=mysql_root_script
-        self.mysql_dump_script=mysql_dump_script
+        self.mysql_root_script = mysql_root_script
+        self.mysql_dump_script = mysql_dump_script
         self.verbose = verbose
         self.debug = debug
         self.progress = progress
@@ -73,7 +73,9 @@ class SqlBackup:
                 self.version = result.stdout
         return self.version
 
-    def run_mysql_root_command(self, cmd: str, as_script: bool = False) -> subprocess.CompletedProcess:
+    def run_mysql_root_command(
+        self, cmd: str, as_script: bool = False
+    ) -> subprocess.CompletedProcess:
         """
         Run the given MySQL command as root.
         - as_script=False: pipe a single line (canonical echo)
@@ -97,8 +99,8 @@ class SqlBackup:
         """
         if not self.version:
             raise ValueError("get_version must be called first")
-        proc=self.run_mysql_root_command("show databases")
-        return proc;
+        proc = self.run_mysql_root_command("show databases")
+        return proc
 
     def parse_database_list(self, result) -> List[str]:
         """
@@ -193,7 +195,9 @@ class SqlBackup:
         proc = procs.get("backup")
         return proc
 
-    def restore_database(self, database_name: str, backup_path: str = None, force: bool = False) -> subprocess.CompletedProcess:
+    def restore_database(
+        self, database_name: str, backup_path: str = None, force: bool = False
+    ) -> subprocess.CompletedProcess:
         """
         Restore a database from a .sql dump.
 
@@ -207,7 +211,9 @@ class SqlBackup:
         """
         # resolve backup path
         if backup_path is None:
-            backup_path = str(self.get_backup_path(database_name, self.today_dir, full=True))
+            backup_path = str(
+                self.get_backup_path(database_name, self.today_dir, full=True)
+            )
 
         # verify backup exists
         if self.remote.get_file_stats(backup_path) is None:
@@ -215,17 +221,23 @@ class SqlBackup:
 
         # prepare database
         if force:
-            drop_proc = self.run_mysql_root_command(f"DROP DATABASE IF EXISTS `{database_name}`")
+            drop_proc = self.run_mysql_root_command(
+                f"DROP DATABASE IF EXISTS `{database_name}`"
+            )
             if drop_proc.returncode != 0:
-                raise RuntimeError(f"Failed to drop database {database_name}: {drop_proc.stderr}")
+                raise RuntimeError(
+                    f"Failed to drop database {database_name}: {drop_proc.stderr}"
+                )
 
         # create DB only if missing
-        exist_cmd= f"USE {database_name}";
+        exist_cmd = f"USE {database_name}"
         exists_proc = self.run_mysql_root_command(exist_cmd)
         # Non-existence is possible here, MySQL returns:
         # ERROR 1049 (42000) at line 1: Unknown database '...'
         if exists_proc.returncode != 0:
-            create_proc = self.run_mysql_root_command(f"CREATE DATABASE {database_name}")
+            create_proc = self.run_mysql_root_command(
+                f"CREATE DATABASE {database_name}"
+            )
             if create_proc.returncode != 0:
                 raise RuntimeError(
                     f"Failed to create database {database_name}: {create_proc.stderr}"
@@ -233,14 +245,14 @@ class SqlBackup:
 
         # restore with optional pv
         if self.progress:
-            restore_cmd = f"sudo pv '{backup_path}' | {self.mysql_root_script} {database_name}"
+            restore_cmd = (
+                f"sudo pv '{backup_path}' | {self.mysql_root_script} {database_name}"
+            )
         else:
             restore_cmd = f"sudo mysql -u root {database_name} < '{backup_path}'"
 
         proc = self.remote.run(restore_cmd)
         return proc
-
-
 
     def perform_backup(self, database: str = "all", full: bool = True) -> int:
         """Perform backups of one or more databases.
@@ -261,7 +273,9 @@ class SqlBackup:
         else:
             databases = [database]
         iterator = (
-            tqdm(databases, desc=f"{len(databases)} databases") if self.progress else databases
+            tqdm(databases, desc=f"{len(databases)} databases")
+            if self.progress
+            else databases
         )
         for database in iterator:
             if self.progress:
@@ -311,9 +325,8 @@ class SqlBackup:
             f"GRANT SELECT,EXECUTE,PROCESS,SHOW VIEW,SHOW DATABASES,LOCK TABLES "
             f"ON *.* TO '{self.backup_user}'@'{self.backup_host}' IDENTIFIED BY '{password}';"
         )
-        proc = self.run_mysql_root_command(grant_sql,as_script=True)
+        proc = self.run_mysql_root_command(grant_sql, as_script=True)
         return proc
-
 
 
 def create_argument_parser() -> argparse.ArgumentParser:
@@ -347,8 +360,12 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="the database to backup 'all' if all databases should be backed up",
         default="all",
     )
-    parser.add_argument("--mysql-root-cmd", help="Command for MySQL root access (e.g. 'mysqlr -cn db')")
-    parser.add_argument("--mysqldump-cmd", help="Command for mysqldump (e.g. 'mysqlr -cn db --dump')")
+    parser.add_argument(
+        "--mysql-root-cmd", help="Command for MySQL root access (e.g. 'mysqlr -cn db')"
+    )
+    parser.add_argument(
+        "--mysqldump-cmd", help="Command for mysqldump (e.g. 'mysqlr -cn db --dump')"
+    )
 
     parser.add_argument("-u", "--user", help="Backup user")
     return parser

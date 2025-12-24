@@ -3,7 +3,7 @@ Created on 2025-07-21
 
 @author: wf
 """
-import tempfile
+
 import glob
 import grp
 import os
@@ -12,6 +12,7 @@ import socket
 import stat
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Dict, Optional, Tuple
@@ -19,6 +20,7 @@ from typing import Dict, Optional, Tuple
 from basemkit.persistent_log import Log
 from basemkit.shell import Shell
 from basemkit.yamlable import lod_storable
+
 
 @lod_storable
 class Tool:
@@ -197,33 +199,38 @@ class Stats:
         age_days = self.age_secs / 86400.0
         return age_days
 
+
 @dataclass
 class RunConfig:
-    tee:bool=False
-    progress:bool=False
-    do_log: bool=True
-    force_local: bool=False
-    sudo_viatemp: bool=False # use a temporary file and move to final with sudo
+    tee: bool = False
+    progress: bool = False
+    do_log: bool = True
+    force_local: bool = False
+    sudo_viatemp: bool = False  # use a temporary file and move to final with sudo
     # to docker or not to docker that's the question
     # if True target the host not the docker container
     # e.g use direct scp to host not docker copy
     ignore_container: bool = False
     # options for multi command handling
-    stop_on_error:bool=True # if True do not continue when an error occurs
-    as_single_cmd: bool=False # if True combine all commands with ';' separator to a single long command
+    stop_on_error: bool = True  # if True do not continue when an error occurs
+    as_single_cmd: bool = (
+        False  # if True combine all commands with ';' separator to a single long command
+    )
     # options for rsync and sudo viatemp
-    update: bool=False # update: Force update even if sentinel_file exists
-    uid: Optional[int] = None # User ID for ownership
-    gid: Optional[int] = None # Group ID for ownership
-    do_mkdir: bool = True # Whether to create directory if missing
-    do_permissions: bool = True # Whether to change ownership/permissions
-    def should_set_permissions(self)->bool:
+    update: bool = False  # update: Force update even if sentinel_file exists
+    uid: Optional[int] = None  # User ID for ownership
+    gid: Optional[int] = None  # Group ID for ownership
+    do_mkdir: bool = True  # Whether to create directory if missing
+    do_permissions: bool = True  # Whether to change ownership/permissions
+
+    def should_set_permissions(self) -> bool:
         should = self.do_permissions and self.uid is not None and self.gid is not None
         return should
 
+
 @dataclass
 class ViaTemp:
-    host:str
+    host: str
     source_path: str
     # calculated fields
     tmp_path: str = None
@@ -237,6 +244,7 @@ class ViaTemp:
             self.tmp_path = f"/tmp/{name}_{timestamp}{ext}"
         if self.target_path is None:
             self.target_path = f"{self.host}:{self.tmp_path}"
+
 
 class Remote:
     """
@@ -258,7 +266,7 @@ class Remote:
         self.is_local = False
         self._ip = None
         self._platform = None
-        self.run_config=RunConfig()
+        self.run_config = RunConfig()
         try:
             host_ip = socket.gethostbyname(host)
             self._ip = host_ip
@@ -275,28 +283,23 @@ class Remote:
         self.shell = Shell()
         self.timeout = timeout
         self.log = Log()
-        self.ssh_options = (
-            f"-o ConnectTimeout={self.timeout} {self.host}"
-        )
+        self.ssh_options = f"-o ConnectTimeout={self.timeout} {self.host}"
 
     def __str__(self):
-        text= f"{self.host}{self.symbol}"
+        text = f"{self.host}{self.symbol}"
         return text
 
     @property
-    def symbol(self)->str:
-        host_kind = "🐳" if self.container else "  " # 2 spaces for width of whale
-        os_symbol = {
-            "linux": "🐧",
-            "darwin": "🍏",
-            "win32": "🪟"
-        }.get(self._platform, "❓")
-        symbol= f"{os_symbol}{host_kind}"
+    def symbol(self) -> str:
+        host_kind = "🐳" if self.container else "  "  # 2 spaces for width of whale
+        os_symbol = {"linux": "🐧", "darwin": "🍏", "win32": "🪟"}.get(
+            self._platform, "❓"
+        )
+        symbol = f"{os_symbol}{host_kind}"
         return symbol
 
     def get_ip(self) -> str:
-        """
-        """
+        """ """
         if self._ip is None:
             self._ip = self.get_output("hostname -I | awk '{print $1}'")
         return self._ip
@@ -306,9 +309,9 @@ class Remote:
             self.avail_check()
         return self._platform
 
-    def run_cmds(self,
-        cmds: Dict[str, str],
-        run_config: RunConfig | None = None) -> Dict[str, subprocess.CompletedProcess]:
+    def run_cmds(
+        self, cmds: Dict[str, str], run_config: RunConfig | None = None
+    ) -> Dict[str, subprocess.CompletedProcess]:
         """
         Runs a given map of commands
         as long as the return code of the previous command is zero
@@ -333,8 +336,8 @@ class Remote:
             run_config = self.run_config
         if run_config.as_single_cmd:
             combined_cmd = "; ".join(cmds.values())
-            proc=self.run(combined_cmd,run_config=run_config)
-            procs["all"]=proc
+            proc = self.run(combined_cmd, run_config=run_config)
+            procs["all"] = proc
         else:
             for key, cmd in cmds.items():
                 proc = self.run(cmd)
@@ -346,7 +349,9 @@ class Remote:
                         continue
         return procs
 
-    def run_cmds_as_single_cmd(self, cmds: Dict[str, str],run_config: RunConfig | None = None) -> subprocess.CompletedProcess:
+    def run_cmds_as_single_cmd(
+        self, cmds: Dict[str, str], run_config: RunConfig | None = None
+    ) -> subprocess.CompletedProcess:
         """
         Run commands as single combined command and return the result directly
 
@@ -362,7 +367,9 @@ class Remote:
         proc = procs["all"]
         return proc
 
-    def run(self, cmd: str, run_config:RunConfig = None) -> subprocess.CompletedProcess:
+    def run(
+        self, cmd: str, run_config: RunConfig = None
+    ) -> subprocess.CompletedProcess:
         """
         Run the given command locally or remotely (optionally inside a container)
 
@@ -373,10 +380,10 @@ class Remote:
         Returns:
             CompletedProcess: the result of the command
         """
-        local=self.is_local
-        prefix=""
+        local = self.is_local
+        prefix = ""
         if run_config is not None:
-            local=local or run_config.force_local
+            local = local or run_config.force_local
         if not local:
             prefix = f"ssh  {self.ssh_options}"
         if self.container:
@@ -384,7 +391,7 @@ class Remote:
         if prefix:
             full_cmd = f'{prefix} "{cmd}"'
         else:
-            full_cmd=cmd
+            full_cmd = cmd
         result = self.run_remote(full_cmd, run_config=run_config)
         return result
 
@@ -401,7 +408,7 @@ class Remote:
             trimmed += f"\n...[+{len(output.splitlines()) - max_lines} lines]"
         return trimmed
 
-    def log_shell_result(self,cmd:str,proc,run_config:RunConfig):
+    def log_shell_result(self, cmd: str, proc, run_config: RunConfig):
         """
         log the given shell result
         """
@@ -416,8 +423,9 @@ class Remote:
         if run_config.do_log:
             self.log.log(status, "remote", log_msg)
 
-
-    def run_remote(self, cmd: str, run_config:RunConfig=None) -> subprocess.CompletedProcess:
+    def run_remote(
+        self, cmd: str, run_config: RunConfig = None
+    ) -> subprocess.CompletedProcess:
         """
         Execute a command
 
@@ -432,19 +440,19 @@ class Remote:
             CompletedProcess: The result of the executed command, including output and return code.
         """
         if run_config is None:
-            run_config=self.run_config
+            run_config = self.run_config
         proc = self.shell.run(cmd, tee=run_config.tee)
-        self.log_shell_result(cmd,proc,run_config)
+        self.log_shell_result(cmd, proc, run_config)
         return proc
 
-    def get_path_on_target(self,target_path:str):
-        if ':' in target_path:
-            _, path_part = target_path.split(':', 1)
+    def get_path_on_target(self, target_path: str):
+        if ":" in target_path:
+            _, path_part = target_path.split(":", 1)
         else:
             path_part = target_path
         return path_part
 
-    def prepare_target_directory(self,target_path:str,run_config:RunConfig):
+    def prepare_target_directory(self, target_path: str, run_config: RunConfig):
         """
         Ensure the directory for a given target path exists and has the correct permissions.
 
@@ -463,34 +471,42 @@ class Remote:
         Returns:
             subprocess.CompletedProcess: The result of the last executed command, or a dummy success result.
         """
-        proc=subprocess.CompletedProcess([], 0, "", "")
+        proc = subprocess.CompletedProcess([], 0, "", "")
         if run_config.uid is None:
-            run_config.uid=getattr(self, 'uid')
+            run_config.uid = getattr(self, "uid")
         if run_config.gid is None:
-            run_config.gid=getattr(self, 'gid')
+            run_config.gid = getattr(self, "gid")
 
-        path_on_target=self.get_path_on_target(target_path)
+        path_on_target = self.get_path_on_target(target_path)
         dir_path = os.path.dirname(path_on_target)
         if dir_path:
-            uid=run_config.uid
-            gid=run_config.gid
+            uid = run_config.uid
+            gid = run_config.gid
             if run_config.do_mkdir:
-                needs_mkdir=self.get_file_stats(dir_path) is None
+                needs_mkdir = self.get_file_stats(dir_path) is None
                 if needs_mkdir:
-                    proc=self.run(f"sudo install -d -m 2775 -o {uid} -g {gid} {dir_path}")
-                    if proc.returncode!=0:
+                    proc = self.run(
+                        f"sudo install -d -m 2775 -o {uid} -g {gid} {dir_path}"
+                    )
+                    if proc.returncode != 0:
                         return proc
 
             if run_config.should_set_permissions:
                 perm_cmds = {
-                    'chown_pre': f"sudo chown -R {uid}:{gid} {dir_path}",
-                    'chmod_pre': f"sudo chmod -R g+rw  {dir_path}"
+                    "chown_pre": f"sudo chown -R {uid}:{gid} {dir_path}",
+                    "chmod_pre": f"sudo chmod -R g+rw  {dir_path}",
                 }
                 proc = self.run_cmds_as_single_cmd(perm_cmds)
         return proc
 
-    def rsync(self, source_path: str, target_path: str, marker_file: str,
-          message: str, run_config:RunConfig=None) -> subprocess.CompletedProcess:
+    def rsync(
+        self,
+        source_path: str,
+        target_path: str,
+        marker_file: str,
+        message: str,
+        run_config: RunConfig = None,
+    ) -> subprocess.CompletedProcess:
         """
         Args:
             source_path: Source path (must include server)
@@ -505,15 +521,17 @@ class Remote:
         if not needs_sync:
             self.log.log("✅", "sync", f"{marker_path} already exists")
             return subprocess.CompletedProcess([], 0, "", "")
-        proc=self.prepare_target_directory(target_path, run_config)
-        if proc.returncode==0:
-            rsync_cmd = f"rsync -avz --no-perms --omit-dir-times {source_path}/* {target_path}"
+        proc = self.prepare_target_directory(target_path, run_config)
+        if proc.returncode == 0:
+            rsync_cmd = (
+                f"rsync -avz --no-perms --omit-dir-times {source_path}/* {target_path}"
+            )
             proc = self.run(rsync_cmd)
 
         if run_config.should_set_permissions and proc.returncode == 0:
             perm_cmds = {
-                    'chown_post': f"sudo chown -R {run_config.uid}:{run_config.gid} {target_path}",
-                    'chmod_pre': f"sudo chmod -R g+w {target_path}"
+                "chown_post": f"sudo chown -R {run_config.uid}:{run_config.gid} {target_path}",
+                "chmod_pre": f"sudo chmod -R g+w {target_path}",
             }
             proc = self.run_cmds_as_single_cmd(perm_cmds)
 
@@ -522,14 +540,20 @@ class Remote:
 
         return proc
 
-    def copy_via_temp(self,viaTemp:ViaTemp,run_config:RunConfig)-> subprocess.CompletedProcess:
+    def copy_via_temp(
+        self, viaTemp: ViaTemp, run_config: RunConfig
+    ) -> subprocess.CompletedProcess:
         """
         copy the source path to the given tmp file
         """
-        proc = self.scp_copy(viaTemp.source_path, viaTemp.target_path, run_config=run_config)
+        proc = self.scp_copy(
+            viaTemp.source_path, viaTemp.target_path, run_config=run_config
+        )
         return proc
 
-    def scp_copy(self,source_path,target_path,run_config:RunConfig)->subprocess.CompletedProcess:
+    def scp_copy(
+        self, source_path, target_path, run_config: RunConfig
+    ) -> subprocess.CompletedProcess:
         # Regular scp copy
         if self.is_local:
             target_path_local = self.get_path_on_target(target_path)
@@ -539,7 +563,9 @@ class Remote:
         proc = self.run(scp_cmd, run_config)
         return proc
 
-    def remote_copy(self, source_path: str, target_path: str, run_config:RunConfig=None) -> subprocess.CompletedProcess:
+    def remote_copy(
+        self, source_path: str, target_path: str, run_config: RunConfig = None
+    ) -> subprocess.CompletedProcess:
         """
         Copy a file between local and remote paths, handling docker containers.
         This method is executed locally, not on the remote.
@@ -556,38 +582,43 @@ class Remote:
             run_config = self.run_config
         if self.container and not run_config.ignore_container:
             ignore_container_run_config = replace(run_config, ignore_container=True)
-            viatemp=ViaTemp(host=self.host,source_path=source_path)
+            viatemp = ViaTemp(host=self.host, source_path=source_path)
             # For containers: copy to host first, then to container
-            proc=self.copy_via_temp(viatemp,ignore_container_run_config)
+            proc = self.copy_via_temp(viatemp, ignore_container_run_config)
 
-            if proc.returncode!=0:
+            if proc.returncode != 0:
                 # Copy from host to container
-                docker_cmd = f"docker cp {viatemp.tmp_path} {self.container}:{target_path}"
-                proc = self.run(docker_cmd,run_config=ignore_container_run_config)
+                docker_cmd = (
+                    f"docker cp {viatemp.tmp_path} {self.container}:{target_path}"
+                )
+                proc = self.run(docker_cmd, run_config=ignore_container_run_config)
 
             # Cleanup temp file on host
-            self.run(f"rm -f {viatemp.tmp_path}",run_config=ignore_container_run_config)
+            self.run(
+                f"rm -f {viatemp.tmp_path}", run_config=ignore_container_run_config
+            )
         else:
             if run_config.sudo_viatemp:
-                viatemp=ViaTemp(host=self.host,source_path=source_path)
+                viatemp = ViaTemp(host=self.host, source_path=source_path)
                 # For containers: copy to host first, then to container
-                proc=self.copy_via_temp(viatemp,run_config)
-                if proc.returncode==0:
-                    proc=self.prepare_target_directory(target_path, run_config)
-                if proc.returncode==0:
-                    path_on_target=self.get_path_on_target(target_path)
-                    mv_cmd=f"sudo mv {viatemp.tmp_path} {path_on_target}"
-                    proc=self.run(mv_cmd)
+                proc = self.copy_via_temp(viatemp, run_config)
+                if proc.returncode == 0:
+                    proc = self.prepare_target_directory(target_path, run_config)
+                if proc.returncode == 0:
+                    path_on_target = self.get_path_on_target(target_path)
+                    mv_cmd = f"sudo mv {viatemp.tmp_path} {path_on_target}"
+                    proc = self.run(mv_cmd)
                 if run_config.should_set_permissions and proc.returncode == 0:
-                    chown_cmd=f"sudo chown {run_config.uid}:{run_config.gid} {path_on_target}"
-                    proc=self.run(chown_cmd)
+                    chown_cmd = (
+                        f"sudo chown {run_config.uid}:{run_config.gid} {path_on_target}"
+                    )
+                    proc = self.run(chown_cmd)
                 # Cleanup temp file locally
-                self.run(f"rm -f {viatemp.tmp_path}",run_config=run_config)
+                self.run(f"rm -f {viatemp.tmp_path}", run_config=run_config)
             else:
-                proc=self.scp_copy(source_path, target_path,run_config=run_config)
+                proc = self.scp_copy(source_path, target_path, run_config=run_config)
 
         return proc
-
 
     def get_output(self, cmd: str) -> Optional[str]:
         """
@@ -617,7 +648,9 @@ class Remote:
             self.gid = os.getgid()
             timestamp = datetime.now()
         else:
-            result = self.run("python3 -c 'import sys, os; print(sys.platform, os.getuid(), os.getgid())'")
+            result = self.run(
+                "python3 -c 'import sys, os; print(sys.platform, os.getuid(), os.getgid())'"
+            )
             if result.returncode == 0:
                 parts = result.stdout.strip().split()
                 self._platform = parts[0]
@@ -692,7 +725,9 @@ class Remote:
         )
         return stats
 
-    def get_local_dir_list(self, dirpath: str, wildcard: str, dirs_only: bool) -> Optional[list[str]]:
+    def get_local_dir_list(
+        self, dirpath: str, wildcard: str, dirs_only: bool
+    ) -> Optional[list[str]]:
         """
         List directory contents locally with optional wildcard and dir filter.
         """
@@ -706,7 +741,6 @@ class Remote:
         except Exception:
             files = None
         return files
-
 
     def get_remote_dir_list(
         self, dirpath: str, wildcard: str = "*", dirs_only: bool = False
@@ -733,7 +767,9 @@ class Remote:
             files = result.stdout.splitlines()
         return files
 
-    def listdir(self, dirpath: str, wildcard: str = "*", dirs_only: bool = False) -> Optional[list[str]]:
+    def listdir(
+        self, dirpath: str, wildcard: str = "*", dirs_only: bool = False
+    ) -> Optional[list[str]]:
         """
         List directory contents with optional wildcard pattern.
 
@@ -750,8 +786,9 @@ class Remote:
         else:
             return self.get_remote_dir_list(dirpath, wildcard, dirs_only)
 
-
-    def copy_string_to_file(self, content: str, filepath: str, run_config:RunConfig=None) -> subprocess.CompletedProcess:
+    def copy_string_to_file(
+        self, content: str, filepath: str, run_config: RunConfig = None
+    ) -> subprocess.CompletedProcess:
         """
         Copy string content to file locally or remotely using scp
 
@@ -764,13 +801,13 @@ class Remote:
             subprocess.CompletedProcess: Result of the copy operation
         """
         if run_config is None:
-            run_config=self.run_config
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
+            run_config = self.run_config
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
             tmp.write(content)
             tmp_path = tmp.name
         try:
             target_path = f"{self.host}:{filepath}"
-            proc = self.remote_copy(tmp_path, target_path,run_config=run_config)
+            proc = self.remote_copy(tmp_path, target_path, run_config=run_config)
         finally:
             os.unlink(tmp_path)
 

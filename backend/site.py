@@ -4,23 +4,24 @@ Created on 2021-01-01
 @author: wf
 """
 
-from dataclasses import dataclass, field
 import platform
 import re
 import socket
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from backend.remote import Remote
-from backend.wikibackup import WikiBackup
+import requests
 from basemkit.yamlable import lod_storable
-from frontend.html_table import HtmlTables
 from lodstorage.lod import LOD
 from mogwai.core import MogwaiGraph
 from ngwidgets.widgets import Link
-import requests
 from tqdm import tqdm
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
+
+from backend.remote import Remote
+from backend.wikibackup import WikiBackup
+from frontend.html_table import HtmlTables
 
 
 @dataclass
@@ -28,6 +29,7 @@ class Site:
     """
     an Apache Site
     """
+
     name: str
     # if container is set the site is provided by a docker container
     container: Optional[str] = None
@@ -44,7 +46,7 @@ class Site:
         initialize
         """
         if self.hostname is None:
-            self.hostname=self.name
+            self.hostname = self.name
         self._resolve_ip()
 
     @classmethod
@@ -77,12 +79,12 @@ class Site:
 
     def ping(self):
         # https://stackoverflow.com/a/34455969/1497139
-        proc=None
+        proc = None
         try:
-            option="-n" if platform.system().lower()=="windows" else "-c"
-            cmd=f"ping {option} 1 -t 1 {self.name}"
+            option = "-n" if platform.system().lower() == "windows" else "-c"
+            cmd = f"ping {option} 1 -t 1 {self.name}"
             self.init_remote()
-            proc=self.remote.shell.run(cmd)
+            proc = self.remote.shell.run(cmd)
         except Exception as ex:
             pass
         return proc
@@ -93,6 +95,7 @@ class WikiSite(Site):
     """
     A MediaWiki Site
     """
+
     wikiId: Optional[str] = None
     database: Optional[str] = None
     defaultPage: str = "Main Page"
@@ -125,7 +128,7 @@ class WikiSite(Site):
         super().__post_init__()
         pass
 
-    def configure_of_settings(self,family=None,localSettings:str=None) -> None:
+    def configure_of_settings(self, family=None, localSettings: str = None) -> None:
         """
         Configure this site from the given settings
 
@@ -134,13 +137,15 @@ class WikiSite(Site):
             localSettings: path to LocalSettings.php
         """
         if family is not None:
-            self.family=family
+            self.family = family
         if localSettings is not None:
-            self.localSettings=localSettings
+            self.localSettings = localSettings
         if self.family is not None and self.localSettings is None:
-            self.localSettings=f"{self.family.sitedir}/{self.hostname}/LocalSettings.php"
+            self.localSettings = (
+                f"{self.family.sitedir}/{self.hostname}/LocalSettings.php"
+            )
         if self.localSettings is None:
-            self.localSettings="/var/www/html/LocalSettings.php"
+            self.localSettings = "/var/www/html/LocalSettings.php"
 
         if self.localSettings:
             self.load_settings()
@@ -150,9 +155,9 @@ class WikiSite(Site):
     def load_settings(self) -> None:
         """Load settings from LocalSettings.php file"""
         if self.family is not None:
-            remote=self.family.remote
+            remote = self.family.remote
         else:
-            remote=self.remote
+            remote = self.remote
         self.settingLines = remote.readlines(self.localSettings)
 
     def configure_from_settings(self) -> None:
@@ -189,7 +194,7 @@ class WikiSite(Site):
         return status_code
 
     @staticmethod
-    def getVarFromSettings(varName: str,settingLines:List[str]) -> Optional[str]:
+    def getVarFromSettings(varName: str, settingLines: List[str]) -> Optional[str]:
         """
         Extract setting value from LocalSettings.php lines
 
@@ -219,9 +224,8 @@ class WikiSite(Site):
         Returns:
             Variable value or None if not found
         """
-        setting=WikiSite.getVarFromSettings(varName, self.settingLines)
+        setting = WikiSite.getVarFromSettings(varName, self.settingLines)
         return setting
-
 
     def init_wikiuser_and_backup(self, wikiUser: WikiUser = None) -> WikiUser:
         """

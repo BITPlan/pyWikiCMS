@@ -8,74 +8,74 @@ to a dockerized environment
 @author: wf
 """
 
-from argparse import ArgumentParser, Namespace
 import base64
-from dataclasses import dataclass, field
-from datetime import datetime
 import subprocess
 import sys
-from typing import Iterator, List, Iterable, TypeVar, Dict
+from argparse import ArgumentParser, Namespace
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Dict, Iterable, Iterator, List, TypeVar
 
-from backend.remote import Remote, RunConfig
-from backend.server import Server, Servers
-from backend.site import Site, WikiSite
-from backend.sql_backup import SqlBackup
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from basemkit.profiler import Profiler
-from frontend.version import Version
 from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 
+from backend.remote import Remote, RunConfig
+from backend.server import Server, Servers
+from backend.site import Site, WikiSite
+from backend.sql_backup import SqlBackup
+from frontend.version import Version
 
 # enable generic types
 T = TypeVar("T")
 
+
 class Checks:
 
     @classmethod
-    def check_age(cls,remote:Remote,filepath:str,days:float=1.0)->float:
+    def check_age(cls, remote: Remote, filepath: str, days: float = 1.0) -> float:
         stats = remote.get_file_stats(filepath)
-        age=None
+        age = None
         if stats:
-            age=stats.age_days
-            ok=stats.age_days <= days
+            age = stats.age_days
+            ok = stats.age_days <= days
             age_marker = "✅" if ok else "❌"
-            print(
-                f"{remote.host}:{filepath} {stats.age_days:.2f} d {age_marker}"
-            )
+            print(f"{remote.host}:{filepath} {stats.age_days:.2f} d {age_marker}")
         return age
+
 
 @dataclass
 class TransferTask:
     wiki_site: WikiSite
     source: Server
     target: Server
-    args:Namespace
+    args: Namespace
     debug: bool = False
     force: bool = False
-    update: bool= False,
+    update: bool = (False,)
     progress: bool = True
-    use_git: bool=False
+    use_git: bool = False
     query_division: int = 50
     # Non-persistent calculated fields
     log: Log = field(default=None, init=False, repr=False)
-    error: Exception= field(default=None, init=False, repr=False)
+    error: Exception = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
-        self.force=self.args.force
-        self.update=self.args.update
-        self.use_git=self.args.git
+        self.force = self.args.force
+        self.update = self.args.update
+        self.use_git = self.args.git
         self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
         self.wikiClient = WikiClient.ofWikiUser(self.wikiUser)
-        self.site=None
-        self.smwClient=None
+        self.site = None
+        self.smwClient = None
         try:
-            self.site=self.wikiClient.get_site()
+            self.site = self.wikiClient.get_site()
         except Exception as ex:
-            self.error=ex
+            self.error = ex
         if self.site:
             self.smwClient = SMWClient(
                 self.site,
@@ -105,8 +105,8 @@ class TransferTask:
         Args:
             target_path: Path to work in for git operations
         """
-        remote=self.target.remote
-        remote.log.do_log=self.debug
+        remote = self.target.remote
+        remote.log.do_log = self.debug
         git_dir = f"{target_path}/.git"
         git_stats = remote.get_file_stats(git_dir)
 
@@ -114,77 +114,84 @@ class TransferTask:
             self.log.log("⚠️", "git", "git not initialized yet")
 
             git_cmds = {
-                'init': f'cd {target_path} && git init',
-                'add': f'cd {target_path} && git add *'
+                "init": f"cd {target_path} && git init",
+                "add": f"cd {target_path} && git add *",
             }
             proc = remote.run_cmds_as_single_cmd(git_cmds)
             if proc.returncode != 0:
-                self.log.log("❌","git",proc.stderr)
+                self.log.log("❌", "git", proc.stderr)
                 return proc
         else:
             self.log.log("✅", "git", "git initialized")
         # https://stackoverflow.com/questions/71849415/i-cannot-add-the-parent-directory-to-safe-directory-in-git
-        git_relax=f"git config --global --add safe.directory {target_path}"
+        git_relax = f"git config --global --add safe.directory {target_path}"
         proc = remote.run(git_relax)
         if proc.returncode != 0:
-            self.log.log("❌","git",proc.stderr)
+            self.log.log("❌", "git", proc.stderr)
 
         timestamp = datetime.now().strftime("%Y-%m-%d-%H_%M_%S")
         commit_cmd = f"cd {target_path} && git add *&& git commit -a -m 'tsite commit at {timestamp}'"
         proc = remote.run(commit_cmd)
         # Git returns 1 when nothing to commit - this is not an error
-        is_nothing_to_commit = proc.returncode == 1 and "nothing to commit" in proc.stdout
+        is_nothing_to_commit = (
+            proc.returncode == 1 and "nothing to commit" in proc.stdout
+        )
         success = proc.returncode == 0 or is_nothing_to_commit
         # fix return code for downstream
-        if is_nothing_to_commit: proc.returncode=0
+        if is_nothing_to_commit:
+            proc.returncode = 0
         status = "✅" if success else "❌"
-        message = "nothing to commit" if is_nothing_to_commit else f"commit changes at {timestamp}"
+        message = (
+            "nothing to commit"
+            if is_nothing_to_commit
+            else f"commit changes at {timestamp}"
+        )
         if not success:
-            message+=f"\n{proc.stdout}\n{proc.stderr}"
+            message += f"\n{proc.stdout}\n{proc.stderr}"
         self.log.log(status, "git", message)
 
         return proc
 
-    def check_ssh(self)->bool:
+    def check_ssh(self) -> bool:
         """
         check the target site is available via ssh
         """
-        avail=self.target.remote.avail_check() is not None
+        avail = self.target.remote.avail_check() is not None
         return avail
 
-    def check_site_sync(self)->bool:
+    def check_site_sync(self) -> bool:
         """
         check the site synchronization
         """
-        result=False
+        result = False
         if self.source.sitedir is not None:
-            site_path=f"{self.source.sitedir}/{self.wiki_site.hostname}"
+            site_path = f"{self.source.sitedir}/{self.wiki_site.hostname}"
             print(f"site sync check {site_path}...")
-            marker_file="LocalSettings.php"
-            source_path=f"{self.source.hostname}:{site_path}"
-            run_config=RunConfig(
+            marker_file = "LocalSettings.php"
+            source_path = f"{self.source.hostname}:{site_path}"
+            run_config = RunConfig(
                 update=self.force or self.update,
                 do_mkdir=True,
                 do_permissions=True,
-                uid=33, # www-data
-                gid=33 # www-data
+                uid=33,  # www-data
+                gid=33,  # www-data
             )
-            proc=self.target.remote.rsync(
+            proc = self.target.remote.rsync(
                 source_path=source_path,
                 target_path=site_path,
                 marker_file=marker_file,
                 message=f"{self.wiki_site.hostname}",
-                run_config=run_config
+                run_config=run_config,
             )
-            if proc.returncode==0:
+            if proc.returncode == 0:
                 print("✅ sync done")
-                result=True
+                result = True
             if self.use_git:
-                proc=self.git_target(target_path=site_path)
-                if proc.returncode==0:
+                proc = self.git_target(target_path=site_path)
+                if proc.returncode == 0:
                     print("✅ git committed")
                 else:
-                    result=False
+                    result = False
         return result
 
     def get_wiki_sql(self):
@@ -192,12 +199,16 @@ class TransferTask:
         wiki.configure_of_settings()
         self.source_base_path = f"{self.source.sql_backup_path}/today/"
         self.target_base_path = f"{self.target.sql_backup_path}/today/"
-        self.source_backup_path = f"{self.source_base_path}{wiki.database_setting}_full.sql"
-        self.target_backup_path = f"{self.target_base_path}{wiki.database_setting}_full.sql"
+        self.source_backup_path = (
+            f"{self.source_base_path}{wiki.database_setting}_full.sql"
+        )
+        self.target_backup_path = (
+            f"{self.target_base_path}{wiki.database_setting}_full.sql"
+        )
 
         return wiki
 
-    def run_sql_cmds(self,sql_cmds)->Dict[str,str]:
+    def run_sql_cmds(self, sql_cmds) -> Dict[str, str]:
         """
         Run the given SQL commands and return a dict of results.
 
@@ -207,57 +218,69 @@ class TransferTask:
         Returns:
             dict mapping name -> stdout
         """
-        mysqlr=self.target.mysql_root_script
-        sql_results={}
+        mysqlr = self.target.mysql_root_script
+        sql_results = {}
         for name, sql_cmd, db_for_cmd in sql_cmds:
             mysql_cmd = f"{mysqlr}" + (f" -D {db_for_cmd}" if db_for_cmd else "")
-            b64=base64.b64encode(sql_cmd.encode()).decode()
-            remote_cmd=f"printf %s {b64!r} | base64 -d | {mysql_cmd}"
-            proc=self.target.remote.run(remote_cmd)
-            success=proc.returncode==0
+            b64 = base64.b64encode(sql_cmd.encode()).decode()
+            remote_cmd = f"printf %s {b64!r} | base64 -d | {mysql_cmd}"
+            proc = self.target.remote.run(remote_cmd)
+            success = proc.returncode == 0
             if success:
                 print(f"✅ {sql_cmd}:{proc.stdout}")
-                sql_results[name]=proc.stdout
+                sql_results[name] = proc.stdout
             else:
                 print(f"❌ {sql_cmd}:{proc.stderr}")
                 break
         return sql_results
 
-    def check_sql_restore(self)->bool:
+    def check_sql_restore(self) -> bool:
         """
         Ensure the SQL restore is done if need be
         """
-        result=False
+        result = False
         print("SQL_Restore check ...")
-        _wiki=self.get_wiki_sql()
-        mysqlr=self.target.mysql_root_script
+        _wiki = self.get_wiki_sql()
+        mysqlr = self.target.mysql_root_script
 
-        database=self.wiki_site.database
-        dbUser=self.wiki_site.dbUser
-        dbPassword=self.wiki_site.dbPassword
+        database = self.wiki_site.database
+        dbUser = self.wiki_site.dbUser
+        dbPassword = self.wiki_site.dbPassword
         sql_cmds = [
-            ("ping",       "SELECT 1 AS COL1", None),
-            ("show_tables","SHOW TABLES", database),
+            ("ping", "SELECT 1 AS COL1", None),
+            ("show_tables", "SHOW TABLES", database),
         ]
-        sql_results=self.run_sql_cmds(sql_cmds)
+        sql_results = self.run_sql_cmds(sql_cmds)
         # ping means the database is accessible
         if "ping" in sql_results:
-            result=True
+            result = True
             # if show_tables fails the database does not exist
             if "show_tables" not in sql_results:
                 # (name, sql, database)
                 sql_cmds = [
-                    ("create_db",  f"CREATE DATABASE IF NOT EXISTS `{database}`", None),
-                    ("grant",      f"GRANT ALL PRIVILEGES ON `{database}`.* TO '{dbUser}'@'%' IDENTIFIED BY '{dbPassword}';", None),
-                    ("show_tables","SHOW TABLES", database),
-                    ("rev_count",  "SELECT COUNT(*) AS rev_count FROM revision;", database),
+                    ("create_db", f"CREATE DATABASE IF NOT EXISTS `{database}`", None),
+                    (
+                        "grant",
+                        f"GRANT ALL PRIVILEGES ON `{database}`.* TO '{dbUser}'@'%' IDENTIFIED BY '{dbPassword}';",
+                        None,
+                    ),
+                    ("show_tables", "SHOW TABLES", database),
+                    (
+                        "rev_count",
+                        "SELECT COUNT(*) AS rev_count FROM revision;",
+                        database,
+                    ),
                 ]
-                sql_results=self.run_sql_cmds(sql_cmds)
+                sql_results = self.run_sql_cmds(sql_cmds)
                 # restore if update flag is set or no rev_count
-                do_restore=result and self.args.update or "rev_count" not in sql_results
+                do_restore = (
+                    result and self.args.update or "rev_count" not in sql_results
+                )
                 if do_restore:
-                    restore_cmd=f"pv {self.target_backup_path} | {mysqlr} -D {database}"
-                    proc=self.target.remote.run(restore_cmd)
+                    restore_cmd = (
+                        f"pv {self.target_backup_path} | {mysqlr} -D {database}"
+                    )
+                    proc = self.target.remote.run(restore_cmd)
                     success = proc.returncode == 0
                     result = result and success
                     if success:
@@ -266,21 +289,21 @@ class TransferTask:
                         print(f"❌ restore:{proc.stderr}")
         if result:
             sql_cmds = [
-                ("user_count",  "SELECT COUNT(*) AS user_count FROM user;", database),
-                ("rev_count",  "SELECT COUNT(*) AS rev_count FROM revision;", database),
+                ("user_count", "SELECT COUNT(*) AS user_count FROM user;", database),
+                ("rev_count", "SELECT COUNT(*) AS rev_count FROM revision;", database),
             ]
-            sql_results=self.run_sql_cmds(sql_cmds)
-            result=len(sql_results)==2
+            sql_results = self.run_sql_cmds(sql_cmds)
+            result = len(sql_results) == 2
         return result
 
-    def check_sql_backup(self)->bool:
+    def check_sql_backup(self) -> bool:
         """
         Ensure a fresh SQL backup exists on the source.
         If not, create it. Then check the target and copy the backup if needed.
         """
-        result=False
+        result = False
         print("SQL Backup check ...")
-        wiki=self.get_wiki_sql()
+        wiki = self.get_wiki_sql()
 
         source_age = Checks.check_age(self.source.remote, self.source_backup_path)
         target_age = Checks.check_age(self.target.remote, self.target_backup_path)
@@ -303,40 +326,44 @@ class TransferTask:
                 return False
 
         if target_age:
-            age_diff_secs=(target_age-source_age)*86400
+            age_diff_secs = (target_age - source_age) * 86400
         # more than 1 minute difference
-        if target_age is None or age_diff_secs>60:
+        if target_age is None or age_diff_secs > 60:
             source_path = f"{self.source.remote.host}:{self.source_backup_path}"
             target_path = f"{self.target_backup_path}"
-            print(f"⚠️ Copying backup from source to target: {source_path} → {target_path}")
+            print(
+                f"⚠️ Copying backup from source to target: {source_path} → {target_path}"
+            )
             # pull from target
             self.target.remote.run_cmds(
                 {
                     "create directory": f"sudo mkdir -p {self.target_base_path}",
                     "chown": f"sudo chown {self.target.remote.uid} {self.target_base_path}",
-                    "chgrp": f"sudo chgrp {self.target.remote.gid} {self.target_base_path}"
+                    "chgrp": f"sudo chgrp {self.target.remote.gid} {self.target_base_path}",
                 }
             )
-            run_config=RunConfig(force_local=True, ignore_container=True)
+            run_config = RunConfig(force_local=True, ignore_container=True)
             scp_cmd = f"scp -p {source_path} {target_path}"
-            proc=self.target.remote.run(scp_cmd, run_config=run_config)
-            result=proc.returncode==0
+            proc = self.target.remote.run(scp_cmd, run_config=run_config)
+            result = proc.returncode == 0
             if not result:
-                msg=f"❌ Backup copy {source_path}→{target_path} failed:{proc.stderr}"
+                msg = f"❌ Backup copy {source_path}→{target_path} failed:{proc.stderr}"
             else:
-                msg=f"✅ Backup copy {target_path} created"
+                msg = f"✅ Backup copy {target_path} created"
             print(msg)
         else:
             print(f"✅ Target backup is up to date.")
-            result=True
+            result = True
         return result
 
-    def get_apache_config(self,server_name:str,hostname:str,port:int=9880)->str:
+    def get_apache_config(
+        self, server_name: str, hostname: str, port: int = 9880
+    ) -> str:
         """
         get the apache configuration for the given server_name and hostname
         """
-        created_iso= datetime.now().isoformat()
-        wiki_site=hostname
+        created_iso = datetime.now().isoformat()
+        wiki_site = hostname
         site_name = wiki_site.split(".")[0]
         config_str = f"""#
 # Apache site {server_name}
@@ -379,52 +406,54 @@ class TransferTask:
 </VirtualHost>"""
         return config_str
 
-
-    def check_apache(self)->bool:
+    def check_apache(self) -> bool:
         """
         check apache configuration or create new one
         """
-        result=False
-        server_name=f"{self.wiki_site.hostname}"
+        result = False
+        server_name = f"{self.wiki_site.hostname}"
         if self.args.backup:
-            server_name=f"{self.wiki_site.name}-{self.target.hostname}"
+            server_name = f"{self.wiki_site.name}-{self.target.hostname}"
         self.target.probe_apache_configs()
         # first check the configuration
-        config_path=self.target.apache_configs.get(server_name)
+        config_path = self.target.apache_configs.get(server_name)
         if config_path is None or self.args.force:
-            config_path=f"/etc/apache2/sites-available/{self.wiki_site.name}.conf"
-            apache_config=self.get_apache_config(server_name, self.wiki_site.hostname)
-            run_config=RunConfig()
-            run_config.sudo_viatemp=True
-            run_config.force_local=True
-            run_config.ignore_container=True
-            run_config.uid=33 # www-data
-            run_config.gid=33 # www-data
-            proc=self.target.remote.copy_string_to_file(apache_config, config_path,run_config=run_config)
-            if proc.returncode==0:
-                msg=f"✅ apache config {config_path} for {server_name} created"
-                result=True
+            config_path = f"/etc/apache2/sites-available/{self.wiki_site.name}.conf"
+            apache_config = self.get_apache_config(server_name, self.wiki_site.hostname)
+            run_config = RunConfig()
+            run_config.sudo_viatemp = True
+            run_config.force_local = True
+            run_config.ignore_container = True
+            run_config.uid = 33  # www-data
+            run_config.gid = 33  # www-data
+            proc = self.target.remote.copy_string_to_file(
+                apache_config, config_path, run_config=run_config
+            )
+            if proc.returncode == 0:
+                msg = f"✅ apache config {config_path} for {server_name} created"
+                result = True
             else:
-                msg=f"❌ apache config {config_path} for {server_name}: {proc.stderr}"
+                msg = f"❌ apache config {config_path} for {server_name}: {proc.stderr}"
         else:
-            msg=f"✅ apache config {config_path} for {server_name} exists"
-            result=True
+            msg = f"✅ apache config {config_path} for {server_name} exists"
+            result = True
         print(msg)
         # then check whether server is available
-        vhost_site=Site(server_name)
-        proc=vhost_site.ping()
-        if proc.returncode==0:
-            msg=f"✅ ping {server_name} {proc.stdout}"
+        vhost_site = Site(server_name)
+        proc = vhost_site.ping()
+        if proc.returncode == 0:
+            msg = f"✅ ping {server_name} {proc.stdout}"
         else:
-            cmd=f"sudo a2ensite {self.wiki_site.name}"
-            proc=self.target.remote.run(cmd)
-            if proc.returncode==0:
-                msg=f"✅ {proc.stdout}"
+            cmd = f"sudo a2ensite {self.wiki_site.name}"
+            proc = self.target.remote.run(cmd)
+            if proc.returncode == 0:
+                msg = f"✅ {proc.stdout}"
             else:
-                msg=f"❌ {proc.stderr}"
+                msg = f"❌ {proc.stderr}"
             pass
         print(msg)
         return result
+
 
 class TransferSite:
     """
@@ -462,18 +491,20 @@ class TransferSite:
             files = server.remote.listdir(server.sql_backup_path + "/today", "*.sql")
             if files:
                 for filepath in files:
-                    Checks.check_age(server.remote,filepath,1.0)
+                    Checks.check_age(server.remote, filepath, 1.0)
 
     def check_database(self):
         """
         check the database access
         """
-        index=0
+        index = 0
         for wiki in self.get_selected_wikis():
             if wiki.localSettings is None:
                 wiki.configure_of_settings()
-                index+=1
-                print(f"{index:2d}:{wiki.database} vs {wiki.database_setting} dbUser:{wiki.dbUser}")
+                index += 1
+                print(
+                    f"{index:2d}:{wiki.database} vs {wiki.database_setting} dbUser:{wiki.dbUser}"
+                )
                 pass
 
     def check_endpoints(self):
@@ -516,14 +547,16 @@ class TransferSite:
                 continue
             wikisite.wiki_backup.show_age()
 
-    def check_remote(self,remote:Remote,index:int=None)->bool:
+    def check_remote(self, remote: Remote, index: int = None) -> bool:
         """
         check the availability of the given remote
         """
-        avail_timestamp=remote.avail_check()
+        avail_timestamp = remote.avail_check()
         ok = Site.state_symbol(avail_timestamp is not None)
         index_str = f"{index:02d}:" if index else ""
-        print(f"{index_str}{remote.host:<26} {ok} {remote.symbol}  {avail_timestamp or ''}")
+        print(
+            f"{index_str}{remote.host:<26} {ok} {remote.symbol}  {avail_timestamp or ''}"
+        )
         if self.args.debug:
             remote.log.dump()
         return ok
@@ -545,10 +578,10 @@ class TransferSite:
                 "linux": "lsb_release -d",
                 "apache": "apachectl -v",
                 "mysql": "mysql --version",
-                "php": "php -v"
+                "php": "php -v",
             }
-            remote.log.do_log=self.args.debug
-            procs = remote.run_cmds(cmds,stop_on_error=False)
+            remote.log.do_log = self.args.debug
+            procs = remote.run_cmds(cmds, stop_on_error=False)
             results = {}
             for key, proc in procs.items():
                 if proc.returncode == 0:
@@ -586,7 +619,7 @@ class TransferSite:
         """
         Check tools on a specific server
         """
-        server.remote.log.do_log=self.args.debug
+        server.remote.log.do_log = self.args.debug
         for tool_name, tool in self.servers.tools.tools.items():
             cmd = f"source .profile;{tool.version_cmd}"
             output = server.remote.get_output(cmd)
@@ -620,8 +653,8 @@ class TransferSite:
         target_server = self.servers.servers.get(self.target)
         if not self.check_remote(target_server.remote):
             return
-        transferTask = TransferTask(wiki, source_server, target_server,args=self.args)
-        transferTask.log=self.log
+        transferTask = TransferTask(wiki, source_server, target_server, args=self.args)
+        transferTask.log = self.log
         return transferTask
 
     def transfer(self):
@@ -631,10 +664,10 @@ class TransferSite:
         total_prof = Profiler("transfer", profile=self.args.profile)
         transferTask = self.create_TransferTask()
         if not transferTask:
-            self.log.log("❌","transfer","aborted before login")
+            self.log.log("❌", "transfer", "aborted before login")
             return
         if transferTask.error:
-            self.log.log("❌","transfer",str(transferTask.error))
+            self.log.log("❌", "transfer", str(transferTask.error))
         else:
             transferTask.login()
             self.log.log("✅", "transfer", transferTask.site.version)
@@ -653,7 +686,7 @@ class TransferSite:
 
         if self.args.transfer_all or self.args.transfer_site:
             sync_prof = Profiler("site sync", profile=self.args.profile)
-            if not  transferTask.check_site_sync():
+            if not transferTask.check_site_sync():
                 return
             sync_prof.time()
         if self.args.transfer_all or self.args.transfer_apache:
@@ -676,13 +709,13 @@ class TransferSite:
         """
         return tqdm(items, desc=desc) if self.args.progress else iter(items)
 
-    def get_selected_remotes_list(self)->List[Remote]:
+    def get_selected_remotes_list(self) -> List[Remote]:
         """
         get the selected remote server access API including
         container and native options
         """
-        remotes=[]
-        servers=self.get_selected_servers()
+        remotes = []
+        servers = self.get_selected_servers()
         for server in servers:
             remotes.append(server.remote)
         for wiki in self.get_selected_wikis_list():
@@ -700,7 +733,6 @@ class TransferSite:
         remotes = self.get_selected_remotes_list()
         remote_iterator = self.as_iterator(remotes, "remotes")
         return remote_iterator
-
 
     def get_selected_servers_list(self):
         """
@@ -722,13 +754,13 @@ class TransferSite:
 
         Returns:
             Iterator[Server]: selected servers, optionally shown with a progress bar
-            """
+        """
         servers = self.get_selected_servers_list()
         server_iterator = self.as_iterator(servers, "Processing servers")
         return server_iterator
 
-    def get_selected_wikis_list(self)->List[WikiSite]:
-        wikis=[]
+    def get_selected_wikis_list(self) -> List[WikiSite]:
+        wikis = []
         if self.args.all:
             for server in self.servers.servers.values():
                 for wiki in server.wikis.values():
@@ -750,7 +782,6 @@ class TransferSite:
         wikis = self.get_selected_wikis_list()
         wiki_iter = self.as_iterator(wikis, "wikis")
         return wiki_iter
-
 
     def list_sites(self) -> None:
         """
@@ -895,15 +926,16 @@ class TransferSiteCmd(BaseCmd):
             help="perform action on all sites",
         )
         parser.add_argument(
-            "-sn", "--sitename", help="specify the site name (also used to derive apache config name)"
+            "-sn",
+            "--sitename",
+            help="specify the site name (also used to derive apache config name)",
         )
         parser.add_argument(
-            "-al", "--alias", help="specify the alias website hostname to use e.g. for backup sites"
-
+            "-al",
+            "--alias",
+            help="specify the alias website hostname to use e.g. for backup sites",
         )
-        parser.add_argument(
-            "-cn", "--container", help="specify the container name"
-        )
+        parser.add_argument("-cn", "--container", help="specify the container name")
 
         parser.add_argument("-s", "--source", help="specify the source server")
         parser.add_argument("-t", "--target", help="specify the target server")
@@ -925,7 +957,7 @@ class TransferSiteCmd(BaseCmd):
         tsite = TransferSite(args)
         if args.check_apache:
             tsite.check_apache()
-            handled=True
+            handled = True
         if args.check_backup:
             tsite.check_backup()
             handled = True
