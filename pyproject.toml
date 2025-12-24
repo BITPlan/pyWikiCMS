@@ -42,7 +42,7 @@ dependencies = [
     # https://github.com/BITPlan/nicegraph/,
     "nicegraph>=0.0.2",
     # https://github.com/WolfgangFahl/PyExpireBackups
-    "pyExpireBackups>=0.1.0"
+    "pyExpireBackups>=0.1.1"
  ]
 
 requires-python = ">=3.10"
