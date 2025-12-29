@@ -10,11 +10,9 @@ import traceback
 
 import requests
 from bs4 import BeautifulSoup, Comment
-from bs4.element import NavigableString, Tag
+from bs4.element import Tag
 from fastapi import Response
 from fastapi.responses import HTMLResponse
-from mogwai.core.mogwaigraph import MogwaiGraph
-from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
@@ -384,7 +382,7 @@ class WikiFrontend(object):
                 frame = match.group(1)
         return frame
 
-    def get_path_response(self, path: str) -> str:
+    def get_path_response(self, path: str) -> Response:
         """
         get the repsonse for the the given path
 
@@ -408,7 +406,12 @@ class WikiFrontend(object):
             html = content
             framed_html = None
             if error:
-                html = f"error getting {page_title} for {self.name}:<br>{error}"
+                response=Response(
+                    content=f"Page not found: {path}",
+                    status_code=404,
+                    media_type="text/html"
+                )
+                self.log(f"error getting {page_title} for {self.name}:<br>{error}")
             else:
                 if "<slideshow" in html or "&lt;slideshow" in html:
                     content = self.toReveal(content)
