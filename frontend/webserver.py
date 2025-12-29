@@ -135,7 +135,7 @@ class CmsWebServer(GraphNavigatorWebserver):
         """
         super().configure_run()
         sites = list(self.server.frontends.keys())
-        sites=self.wiki_frontend.get_sites(self.args,sites)
+        sites=self.wiki_frontends.get_sites(self.args,sites)
         self.wiki_frontends.enableSites(sites)
         module_path = os.path.dirname(os.path.abspath(__file__))
         yaml_path = os.path.join(module_path, "resources", "schema.yaml")
