@@ -134,7 +134,9 @@ class CmsWebServer(GraphNavigatorWebserver):
         configure command line specific details
         """
         super().configure_run()
-        sites = [frontend.name for frontend in self.server.frontends.values()]
+        sites=[]
+        if self.server and self.server.frontends:
+            sites = [frontend.name for frontend in self.server.frontends.values()]
         sites=self.wiki_frontends.get_sites(self.args,sites)
         self.wiki_frontends.enableSites(sites)
         module_path = os.path.dirname(os.path.abspath(__file__))
