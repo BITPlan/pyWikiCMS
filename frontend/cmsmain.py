@@ -23,8 +23,8 @@ class CmsMain(WebserverCmd):
         """
         parser = super().getArgParser(description, version_msg)
         parser.add_argument(
-            "--sites", nargs="+", required=False, help="the sites to enable"
-        )
+            "--sites", nargs="+", required=False,
+        help="space-separated list of sites (or use comma-separated string)"        )
         return parser
 
 

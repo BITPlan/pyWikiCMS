@@ -134,7 +134,12 @@ class CmsWebServer(GraphNavigatorWebserver):
         configure command line specific details
         """
         super().configure_run()
-        self.wiki_frontends.enableSites(self.args.sites)
+        args=self.args
+        if args.sites and len(args.sites) == 1 and ',' in args.sites[0]:
+            sites = args.sites[0].split(',')
+        else:
+            sites = args.sites or []
+        self.wiki_frontends.enableSites(sites)
         module_path = os.path.dirname(os.path.abspath(__file__))
         yaml_path = os.path.join(module_path, "resources", "schema.yaml")
         self.load_schema(yaml_path)
