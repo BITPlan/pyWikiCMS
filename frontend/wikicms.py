@@ -18,7 +18,7 @@ from wikibot3rd.wikiclient import WikiClient
 
 from backend.site import FrontendSite
 from frontend.frame import HtmlFrame
-
+from typing import List
 
 class WikiFrontend(object):
     """
@@ -436,6 +436,42 @@ class WikiFrontends:
         """
         self.servers = servers
         self.wiki_frontends = {}
+
+
+    def get_sites(self, args, sites: List[str]) -> List[str]:
+        """
+        Parse sites from command line arguments.
+
+        Handles various input formats:
+        - Comma-separated string: "site1,site2" -> ["site1", "site2"]
+        - Single site: "site1" -> ["site1"]
+        - "all" keyword: returns the input sites list unchanged
+        - Multiple arguments: ["site1", "site2"] -> ["site1", "site2"]
+        - No arguments: returns all
+
+        Args:
+            args: Arguments object with a 'sites' attribute (list of strings)
+            sites: Default sites list to return when "all" is specified
+
+        Returns:
+            List of parsed site names
+        """
+        parsed_sites: List[str] = []
+
+        if not args.sites:
+            parsed_sites = sites
+        elif len(args.sites) == 1:
+            arg = args.sites[0]
+            if ',' in arg:
+                parsed_sites = arg.split(',')
+            elif arg.lower() == 'all':
+                parsed_sites = sites
+            else:
+                parsed_sites = args.sites
+        else:
+            parsed_sites = args.sites
+
+        return parsed_sites
 
     def enableSites(self, siteNames):
         """
