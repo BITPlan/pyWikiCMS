@@ -213,7 +213,7 @@ class WikiFrontend(object):
         prefix (str): the prefix to replace e.g. "/", "/images", "/thumbs"
         delim (str): if not None the delimiter for multiple values
         """
-        siteprefix = f"/{self.frontend.name}{prefix}"
+        siteprefix = f"/{prefix}"
         if attribute in node.attrs:
             attrval = node.attrs[attribute]
             if delim is not None:
