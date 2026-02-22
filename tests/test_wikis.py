@@ -7,7 +7,7 @@ Created on 2023-10-31
 from basemkit.basetest import Basetest
 from mogwai.core.mogwaigraph import MogwaiGraph
 
-from MediaWikiServerTools.backend.site import Wikis
+from MediaWikiServerTools.mwstools_backend.site import Wikis
 
 
 class TestWikis(Basetest):

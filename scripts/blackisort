@@ -1,6 +1,6 @@
 #!/bin/bash
 # WF 2025-07-23
-packages="tests backend frontend"
+packages="tests frontend site"
 for package in $packages
 do
   isort $package/*.py

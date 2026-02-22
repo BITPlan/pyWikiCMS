@@ -16,8 +16,8 @@ from fastapi.testclient import TestClient
 from ngwidgets.basetest import Basetest
 from ngwidgets.webserver_test import WebserverTest
 
-from MediaWikiServerTools.backend.server import Server, Servers
-from MediaWikiServerTools.backend.site import FrontendSite, WikiSite
+from MediaWikiServerTools.mwstools_backend.server import Server, Servers
+from MediaWikiServerTools.mwstools_backend.site import FrontendSite, WikiSite
 from frontend.cmsmain import CmsMain
 from frontend.webserver import CmsWebServer
 from frontend.wikicms import WikiFrontend, WikiFrontends

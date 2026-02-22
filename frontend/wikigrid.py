@@ -14,7 +14,7 @@ from ngwidgets.progress import NiceguiProgressbar
 from ngwidgets.task_runner import TaskRunner
 from nicegui import ui
 
-from MediaWikiServerTools.backend.site import Wikis, WikiSite
+from MediaWikiServerTools.mwstools_backend.site import Wikis, WikiSite
 
 
 class WikiCheck:

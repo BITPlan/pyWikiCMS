@@ -13,7 +13,7 @@ YOU WILL NEVER PROCEED WITH OUT POSITIVE CONFIRMATION by go!
 
 pyWikiCMS is a Python-based MediaWiki Content Management System frontend. It consists of:
 - `frontend/` - Web UI components (FastAPI-based)
-- `backend/` - Server and backup functionality
+- `site/` - Site-specific configuration
 - `tests/` - Unit tests using unittest
 
 Requires Python 3.10+.
@@ -68,7 +68,7 @@ python -m unittest tests.test_wikicms.TestWikiCMS.testWikiCMS
 ```bash
 scripts/blackisort
 ```
-This runs `isort` then `black` on `tests/`, `backend/`, and `frontend/` directories.
+This runs `isort` then `black` on `tests/`, `frontend/`, and `site/` directories.
 
 ### Running the Application
 
@@ -78,11 +78,12 @@ python -m frontend.cmsmain
 # or: wikicms
 ```
 
-**Other CLI commands:**
+**Other CLI commands (provided by MediaWikiServerTools):**
+
 ```bash
-tsite   # backend/tsite:main
-sqlbackup  # backend/sql_backup:main
-cronbackup # backend.cron_backup:main
+tsite   # mwstools_backend.tsite:main
+sqlbackup  # mwstools_backend.sql_backup:main
+cronbackup # mwstools_backend.cron_backup:main
 ```
 
 ---
@@ -98,7 +99,7 @@ Order imports as follows (enforced by isort):
 
 Use relative imports within the project:
 ```python
-from MediaWikiServerTools.backend.site import FrontendSite
+from MediaWikiServerTools.mwstools_backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 ```
 
@@ -200,10 +201,6 @@ pyWikiCMS/
 │   ├── wikicms.py
 │   ├── webserver.py
 │   └── ...
-├── backend/          # Server/backup code
-│   ├── __init__.py
-│   ├── site.py
-│   └── ...
 ├── tests/            # Unit tests
 │   ├── test_wikicms.py
 │   └── ...
@@ -211,8 +208,12 @@ pyWikiCMS/
 │   ├── blackisort
 │   ├── test
 │   └── install
+├── site/             # Site-specific configuration
+├── docs/             # Documentation
 └── pyproject.toml
 ```
+
+**Note:** Backend functionality is provided by the `MediaWikiServerTools` dependency (import as `MediaWikiServerTools.mwstools_backend.*`).
 
 ### Dependencies
 

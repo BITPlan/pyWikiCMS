@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
-from MediaWikiServerTools.backend.site import FrontendSite
+from MediaWikiServerTools.mwstools_backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 from typing import List
 

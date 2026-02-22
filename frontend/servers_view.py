@@ -9,7 +9,7 @@ from mogwai.web.node_view import NodeView
 from nicegui import ui
 from tqdm import tqdm
 
-from MediaWikiServerTools.backend.server import Servers
+from MediaWikiServerTools.mwstools_backend.server import Servers
 
 
 class ServersView:
