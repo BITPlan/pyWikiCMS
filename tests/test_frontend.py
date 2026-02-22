@@ -178,7 +178,7 @@ class TestFrontend(WebserverTest):
         ]
 
         for i, (query, ehtml) in enumerate(test_cases):
-            print(f"\n--- Request {i+1}: {query} ---")
+            print(f"\n--- Request {i + 1}: {query} ---")
             self.check_server(f"pre_request_{i}")
             try:
                 html = self.get_html(query)
@@ -221,7 +221,14 @@ class TestFrontend(WebserverTest):
             self.assertEqual(expected, pageTitle)
         pass
 
-    def checkProxiedContent(self, frontend_name: str, url: str, expected_size: int):
+    def checkProxiedContent(
+        self,
+        frontend_name: str,
+        url: str,
+        expected_size: int,
+        expected_code: int = 200,
+        expected_mime: str = None,
+    ):
         """
         check access of a proxied content at a given frontend
         and url for an expected size
@@ -231,7 +238,9 @@ class TestFrontend(WebserverTest):
         self.assertTrue(frontend.needsProxy(url))
         imageResponse = frontend.proxy(url)
         self.assertFalse(imageResponse is None)
-        self.assertEqual(200, imageResponse.status_code)
+        self.assertEqual(expected_code, imageResponse.status_code)
+        if expected_mime:
+            self.assertEqual(expected_mime, imageResponse.headers.get("Content-Type"))
         self.assertEqual(expected_size, len(imageResponse.content))
 
     def testProxy(self):
@@ -334,14 +343,16 @@ class TestFrontend(WebserverTest):
         if self.debug:
             print(content)
 
+    @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue28_video_support(self):
         """
         https://github.com/BITPlan/pyWikiCMS/issues/28
+        @FIXME 2026 Q1 on migration
         """
         self.check_server()
         url = "/videos/HDV_0878.webm"
         expected_size = 2939840
-        self.checkProxiedContent("www", url, expected_size)
+        self.checkProxiedContent("www", url, expected_size, expected_mime="video/webm")
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testToReveal(self):

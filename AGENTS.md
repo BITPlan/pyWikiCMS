@@ -2,6 +2,13 @@
 
 This file provides guidelines for agentic coding agents working on this repository.
 
+## Important Rules
+
+**CRITICAL: NEVER EVER DO ANY ACTION READING, MODIFYING OR RUNNING without explaing the plan
+Each set of intended actions needs to be explained in the format:
+I understood that <YOUR ANALYSIS> so that i plan to <GOALS YOU PURSUE> by <ACTIONS TO BE CONFIRMED> confirm with go!
+YOU WILL NEVER PROCEED WITH OUT POSITIVE CONFIRMATION by go!
+
 ## Project Overview
 
 pyWikiCMS is a Python-based MediaWiki Content Management System frontend. It consists of:
