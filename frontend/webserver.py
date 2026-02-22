@@ -65,9 +65,8 @@ class CmsWebServer(GraphNavigatorWebserver):
         self.users = Sso_Users(self.config.short_name)
         self.login = Login(self, self.users)
         self.hostname = socket.gethostname()
-        self.server = self.servers.servers.get(self.hostname)
-        if self.server:
-            self.server.probe_local()
+        self.server=None
+        self.local_server=None
 
         @ui.page("/servers")
         async def show_servers(client: Client):
@@ -135,6 +134,12 @@ class CmsWebServer(GraphNavigatorWebserver):
         """
         super().configure_run()
         sites=[]
+        self.local_server = self.servers.servers.get(self.hostname)
+        server_name=self.args.server or self.hostname
+        self.server = self.servers.servers.get(server_name)
+        if self.local_server:
+            self.local_server.probe_local()
+
         if self.server and self.server.frontends:
             sites = [frontend.name for frontend in self.server.frontends.values()]
         sites=self.wiki_frontends.get_sites(self.args,sites)

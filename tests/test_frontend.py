@@ -223,7 +223,8 @@ class TestFrontend(WebserverTest):
 
     def checkProxiedContent(self, frontend_name: str, url: str, expected_size: int):
         """
-        check access of a proxied content at a given frontend and url for an expected size
+        check access of a proxied content at a given frontend
+        and url for an expected size
         """
         self.check_server()
         frontend = self.get_frontend(frontend_name)
