@@ -18,8 +18,8 @@ from nicegui import Client, app, ui
 from starlette.responses import RedirectResponse
 from wikibot3rd.sso_users import Sso_Users
 
-from MediaWikiServerTools.mwstools_backend.server import Servers
-from MediaWikiServerTools.mwstools_backend.site import Wikis
+from mwstools_backend.server import Servers
+from mwstools_backend.site import Wikis
 from frontend.servers_view import ServersView
 from frontend.version import Version
 from frontend.wikicms import WikiFrontends

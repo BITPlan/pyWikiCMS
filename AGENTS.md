@@ -99,7 +99,7 @@ Order imports as follows (enforced by isort):
 
 Use relative imports within the project:
 ```python
-from MediaWikiServerTools.mwstools_backend.site import FrontendSite
+from mwstools_backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 ```
 
@@ -213,7 +213,7 @@ pyWikiCMS/
 └── pyproject.toml
 ```
 
-**Note:** Backend functionality is provided by the `MediaWikiServerTools` dependency (import as `MediaWikiServerTools.mwstools_backend.*`).
+**Note:** Backend functionality is provided by the `MediaWikiServerTools` package (import modules as `mwstools_backend.*`).
 
 ### Dependencies
 
