@@ -8,8 +8,8 @@ import unittest
 
 from basemkit.basetest import Basetest
 
-from backend.server import Servers
-from backend.site import Site, WikiSite
+from MediaWikiServerTools.backend.server import Servers
+from MediaWikiServerTools.backend.site import Site, WikiSite
 
 
 class TestSite(Basetest):

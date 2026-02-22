@@ -16,9 +16,10 @@ from fastapi.responses import HTMLResponse
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
-from backend.site import FrontendSite
+from MediaWikiServerTools.backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 from typing import List
+
 
 class WikiFrontend(object):
     """
@@ -406,10 +407,10 @@ class WikiFrontend(object):
             html = content
             framed_html = None
             if error:
-                response=Response(
+                response = Response(
                     content=f"Page not found: {path}",
                     status_code=404,
-                    media_type="text/html"
+                    media_type="text/html",
                 )
                 self.log(f"error getting {page_title} for {self.name}:<br>{error}")
             else:
@@ -437,7 +438,6 @@ class WikiFrontends:
         self.servers = servers
         self.wiki_frontends = {}
 
-
     def get_sites(self, args, sites: List[str]) -> List[str]:
         """
         Parse sites from command line arguments.
@@ -462,9 +462,9 @@ class WikiFrontends:
             parsed_sites = sites
         elif len(args.sites) == 1:
             arg = args.sites[0]
-            if ',' in arg:
-                parsed_sites = arg.split(',')
-            elif arg.lower() == 'all':
+            if "," in arg:
+                parsed_sites = arg.split(",")
+            elif arg.lower() == "all":
                 parsed_sites = sites
             else:
                 parsed_sites = args.sites

@@ -98,7 +98,7 @@ Order imports as follows (enforced by isort):
 
 Use relative imports within the project:
 ```python
-from backend.site import FrontendSite
+from MediaWikiServerTools.backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 ```
 
