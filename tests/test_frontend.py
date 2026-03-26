@@ -275,12 +275,12 @@ class TestFrontend(WebserverTest):
         for test_page, expected_frame in test_cases:
             frame = frontend.get_frame(test_page)
             self.assertEqual(expected_frame, frame)
-            page_title, html, error = frontend.getContent(test_page)
+            pc = frontend.getContent(test_page)
             if debug:
-                print(html)
-            self.assertIsNone(error)
-            self.assertEqual(page_title, test_page)
-            self.assertTrue("</div" in html or "<p>" in html)
+                print(pc.content)
+            self.assertIsNone(pc.error)
+            self.assertEqual(pc.page_title, test_page)
+            self.assertTrue("</div" in pc.content or "<p>" in pc.content)
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue15(self):
@@ -298,12 +298,12 @@ class TestFrontend(WebserverTest):
             print(filtered)
         self.assertFalse("""<span class="mw-editsection">""" in filtered)
         issue_page = "WikiCMS/Issue15"
-        pageTitle, content, error = frontend.getContent(issue_page)
-        self.assertEqual(issue_page, pageTitle)
-        self.assertIsNone(error)
+        pc = frontend.getContent(issue_page)
+        self.assertEqual(issue_page, pc.page_title)
+        self.assertIsNone(pc.error)
         if self.debug:
-            print(content)
-        self.assertFalse("""<span class="mw-editsection">""" in content)
+            print(pc.content)
+        self.assertFalse("""<span class="mw-editsection">""" in pc.content)
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue19(self):
@@ -337,11 +337,11 @@ class TestFrontend(WebserverTest):
         self.assertFalse("<html>" in filtered)
         self.assertFalse("<body>" in filtered)
         issue_page = "WikiCMS/Issue17"
-        pageTitle, content, error = frontend.getContent(issue_page)
-        self.assertIsNone(error)
-        self.assertEqual(issue_page, pageTitle)
+        pc = frontend.getContent(issue_page)
+        self.assertIsNone(pc.error)
+        self.assertEqual(issue_page, pc.page_title)
         if self.debug:
-            print(content)
+            print(pc.content)
 
     @unittest.skipIf(Basetest.inPublicCI(), "Skip in public CI environment")
     def testIssue28_video_support(self):

@@ -10,7 +10,6 @@ import traceback
 
 import requests
 from bs4 import BeautifulSoup, Comment
-from bs4.element import Tag
 from fastapi import Response
 from fastapi.responses import HTMLResponse
 from wikibot3rd.smw import SMWClient
@@ -19,6 +18,15 @@ from wikibot3rd.wikiclient import WikiClient
 from mwstools_backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 from typing import List
+from basemkit.yamlable import lod_storable
+
+@lod_storable
+class PageContent:
+    page_title:str
+    content: str
+    html:str
+    error: Exception
+
 
 
 class WikiFrontend(object):
@@ -117,11 +125,11 @@ class WikiFrontend(object):
         ask_query = "[[Category:CMS]]"
         page_records = self.smwclient.query(ask_query, "cms pages")
         for page_title in list(page_records):
-            page_title, html, error = self.getContent(page_title)
-            if not error:
-                cms_pages[page_title] = html
+            pageContent = self.getContent(page_title)
+            if not pageContent.error:
+                cms_pages[page_title] = pageContent.html
             else:
-                self.logger.warn(error)
+                self.logger.warn(pageContent.error)
         return cms_pages
 
     def errMsg(self, ex):
@@ -288,35 +296,34 @@ class WikiFrontend(object):
             comments.extract()
         return soup
 
-    def getContent(self, pagePath: str):
+    def getContent(self, pagePath: str)->PageContent:
         """get the content for the given pagePath
         Args:
             pagePath(str): the pagePath
             whatToFilter(list): list of filter keys
         Returns:
-            str: the HTML content for the given path
+            pageContent(PageContent): the HTML content for the given path wrapped in a PageContent
         """
-        content = None
-        error = None
-        pageTitle = "?"
+        pc=PageContent(html=None,content=None,error=None,page_title="?")
         try:
             if pagePath == "/":
-                pageTitle = self.frontend.defaultPage
+                pc.page_title = self.frontend.defaultPage
             else:
-                error = self.checkPath(pagePath)
-                pageTitle = self.wikiPage(pagePath)
-            if error is None:
+                pc.error = self.checkPath(pagePath)
+                pc.page_title = self.wikiPage(pagePath)
+            if pc.error is None:
                 if self.wiki is None:
                     raise Exception(
                         "getContent without wiki - you might want to call open first"
                     )
-                content = self.wiki.getHtml(pageTitle)
-                soup = self.filter(content)
+                pc.html = self.wiki.getHtml(pc.page_title)
+                soup = self.filter(pc.html)
                 soup = self.fixHtml(soup)
-                content = self.unwrap(soup)
+                pc.content = self.unwrap(soup)
         except Exception as e:
-            error = self.errMsg(e)
-        return pageTitle, content, error
+            pc.error = self.errMsg(e)
+
+        return pc
 
     def wrapWithReveal(self, html: str):
         """
@@ -402,10 +409,13 @@ class WikiFrontend(object):
                 headers=dict(html_response.headers),
             )
         else:
-            page_title, content, error = self.getContent(path)
-            html_frame = HtmlFrame(self, title=page_title)
-            html = content
+            pageContent= self.getContent(path)
+            html_frame = HtmlFrame(self, title=pageContent.page_title)
             framed_html = None
+            error=pageContent.error
+            page_title=pageContent.page_title
+            content=pageContent.content
+            html=pageContent.html
             if error:
                 response = Response(
                     content=f"Page not found: {path}",
