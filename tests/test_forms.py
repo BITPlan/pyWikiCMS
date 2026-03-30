@@ -164,7 +164,7 @@ class TestForms(Basetest):
             "</div>"
         )
 
-        mwf = MediaWikiHtmlFilter(form_registry=FormRegistry.instance())
+        mwf = MediaWikiHtmlFilter()
         result = mwf.filter_html(html)
         if self.debug:
             print(result)
