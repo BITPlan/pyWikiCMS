@@ -218,9 +218,6 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 pc.html = self.wiki.getHtml(pc.page_title)
                 # apply filter keeping original html for reference, result in pc.content
                 pc.apply_filter(self)
-                soup = self.filter(pc.content)
-                soup = self.fixHtml(soup)
-                pc.content = self.unwrap(soup)
         except Exception as e:
             pc.error = self.errMsg(e)
 
