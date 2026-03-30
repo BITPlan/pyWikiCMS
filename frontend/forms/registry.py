@@ -35,7 +35,7 @@ class FormRegistry:
         """
         if forms_dir is None:
             forms_dir = DEFAULT_FORMS_DIR
-        registry = FormRegistry.instance()
+        registry = FormRegistry()
         if os.path.isdir(forms_dir):
             for fname in sorted(os.listdir(forms_dir)):
                 if fname.endswith(".yaml"):
