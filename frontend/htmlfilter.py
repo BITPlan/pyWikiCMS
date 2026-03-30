@@ -14,10 +14,25 @@ from basemkit.yamlable import lod_storable
 
 @lod_storable
 class PageContent:
-    page_title: str
-    content: str
-    html: str
-    error: Exception
+    """
+    Content of a wiki page with original html preserved for reference
+    and filtered content for display.
+    """
+
+    page_title: str  # the title of the wiki page
+    html: str  # original raw html from the wiki
+    content: str  # filtered html for display
+    error: Exception  # error if any occurred during retrieval or filtering
+
+    def apply_filter(self, mwf: "MediaWikiHtmlFilter"):
+        """
+        Apply the given filter to the raw html, storing the result in content
+        while keeping the original html for reference.
+
+        Args:
+            mwf(MediaWikiHtmlFilter): the filter to apply
+        """
+        self.content = mwf.filter_html(self.html)
 
 
 class HtmlFilter:
@@ -81,6 +96,20 @@ class MediaWikiHtmlFilter(HtmlFilter):
         filter the given html
         """
         return self.doFilter(html, self.filterKeys)
+
+    def filter_html(self, html: str) -> str:
+        """
+        Apply filters directly on the raw HTML string without re-parsing,
+        to avoid lxml re-serialization mangling content.
+        """
+        if "editsection" in self.filterKeys:
+            html = re.sub(
+                r'<span class="mw-editsection">.*?</span>\s*</span>',
+                "</span>",
+                html,
+                flags=re.DOTALL,
+            )
+        return html
 
     def doFilter(self, html, filterKeys):
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup

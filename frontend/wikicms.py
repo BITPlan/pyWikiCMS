@@ -216,7 +216,9 @@ class WikiFrontend(MediaWikiHtmlFilter):
                         "getContent without wiki - you might want to call open first"
                     )
                 pc.html = self.wiki.getHtml(pc.page_title)
-                soup = self.filter(pc.html)
+                # apply filter keeping original html for reference, result in pc.content
+                pc.apply_filter(self)
+                soup = self.filter(pc.content)
                 soup = self.fixHtml(soup)
                 pc.content = self.unwrap(soup)
         except Exception as e:
@@ -284,7 +286,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
                     html = content
 
             if not framed_html:
-                framed_html = html_frame.frame(content)
+                framed_html = html_frame.frame(html)
             response = HTMLResponse(framed_html)
         return response
 

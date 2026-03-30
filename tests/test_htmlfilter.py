@@ -3,8 +3,10 @@ Created on 2026-03-30
 
 @author: wf
 """
+
 from basemkit.basetest import Basetest
 from frontend.htmlfilter import MediaWikiHtmlFilter
+
 
 class TestHtmlFilter(Basetest):
     """
@@ -38,14 +40,21 @@ class TestHtmlFilter(Basetest):
         test that mw-editsection spans are filtered from frontend output
         https://github.com/BITPlan/pyWikiCMS/issues/32
         """
-        html = """<div class="mw-parser-output">
+        from frontend.htmlfilter import PageContent
+
+        raw_html = """<div class="mw-parser-output">
 <h2><span class="mw-headline" id="Ankunft">Ankunft</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=Ion2017-02-04&amp;veaction=edit&amp;section=18" class="mw-editsection-visualeditor" title="Edit section: Ankunft">edit</a><span class="mw-editsection-divider"> | </span><a href="/index.php?title=Ion2017-02-04&amp;action=edit&amp;section=18" title="Edit section: Ankunft">edit source</a><span class="mw-editsection-bracket">]</span></span></h2>
 <p>Some content</p>
 </div>"""
+        pc = PageContent(
+            page_title="Ion2017-02-04", html=raw_html, content=None, error=None
+        )
         mwf = MediaWikiHtmlFilter()
-        soup = mwf.filter(html)
-        result = str(soup)
+        pc.apply_filter(mwf)
         if self.debug:
-            print(result)
-        self.assertNotIn("mw-editsection", result)
-        self.assertIn("Ankunft", result)
+            print(pc.content)
+        # original html preserved
+        self.assertIn("mw-editsection", pc.html)
+        # filtered content has no editsection
+        self.assertNotIn("mw-editsection", pc.content)
+        self.assertIn("Ankunft", pc.content)
