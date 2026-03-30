@@ -3,12 +3,8 @@ Created on 2026-03-30
 
 @author: wf
 """
-
 from basemkit.basetest import Basetest
-
-from mwstools_backend.server import Servers
-from mwstools_backend.site import Site, WikiSite
-
+from frontend.htmlfilter import MediaWikiHtmlFilter
 
 class TestHtmlFilter(Basetest):
     """
@@ -17,13 +13,11 @@ class TestHtmlFilter(Basetest):
 
     def setUp(self, debug=True, profile=True):
         Basetest.setUp(self, debug=debug, profile=profile)
-        self.servers = Servers.of_config_path()
 
     def testToReveal(self):
         """
         test converting MediaWiki html with ⌘⌘ headings to reveal.js slideshow
         """
-        from frontend.htmlfilter import MediaWikiHtmlFilter
 
         html = """<div class="mw-parser-output">
 <h2><span id=".E2.8C.98.E2.8C.98_Slide1"></span><span class="mw-headline" id="⌘⌘_Slide1">⌘⌘ Slide1</span></h2>
@@ -38,3 +32,20 @@ class TestHtmlFilter(Basetest):
             print(framed)
         self.assertIn("reveal.min.css", framed)
         self.assertIn("Reveal.initialize({", framed)
+
+    def testIssue32_editsection_filter(self):
+        """
+        test that mw-editsection spans are filtered from frontend output
+        https://github.com/BITPlan/pyWikiCMS/issues/32
+        """
+        html = """<div class="mw-parser-output">
+<h2><span class="mw-headline" id="Ankunft">Ankunft</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/index.php?title=Ion2017-02-04&amp;veaction=edit&amp;section=18" class="mw-editsection-visualeditor" title="Edit section: Ankunft">edit</a><span class="mw-editsection-divider"> | </span><a href="/index.php?title=Ion2017-02-04&amp;action=edit&amp;section=18" title="Edit section: Ankunft">edit source</a><span class="mw-editsection-bracket">]</span></span></h2>
+<p>Some content</p>
+</div>"""
+        mwf = MediaWikiHtmlFilter()
+        soup = mwf.filter(html)
+        result = str(soup)
+        if self.debug:
+            print(result)
+        self.assertNotIn("mw-editsection", result)
+        self.assertIn("Ankunft", result)
