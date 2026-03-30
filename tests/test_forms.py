@@ -4,6 +4,8 @@ Created on 2026-03-30
 @author: wf
 """
 
+import os
+
 from basemkit.basetest import Basetest
 
 from frontend.forms.form_field import FormDefinition, FormField
@@ -11,6 +13,8 @@ from frontend.forms.handler import FormHandler
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
 from frontend.htmlfilter import MediaWikiHtmlFilter
+
+DEFAULT_FORMS_DIR = os.path.expanduser("~/.wikicms/forms")
 
 
 def make_contact_form() -> FormDefinition:
@@ -171,6 +175,26 @@ class TestForms(Basetest):
         self.assertNotIn("wikicms-form", result)
         self.assertIn("form-horizontal", result)
         self.assertIn("Ihre Nachricht an uns", result)
+
+    def test_load_forms_from_default_dir(self):
+        """
+        Test that all YAML files in ~/.wikicms/forms are loaded into the registry.
+        """
+        if not os.path.isdir(DEFAULT_FORMS_DIR):
+            self.skipTest(f"{DEFAULT_FORMS_DIR} does not exist")
+        for fname in sorted(os.listdir(DEFAULT_FORMS_DIR)):
+            if fname.endswith(".yaml"):
+                yaml_path = os.path.join(DEFAULT_FORMS_DIR, fname)
+                FormRegistry.register_from_yaml(yaml_path)
+        for expected_name in ("contact", "contacttest", "registration"):
+            form_def = FormRegistry.get(expected_name)
+            self.assertIsNotNone(
+                form_def, f"form '{expected_name}' not found in registry"
+            )
+            if self.debug:
+                renderer = FormRenderer()
+                print(f"\n--- {expected_name} ---")
+                print(renderer.render(form_def))
 
     def test_htmlfilter_no_registry_leaves_div(self):
         """
