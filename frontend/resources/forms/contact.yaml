@@ -1,15 +1,27 @@
 # Contact form definition for pyWikiCMS
 #
 # Translatable string fields (legend, submit_label, success_message on the form;
-# label, placeholder, error_msg on each field) accept either a plain string or a
-# language-keyed dict, e.g.:
+# label, placeholder, error_msg, placeholder_choice on each field) accept either a 
+# plain string or a language-keyed dict, e.g.:
 #
-#   label:
+#   label: "Name"   # simple string
+#   label:          # or language-keyed dict
 #     en: "Name"
 #     de: "Name"
 #     fr: "Nom"
 #
-# The renderer resolves the correct language at render time via resolve_i18n().
+#   label:          # or object with custom CSS class
+#     text:
+#       en: "Name"
+#       de: "Name"
+#     css_class: "bitplanorange"
+#
+# The renderer resolves the correct language at render time via I18n.resolve().
+#
+# Common field attributes:
+#   - css_class: additional CSS classes (e.g., "form-control selectpicker")
+#   - size: xs, sm, md, lg (affects label and input column sizing)
+#   - placeholder_choice: for select fields, the first option text
 #
 # The `validators` list maps to WTForms validators.  Supported types:
 #   DataRequired, InputRequired, Optional, Email, Length (min/max),
@@ -53,12 +65,16 @@ fields:
   - name: name
     field_type: text
     label:
-      en: Name
-      de: Name
-      fr: Nom
-      es: Nombre
-      it: Nome
-      nl: Naam
+      text:
+        en: Name
+        de: Name
+        fr: Nom
+        es: Nombre
+        it: Nome
+        nl: Naam
+      css_class: bitplanorange
+    css_class: form-control
+    size: md
     placeholder:
       en: Your name
       de: Ihr Name

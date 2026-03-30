@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 
 from markupsafe import Markup, escape
 
-from frontend.forms.form_field import FormDefinition, FormField, resolve_i18n
+from frontend.forms.form_field import FormDefinition, FormField, I18n
 
 
 class FormRenderer:
@@ -50,14 +50,20 @@ class FormRenderer:
         if errors is None:
             errors = {}
 
-        legend = resolve_i18n(form_def.legend, lang)
+        legend = I18n.resolve(form_def.legend, lang)
+        # Use css_class from form definition, default to "form-horizontal"
+        form_css_class = (
+            form_def.css_class
+            if hasattr(form_def, "css_class") and form_def.css_class
+            else "form-horizontal"
+        )
         parts = []
         parts.append(
             Markup(
-                f'<form class="form-horizontal" action="{escape(form_def.action)}" method="post">'
+                f'<form class="{form_css_class}" action="{escape(form_def.action)}" method="post">\n'
             )
         )
-        parts.append(Markup(f"<fieldset><legend>{escape(legend)}</legend>"))
+        parts.append(Markup(f"<fieldset>\n<legend>{escape(legend)}</legend>\n"))
 
         for field in form_def.fields:
             parts.append(
@@ -70,7 +76,7 @@ class FormRenderer:
             )
 
         parts.append(self._render_submit(form_def, lang))
-        parts.append(Markup("</fieldset></form>"))
+        parts.append(Markup("</fieldset>\n</form>"))
 
         return Markup("").join(parts)
 
@@ -98,42 +104,62 @@ class FormRenderer:
         has_error = bool(field_errors)
         group_class = "form-group has-feedback" + (" has-error" if has_error else "")
 
-        label_text = escape(resolve_i18n(field.label, lang) or field.name)
+        # Handle label - can be string/dict (backward compat) or FormLabel object
+        if hasattr(field.label, "text"):
+            # New FormLabel format
+            label_text = escape(I18n.resolve(field.label.text, lang) or field.name)
+            label_extra_css = field.label.css_class if field.label.css_class else ""
+        else:
+            # Old format: string or dict
+            label_text = escape(I18n.resolve(field.label, lang) or field.name)
+            label_extra_css = ""
 
-        parts = [Markup(f'<div class="{group_class}">')]
+        # Build label css_class - use label_extra_css + size-based classes
+        label_size = field.size if field.size else "md"
+        size_css = f"col-{label_size}-3 control-label"
+        label_css = f"{label_extra_css} {size_css}".strip()
+
+        parts = [Markup(f'<div class="{group_class}">\n')]
         parts.append(
             Markup(
-                f'<label class="col-md-3 control-label bitplanorange" for="{escape(field.name)}">'
-                f"{label_text}</label>"
+                f'  <label class="{label_css}" for="{escape(field.name)}">'
+                f"{label_text}</label>\n"
             )
         )
+
+        # Use size for input container
+        input_size = field.size if field.size else "md"
         parts.append(
             Markup(
-                '<div class="col-md-6 inputGroupContainer"><div class="input-group">'
+                f'  <div class="col-{input_size}-6 inputGroupContainer">\n'
+                f'    <div class="input-group">\n'
             )
         )
 
         if field.glyphicon:
             parts.append(
                 Markup(
-                    f'<span class="input-group-addon">'
+                    f'      <span class="input-group-addon">'
                     f'<i class="glyphicon glyphicon-{escape(field.glyphicon)}"></i>'
-                    f"</span>"
+                    f"</span>\n"
                 )
             )
 
-        parts.append(self._render_input(field, value, lang))
-        parts.append(Markup("</div>"))  # input-group
+        parts.append(
+            Markup("      ") + self._render_input(field, value, lang) + Markup("\n")
+        )
+
+        parts.append(Markup("    </div>\n"))  # input-group
 
         for error in field_errors:
             parts.append(
                 Markup(
-                    f'<small class="help-block" data-bv-validator="notEmpty">'
-                    f"{escape(error)}</small>"
+                    f'    <small class="help-block" data-bv-validator="notEmpty">'
+                    f"{escape(error)}</small>\n"
                 )
             )
 
-        parts.append(Markup("</div></div>"))  # inputGroupContainer, form-group
+        parts.append(Markup("  </div>\n</div>\n"))  # inputGroupContainer, form-group
 
         return Markup("").join(parts)
 
@@ -149,34 +175,51 @@ class FormRenderer:
         Returns:
             Markup: rendered input HTML
         """
-        placeholder = escape(resolve_i18n(field.placeholder, lang) or "")
+        placeholder = escape(I18n.resolve(field.placeholder, lang) or "")
         required_attr = ' required="required"' if field.required else ""
         field_name = escape(field.name)
 
+        # Build css_class - use field.css_class or default to "form-control"
+        base_class = field.css_class if field.css_class else "form-control"
+
         if field.field_type == "textarea":
             rendered = Markup(
-                f'<textarea class="form-control" name="{field_name}" id="{field_name}" '
-                f'placeholder="{placeholder}" data-bv-field="{field_name}"{required_attr}>'
+                f'<textarea class="{base_class}" name="{field_name}" id="{field_name}" '
+                f'placeholder="{placeholder}" data-bv-field="{field_name}"{required_attr}>\n'
                 f"{escape(value)}</textarea>"
             )
         elif field.field_type == "select":
             choices = field.choices or []
-            options = Markup("").join(
-                Markup(
-                    f'<option value="{escape(c)}"'
-                    f"{'selected' if c == value else ''}>"
-                    f"{escape(c)}</option>"
+            # Add placeholder choice if specified
+            placeholder_choice = I18n.resolve(field.placeholder_choice, lang)
+            options_parts = []
+            if placeholder_choice:
+                selected_attr = " selected" if not value else ""
+                options_parts.append(
+                    Markup(
+                        f'<option value=" "{selected_attr}>{escape(placeholder_choice)}</option>'
+                    )
                 )
-                for c in choices
-            )
+            for c in choices:
+                selected_attr = " selected" if c == value else ""
+                options_parts.append(
+                    Markup(
+                        f'<option value="{escape(c)}"{selected_attr}>{escape(c)}</option>'
+                    )
+                )
+            options = Markup("\n").join(options_parts)
+            # Add selectpicker class if not already in css_class
+            if "selectpicker" not in base_class:
+                base_class = f"{base_class} selectpicker"
             rendered = Markup(
-                f'<select class="form-control" name="{field_name}" id="{field_name}" '
-                f'data-bv-field="{field_name}"{required_attr}>{options}</select>'
+                f'<select class="{base_class}" name="{field_name}" id="{field_name}" '
+                f'data-bv-field="{field_name}"{required_attr}>\n'
+                f"{options}\n</select>"
             )
         else:
             # text and email field types both render as <input type="text">
             rendered = Markup(
-                f'<input type="text" class="form-control" name="{field_name}" id="{field_name}" '
+                f'<input type="text" class="{base_class}" name="{field_name}" id="{field_name}" '
                 f'placeholder="{placeholder}" value="{escape(value)}" '
                 f'data-bv-field="{field_name}"{required_attr}>'
             )
@@ -200,8 +243,8 @@ class FormRenderer:
                 f'<i class="glyphicon glyphicon-{escape(form_def.submit_glyphicon)}"></i> '
             )
         return Markup(
-            '<div class="form-group">'
-            '<div class="col-md-offset-3 col-md-6">'
-            f'<button type="submit" class="btn btn-primary">{icon}{submit_label}</button>'
-            "</div></div>"
+            '  <div class="form-group">\n'
+            '    <div class="col-md-offset-3 col-md-6">\n'
+            f'      <button type="submit" class="btn btn-primary">{icon}{submit_label}</button>\n'
+            "    </div>\n  </div>\n"
         )
