@@ -5,8 +5,10 @@ Created on 2026-03-30
 """
 
 from typing import Dict, Optional
-
+import os
 from frontend.forms.form_field import FormDefinition
+
+DEFAULT_FORMS_DIR=os.path.expanduser("~/.wikicms/forms")
 
 
 class FormRegistry:
@@ -21,12 +23,34 @@ class FormRegistry:
         self._forms: Dict[str, FormDefinition] = {}
 
     @classmethod
+    def of_forms_dir(cls, forms_dir: str=None) -> 'FormRegistry':
+        """
+        Load all *.yaml files from forms_dir into the FormRegistry.
+
+        Args:
+            forms_dir(str): path to directory containing form YAML files
+
+        Returns:
+            FormRegistry: the populated singleton registry
+        """
+        if forms_dir is None:
+            forms_dir = DEFAULT_FORMS_DIR
+        registry = FormRegistry.instance()
+        if os.path.isdir(forms_dir):
+            for fname in sorted(os.listdir(forms_dir)):
+                if fname.endswith(".yaml"):
+                    yaml_path = os.path.join(forms_dir, fname)
+                    FormRegistry.register_from_yaml(yaml_path)
+        return registry
+
+
+    @classmethod
     def instance(cls) -> "FormRegistry":
         """
         Return the singleton FormRegistry instance, creating it if needed.
         """
         if cls._instance is None:
-            cls._instance = cls()
+            cls._instance = cls.of_forms_dir()
         return cls._instance
 
     @classmethod
@@ -50,7 +74,7 @@ class FormRegistry:
         Returns:
             FormDefinition: the loaded and registered form definition
         """
-        form_def = FormDefinition.load_from_yaml_file(yaml_path)
+        form_def = FormDefinition.load_from_yaml_file(yaml_path) # @UndefinedVariable
         cls.register(form_def)
         return form_def
 
@@ -65,4 +89,5 @@ class FormRegistry:
         Returns:
             FormDefinition or None if not found
         """
-        return cls.instance()._forms.get(name)
+        form_def=cls.instance()._forms.get(name)
+        return form_def

@@ -89,6 +89,13 @@ cronbackup # mwstools_backend.cron_backup:main
 ---
 
 ## Code Style Guidelines
+- Never use return expressions assign return vars for debugging with meaningful names
+- avoid multiple return statements assign the default return value to the return var and flow to the end if
+the code does not get to complex
+  # Bad: return f(g(h(i(pi*3),l(x))
+  # Good:
+  flight_area=...
+  return flight_area
 
 ### Imports
 

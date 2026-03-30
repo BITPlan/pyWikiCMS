@@ -274,7 +274,7 @@ class TestFrontend(WebserverTest):
         frontend = self.get_frontend("www")
         test_cases = [("SMWConTalk2015-05", "reveal"), ("Feedback", "Contact")]
         debug = self.debug
-        # debug=True
+        debug=True
         for test_page, expected_frame in test_cases:
             frame = frontend.get_frame(test_page)
             self.assertEqual(expected_frame, frame)

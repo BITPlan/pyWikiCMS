@@ -5,14 +5,12 @@ Created on 2026-03-30
 """
 
 import re
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
 
 from bs4 import BeautifulSoup, Comment
 from basemkit.yamlable import lod_storable
 
-if TYPE_CHECKING:
-    from frontend.forms.registry import FormRegistry
+from frontend.forms.registry import FormRegistry
+from frontend.forms.renderer import FormRenderer
 
 
 @lod_storable
@@ -78,7 +76,6 @@ class MediaWikiHtmlFilter(HtmlFilter):
         debug: bool = False,
         filterKeys=None,
         site_name: str = "",
-        form_registry: Optional["FormRegistry"] = None,
     ):
         """
         Constructor
@@ -91,7 +88,7 @@ class MediaWikiHtmlFilter(HtmlFilter):
         """
         super().__init__(parser=parser, debug=debug)
         self.site_name = site_name
-        self.form_registry = form_registry
+        self.form_registry = FormRegistry.instance()
         if filterKeys is None:
             self.filterKeys = ["editsection", "parser-output", "parser-output"]
         else:
@@ -118,10 +115,10 @@ class MediaWikiHtmlFilter(HtmlFilter):
                 flags=re.DOTALL,
             )
         if self.form_registry is not None:
-            html = self._replace_form_divs(html)
+            html = self.replace_form_divs(html)
         return html
 
-    def _replace_form_divs(self, html: str) -> str:
+    def replace_form_divs(self, html: str) -> str:
         """
         Find all <div class="wikicms-form" data-form-name="..."> elements and
         replace each with the rendered form HTML from the registry.
@@ -132,7 +129,6 @@ class MediaWikiHtmlFilter(HtmlFilter):
         Returns:
             str: HTML with form divs replaced
         """
-        from frontend.forms.renderer import FormRenderer
 
         renderer = FormRenderer()
 

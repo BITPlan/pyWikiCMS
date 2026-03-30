@@ -21,7 +21,6 @@ from wikibot3rd.sso_users import Sso_Users
 
 from mwstools_backend.server import Servers
 from mwstools_backend.site import Wikis
-from frontend.forms.registry import FormRegistry
 from frontend.servers_view import ServersView
 from frontend.version import Version
 from frontend.wikicms import WikiFrontends
@@ -57,17 +56,14 @@ class CmsWebServer(GraphNavigatorWebserver):
             allow = allow or self.server.auto_login
         return allow
 
-    def __init__(self, form_registry: Optional[FormRegistry] = None):
+    def __init__(self):
         """
         constructor
 
-        Args:
-            form_registry(FormRegistry): optional form registry forwarded to MediaWikiHtmlFilter
         """
         GraphNavigatorWebserver.__init__(self, config=CmsWebServer.get_config())
-        self.form_registry = form_registry
         self.servers = Servers.of_config_path()
-        self.wiki_frontends = WikiFrontends(self.servers, form_registry=form_registry)
+        self.wiki_frontends = WikiFrontends(self.servers)
         self.users = Sso_Users(self.config.short_name)
         self.login = Login(self, self.users)
         self.hostname = socket.gethostname()
@@ -156,7 +152,6 @@ class CmsWebServer(GraphNavigatorWebserver):
         ServersView.add_to_graph(self.servers, self.graph, with_progress=True)
         self.wikis = Wikis()
         self.wikis.add_to_graph(self.graph, with_progress=True)
-        pass
 
 
 class CmsSolution(GraphNavigatorSolution):
