@@ -264,30 +264,25 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 headers=dict(html_response.headers),
             )
         else:
-            pageContent = self.getContent(path)
-            html_frame = HtmlFrame(self, title=pageContent.page_title)
-            framed_html = None
-            error = pageContent.error
-            page_title = pageContent.page_title
-            content = pageContent.content
-            html = pageContent.html
-            if error:
+            pc = self.getContent(path)
+            html_frame = HtmlFrame(self, title=pc.page_title)
+            if pc.error:
                 response = Response(
                     content=f"Page not found: {path}",
                     status_code=404,
                     media_type="text/html",
                 )
-                self.log(f"error getting {page_title} for {self.name}:<br>{error}")
+                self.log(
+                    f"error getting {pc.page_title} for {self.name}:<br>{pc.error}"
+                )
             else:
-                if "<slideshow" in html or "&lt;slideshow" in html:
-                    content = self.toReveal(content)
-                    # Complete reveal.js webpage
-                    framed_html = self.wrapWithReveal(html)
-                    html = content
-
-            if not framed_html:
-                framed_html = html_frame.frame(html)
-            response = HTMLResponse(framed_html)
+                if "<slideshow" in pc.html or "&lt;slideshow" in pc.html:
+                    # reveal.js slideshow: convert content to slides, wrap with reveal
+                    pc.content = self.toReveal(pc.content)
+                    framed_html = self.wrapWithReveal(pc.content)
+                else:
+                    framed_html = html_frame.frame(pc.content)
+                response = HTMLResponse(framed_html)
         return response
 
 
