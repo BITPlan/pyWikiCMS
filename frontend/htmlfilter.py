@@ -6,10 +6,13 @@ Created on 2026-03-30
 
 import re
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from bs4 import BeautifulSoup, Comment
 from basemkit.yamlable import lod_storable
+
+if TYPE_CHECKING:
+    from frontend.forms.registry import FormRegistry
 
 
 @lod_storable
@@ -75,6 +78,7 @@ class MediaWikiHtmlFilter(HtmlFilter):
         debug: bool = False,
         filterKeys=None,
         site_name: str = "",
+        form_registry: Optional["FormRegistry"] = None,
     ):
         """
         Constructor
@@ -83,9 +87,11 @@ class MediaWikiHtmlFilter(HtmlFilter):
             debug(bool): True if debugging should be on
             filterKeys(list): a list of keys for filters to be applied e.g. editsection
             site_name(str): the name of the site e.g. for prefixing image/href paths
+            form_registry(FormRegistry): optional singleton registry for form definitions
         """
         super().__init__(parser=parser, debug=debug)
         self.site_name = site_name
+        self.form_registry = form_registry
         if filterKeys is None:
             self.filterKeys = ["editsection", "parser-output", "parser-output"]
         else:
@@ -101,6 +107,8 @@ class MediaWikiHtmlFilter(HtmlFilter):
         """
         Apply filters directly on the raw HTML string without re-parsing,
         to avoid lxml re-serialization mangling content.
+        Detects wikicms-form divs and replaces them with rendered form HTML
+        when a form_registry is set.
         """
         if "editsection" in self.filterKeys:
             html = re.sub(
@@ -109,7 +117,38 @@ class MediaWikiHtmlFilter(HtmlFilter):
                 html,
                 flags=re.DOTALL,
             )
+        if self.form_registry is not None:
+            html = self._replace_form_divs(html)
         return html
+
+    def _replace_form_divs(self, html: str) -> str:
+        """
+        Find all <div class="wikicms-form" data-form-name="..."> elements and
+        replace each with the rendered form HTML from the registry.
+
+        Args:
+            html(str): raw HTML string
+
+        Returns:
+            str: HTML with form divs replaced
+        """
+        from frontend.forms.renderer import FormRenderer
+
+        renderer = FormRenderer()
+
+        def replace_match(m: re.Match) -> str:
+            form_name = m.group(1)
+            form_def = self.form_registry.get(form_name)
+            if form_def is None:
+                return m.group(0)
+            return renderer.render(form_def)
+
+        return re.sub(
+            r'<div\s+class="wikicms-form"\s+data-form-name="([^"]+)"[^>]*>.*?</div>',
+            replace_match,
+            html,
+            flags=re.DOTALL,
+        )
 
     def doFilter(self, html, filterKeys):
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup

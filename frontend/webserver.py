@@ -6,6 +6,7 @@ Created on 2020-12-30
 
 import os
 import socket
+from typing import Optional
 
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
@@ -20,6 +21,7 @@ from wikibot3rd.sso_users import Sso_Users
 
 from mwstools_backend.server import Servers
 from mwstools_backend.site import Wikis
+from frontend.forms.registry import FormRegistry
 from frontend.servers_view import ServersView
 from frontend.version import Version
 from frontend.wikicms import WikiFrontends
@@ -55,13 +57,17 @@ class CmsWebServer(GraphNavigatorWebserver):
             allow = allow or self.server.auto_login
         return allow
 
-    def __init__(self):
+    def __init__(self, form_registry: Optional[FormRegistry] = None):
         """
         constructor
+
+        Args:
+            form_registry(FormRegistry): optional form registry forwarded to MediaWikiHtmlFilter
         """
         GraphNavigatorWebserver.__init__(self, config=CmsWebServer.get_config())
+        self.form_registry = form_registry
         self.servers = Servers.of_config_path()
-        self.wiki_frontends = WikiFrontends(self.servers)
+        self.wiki_frontends = WikiFrontends(self.servers, form_registry=form_registry)
         self.users = Sso_Users(self.config.short_name)
         self.login = Login(self, self.users)
         self.hostname = socket.gethostname()
