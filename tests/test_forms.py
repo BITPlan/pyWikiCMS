@@ -183,7 +183,9 @@ class TestForms(Basetest):
         self.assertTrue(
             _CONTACT_YAML.exists(), f"contact.yaml not found: {_CONTACT_YAML}"
         )
-        form_def = FormDefinition.load_from_yaml_file(str(_CONTACT_YAML))  # @UndefinedVariable
+        form_def = FormDefinition.load_from_yaml_file(
+            str(_CONTACT_YAML)
+        )  # @UndefinedVariable
         self.assertEqual(form_def.name, "contact")
         self.assertEqual(resolve_i18n(form_def.legend, "en"), "Contact us")
         self.assertEqual(resolve_i18n(form_def.legend, "de"), "Kontaktieren Sie uns")

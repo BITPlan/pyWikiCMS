@@ -7,7 +7,6 @@ Created on 2021-01-01
 import unittest
 
 from basemkit.basetest import Basetest
-
 from mwstools_backend.server import Servers
 from mwstools_backend.site import Site, WikiSite
 

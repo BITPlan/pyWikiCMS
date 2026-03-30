@@ -13,11 +13,11 @@ from datetime import datetime
 from typing import Any, Dict
 
 from fastapi.testclient import TestClient
+from mwstools_backend.server import Server, Servers
+from mwstools_backend.site import FrontendSite, WikiSite
 from ngwidgets.basetest import Basetest
 from ngwidgets.webserver_test import WebserverTest
 
-from mwstools_backend.server import Server, Servers
-from mwstools_backend.site import FrontendSite, WikiSite
 from frontend.cmsmain import CmsMain
 from frontend.webserver import CmsWebServer
 from frontend.wikicms import WikiFrontend, WikiFrontends
@@ -131,7 +131,6 @@ class TestFrontend(WebserverTest):
         print(msg)
         pass
 
-
     def get_frontend(self, name: str) -> WikiFrontend:
         frontend = self.ws.wiki_frontends.get_frontend(name)
         return frontend
@@ -200,8 +199,8 @@ class TestFrontend(WebserverTest):
         """
         self.check_server()
         html = self.get_html("/www/SMWConTalk2015-05")
-        debug=self.debug
-        debug=True
+        debug = self.debug
+        debug = True
         if debug:
             print(html)
         self.assertTrue("reveal.min.css" in html)
@@ -274,7 +273,7 @@ class TestFrontend(WebserverTest):
         frontend = self.get_frontend("www")
         test_cases = [("SMWConTalk2015-05", "reveal"), ("Feedback", "Contact")]
         debug = self.debug
-        debug=True
+        debug = True
         for test_page, expected_frame in test_cases:
             frame = frontend.get_frame(test_page)
             self.assertEqual(expected_frame, frame)

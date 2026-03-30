@@ -5,6 +5,7 @@ Created on 2026-03-30
 """
 
 from basemkit.basetest import Basetest
+
 from frontend.htmlfilter import MediaWikiHtmlFilter
 
 

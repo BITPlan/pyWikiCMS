@@ -6,10 +6,9 @@ Created on 2025-07-23
 
 from mogwai.core.mogwaigraph import MogwaiGraph
 from mogwai.web.node_view import NodeView
+from mwstools_backend.server import Servers
 from nicegui import ui
 from tqdm import tqdm
-
-from mwstools_backend.server import Servers
 
 
 class ServersView:

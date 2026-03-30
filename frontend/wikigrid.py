@@ -9,12 +9,11 @@ import os
 import time
 from pathlib import Path
 
+from mwstools_backend.site import Wikis, WikiSite
 from ngwidgets.lod_grid import GridConfig, ListOfDictsGrid
 from ngwidgets.progress import NiceguiProgressbar
 from ngwidgets.task_runner import TaskRunner
 from nicegui import ui
-
-from mwstools_backend.site import Wikis, WikiSite
 
 
 class WikiCheck:

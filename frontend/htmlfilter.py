@@ -6,8 +6,8 @@ Created on 2026-03-30
 
 import re
 
-from bs4 import BeautifulSoup, Comment
 from basemkit.yamlable import lod_storable
+from bs4 import BeautifulSoup, Comment
 
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer

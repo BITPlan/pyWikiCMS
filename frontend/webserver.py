@@ -10,6 +10,8 @@ from typing import Optional
 
 from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
+from mwstools_backend.server import Servers
+from mwstools_backend.site import Wikis
 from ng3.graph_navigator import GraphNavigatorSolution, GraphNavigatorWebserver
 from ngwidgets.input_webserver import InputWebSolution
 from ngwidgets.login import Login
@@ -19,8 +21,6 @@ from nicegui import Client, app, ui
 from starlette.responses import RedirectResponse
 from wikibot3rd.sso_users import Sso_Users
 
-from mwstools_backend.server import Servers
-from mwstools_backend.site import Wikis
 from frontend.servers_view import ServersView
 from frontend.version import Version
 from frontend.wikicms import WikiFrontends

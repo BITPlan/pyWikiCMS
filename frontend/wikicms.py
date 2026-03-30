@@ -7,17 +7,17 @@ Created on 2020-07-27
 import logging
 import re
 import traceback
+from typing import List
 
 import requests
 from fastapi import Response
 from fastapi.responses import HTMLResponse
+from mwstools_backend.site import FrontendSite
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
-from mwstools_backend.site import FrontendSite
 from frontend.frame import HtmlFrame
 from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent
-from typing import List
 
 
 class WikiFrontend(MediaWikiHtmlFilter):
