@@ -203,7 +203,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
         Returns:
             pageContent(PageContent): the HTML content for the given path wrapped in a PageContent
         """
-        pc = PageContent(html=None, content=None, error=None, page_title="?")
+        pc = PageContent()
         try:
             if pagePath == "/":
                 pc.page_title = self.frontend.defaultPage
@@ -215,9 +215,11 @@ class WikiFrontend(MediaWikiHtmlFilter):
                     raise Exception(
                         "getContent without wiki - you might want to call open first"
                     )
-                pc.html = self.wiki.getHtml(pc.page_title)
-                # apply filter keeping original html for reference, result in pc.content
-                pc.apply_filter(self)
+                pc.html=self.wiki.getHtml(pc.page_title)
+                pc.markup=self.wiki.get_wiki_markup(pc.page_title)
+                pc.page_title=pc.page_title
+                pc.detect_lang()
+                self.filter_page_content(pc)
         except Exception as e:
             pc.error = self.errMsg(e)
 

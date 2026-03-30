@@ -20,20 +20,23 @@ class PageContent:
     and filtered content for display.
     """
 
-    page_title: str  # the title of the wiki page
-    html: str  # original raw html from the wiki
-    content: str  # filtered html for display
-    error: Exception  # error if any occurred during retrieval or filtering
+    page_title: str = "?"  # the title of the wiki page
+    markup: str = None  # original wiki markup from the wiki
+    html: str = None  # original raw html from the wiki
+    content: str = None  # filtered html for display
+    error: Exception = None  # error if any occurred during retrieval or filtering
+    lang: str = (
+        "en"  # the language of the wiki page - potentially derived from it's markup
+    )
 
-    def apply_filter(self, mwf: "MediaWikiHtmlFilter"):
-        """
-        Apply the given filter to the raw html, storing the result in content
-        while keeping the original html for reference.
+    def __post_init__(self):
+        self.detect_lang()
 
-        Args:
-            mwf(MediaWikiHtmlFilter): the filter to apply
-        """
-        self.content = mwf.filter_html(self.html)
+    def detect_lang(self):
+        if self.markup:
+            lang_match = re.search(r"{{Language\|[^}]*language=([^}|]+)", self.markup)
+            if lang_match:
+                self.lang = lang_match.group(1)
 
 
 class HtmlFilter:
@@ -94,40 +97,65 @@ class MediaWikiHtmlFilter(HtmlFilter):
         else:
             self.filterKeys = filterKeys
 
-    def filter(self, html: str):
+    def filter_page_content(self, pc: PageContent):
         """
-        filter the given html
+        filter the given page content
         """
-        return self.doFilter(html, self.filterKeys)
+        self.filter(pc)
 
-    def filter_html(self, html: str) -> str:
+    def filter(self, pc: PageContent):
+        """
+        filter the given page content
+        """
+        soup = self.doFilter(pc.html, self.filterKeys)
+        html_to_filter = soup.decode_contents()
+        temp_pc = PageContent(html=html_to_filter, lang=pc.lang)
+        temp_pc = self.filter_html(temp_pc)
+        pc.content = temp_pc.html
+        return pc
+
+    def filter_html(self, pc_or_html) -> PageContent:
         """
         Apply filters directly on the raw HTML string without re-parsing,
         to avoid lxml re-serialization mangling content.
         Detects wikicms-form divs and replaces them with rendered form HTML
         when a form_registry is set.
+
+        Args:
+            pc_or_html: either a PageContent object or a string (for backward compatibility)
+
+        Returns:
+            If given a string, returns the filtered string.
+            If given a PageContent, returns the PageContent with filtered html.
         """
+        return_string = isinstance(pc_or_html, str)
+        if return_string:
+            pc = PageContent(html=pc_or_html)
+        else:
+            pc = pc_or_html
         if "editsection" in self.filterKeys:
-            html = re.sub(
+            pc.html = re.sub(
                 r'<span class="mw-editsection">.*?</span>\s*</span>',
                 "</span>",
-                html,
+                pc.html,
                 flags=re.DOTALL,
             )
         if self.form_registry is not None:
-            html = self.replace_form_divs(html)
-        return html
+            pc = self.replace_form_divs(pc)
+        if return_string:
+            return pc.html
+        return pc
 
-    def replace_form_divs(self, html: str) -> str:
+    def replace_form_divs(self, pc: PageContent) -> PageContent:
         """
         Find all <div class="wikicms-form" data-form-name="..."> elements and
         replace each with the rendered form HTML from the registry.
 
         Args:
-            html(str): raw HTML string
+            pc(PageContent): the page content with html to process
 
         Returns:
-            str: HTML with form divs replaced
+            PageContent: the page content with forms replaced
         """
 
         renderer = FormRenderer()
@@ -137,14 +165,15 @@ class MediaWikiHtmlFilter(HtmlFilter):
             form_def = self.form_registry.get(form_name)
             if form_def is None:
                 return m.group(0)
-            return renderer.render(form_def)
+            return renderer.render(form_def, lang=pc.lang)
 
-        return re.sub(
+        pc.html = re.sub(
             r'<div\s+class="wikicms-form"\s+data-form-name="([^"]+)"[^>]*>.*?</div>',
             replace_match,
-            html,
+            pc.html,
             flags=re.DOTALL,
         )
+        return pc
 
     def doFilter(self, html, filterKeys):
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup

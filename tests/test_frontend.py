@@ -391,11 +391,12 @@ class TestFrontend(WebserverTest):
         """
         self.check_server()
         frontend = self.get_frontend("www")
-        pageTitle, content, error = frontend.getContent("Welcome")
-        if error is not None:
-            print(error)
-            self.fail(error)
-        self.assertEqual(pageTitle, "Welcome")
+        pc = frontend.getContent("Welcome")
+        if pc.error is not None:
+            print(pc.error)
+            self.fail(pc.error)
+        self.assertEqual(pc.page_title, "Welcome")
+        content = pc.content
         if self.debug:
             print(content)
 

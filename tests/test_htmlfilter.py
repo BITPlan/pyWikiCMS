@@ -51,7 +51,7 @@ class TestHtmlFilter(Basetest):
             page_title="Ion2017-02-04", html=raw_html, content=None, error=None
         )
         mwf = MediaWikiHtmlFilter()
-        pc.apply_filter(mwf)
+        mwf.filter_page_content(pc)
         if self.debug:
             print(pc.content)
         # original html preserved
