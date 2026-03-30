@@ -19,34 +19,34 @@ def make_contact_form() -> FormDefinition:
     """
     return FormDefinition(
         name="contact",
-        legend="Ihre Nachricht an uns",
+        legend="Send us a message",
         fields=[
             FormField(
                 name="name",
                 field_type="text",
                 label="Name",
-                placeholder="Ihr Name",
+                placeholder="Your name",
                 glyphicon="user",
                 required=True,
-                error_msg="Bitte geben Sie Ihren Namen an.",
+                error_msg="Please enter your name.",
             ),
             FormField(
                 name="email",
                 field_type="text",
                 label="E-Mail",
-                placeholder="Ihre E-Mail-Adresse",
+                placeholder="Your e-mail address",
                 glyphicon="envelope",
                 required=True,
-                error_msg="Bitte geben Sie Ihre E-Mail-Adresse an.",
+                error_msg="Please enter your e-mail address.",
             ),
             FormField(
                 name="message",
                 field_type="textarea",
-                label="Nachricht",
-                placeholder="Ihre Nachricht",
+                label="Message",
+                placeholder="Your message",
                 glyphicon="pencil",
                 required=True,
-                error_msg="Bitte geben Sie eine Nachricht ein.",
+                error_msg="Please enter a message.",
             ),
             FormField(
                 name="postToken",
@@ -54,9 +54,9 @@ def make_contact_form() -> FormDefinition:
                 value="dummy-token",
             ),
         ],
-        submit_label="Absenden",
+        submit_label="Send",
         submit_glyphicon="send",
-        success_message="Vielen Dank für Ihre Nachricht!",
+        success_message="Thank you for your message!",
     )
 
 
@@ -76,7 +76,7 @@ class TestForms(Basetest):
         """
         form_def = make_contact_form()
         self.assertEqual(form_def.name, "contact")
-        self.assertEqual(form_def.legend, "Ihre Nachricht an uns")
+        self.assertEqual(form_def.legend, "Send us a message")
         self.assertEqual(len(form_def.fields), 4)
         self.assertEqual(form_def.fields[0].name, "name")
         self.assertTrue(form_def.fields[0].required)
@@ -102,13 +102,13 @@ class TestForms(Basetest):
         if self.debug:
             print(html)
         self.assertIn("form-horizontal", html)
-        self.assertIn("Ihre Nachricht an uns", html)
+        self.assertIn("Send us a message", html)
         self.assertIn('name="name"', html)
         self.assertIn('name="email"', html)
         self.assertIn("<textarea", html)
         self.assertIn('type="hidden"', html)
         self.assertIn("glyphicon-user", html)
-        self.assertIn("Absenden", html)
+        self.assertIn("Send", html)
         self.assertIn("glyphicon-send", html)
 
     def test_renderer_with_values_and_errors(self):
@@ -119,14 +119,14 @@ class TestForms(Basetest):
         renderer = FormRenderer()
         html = renderer.render(
             form_def,
-            values={"name": "Max Mustermann", "email": "max@example.com"},
-            errors={"email": ["Bitte geben Sie Ihre E-Mail-Adresse an."]},
+            values={"name": "John Doe", "email": "john@example.com"},
+            errors={"email": ["Please enter your e-mail address."]},
         )
         if self.debug:
             print(html)
-        self.assertIn("Max Mustermann", html)
+        self.assertIn("John Doe", html)
         self.assertIn("has-error", html)
-        self.assertIn("Bitte geben Sie Ihre E-Mail-Adresse an.", html)
+        self.assertIn("Please enter your e-mail address.", html)
 
     def test_handler_validate_missing_required(self):
         """
@@ -147,7 +147,7 @@ class TestForms(Basetest):
         form_def = make_contact_form()
         errors = FormHandler.validate(
             form_def,
-            {"name": "Max", "email": "max@example.com", "message": "Hallo"},
+            {"name": "John", "email": "john@example.com", "message": "Hello"},
         )
         self.assertEqual(errors, {})
 
@@ -160,7 +160,7 @@ class TestForms(Basetest):
 
         html = (
             '<div class="wikicms-form" data-form-name="contact">'
-            '<a href="http://www.bitplan.com/Kontaktformular">Hier geht\'s zum Kontaktformular</a>'
+            '<a href="http://www.bitplan.com/Contact">Contact form</a>'
             "</div>"
         )
 
@@ -170,8 +170,7 @@ class TestForms(Basetest):
             print(result)
         self.assertNotIn("wikicms-form", result)
         self.assertIn("form-horizontal", result)
-        self.assertIn("Ihre Nachricht an uns", result)
-
+        self.assertIn("Send us a message", result)
 
     def test_htmlfilter_no_registry_leaves_div(self):
         """
@@ -179,7 +178,7 @@ class TestForms(Basetest):
         """
         html = (
             '<div class="wikicms-form" data-form-name="contact">'
-            '<a href="http://www.bitplan.com/Kontaktformular">Hier geht\'s zum Kontaktformular</a>'
+            '<a href="http://www.bitplan.com/Contact">Contact form</a>'
             "</div>"
         )
         mwf = MediaWikiHtmlFilter()
