@@ -50,38 +50,6 @@ class TestFrontend(WebserverTest):
             self.client = None
         pass
 
-    def get_event_loop_info(self) -> Dict[str, Any]:
-        """
-        Get current event loop information to help debugging
-        ValueError: The future belongs to a different loop than the one specified as the loop argument
-
-        """
-        try:
-            loop = asyncio.get_event_loop()
-            loop_info = {
-                "is_running": loop.is_running(),
-                "is_closed": loop.is_closed(),
-                "loop_id": id(loop),
-                "thread_id": threading.get_ident(),
-                "tasks": len(asyncio.all_tasks(loop)) if not loop.is_closed() else 0,
-            }
-        except RuntimeError as e:
-            loop_info = {"error": str(e)}
-        return loop_info
-
-    def check_server(self, hint: str = None):
-        """
-        make sure the server is ready
-        """
-        timestamp = datetime.now().isoformat()
-        if hint is None:
-            hint = self._testMethodName
-        loop_info = self.get_event_loop_info()
-        loop_info_str = json.dumps(loop_info, indent=2)
-        msg = f"{timestamp} - {hint} Event loop:{loop_info_str}"
-        print(msg)
-        pass
-
     def setUp(self, debug=False, profile=True):
         """
         setUp the test environment making sure we reuse the expensive
@@ -130,6 +98,39 @@ class TestFrontend(WebserverTest):
             self.client = TestClient(self.ws.app)
             self.debug = first.debug
         self.check_server("setup")
+
+    def get_event_loop_info(self) -> Dict[str, Any]:
+        """
+        Get current event loop information to help debugging
+        ValueError: The future belongs to a different loop than the one specified as the loop argument
+
+        """
+        try:
+            loop = asyncio.get_event_loop()
+            loop_info = {
+                "is_running": loop.is_running(),
+                "is_closed": loop.is_closed(),
+                "loop_id": id(loop),
+                "thread_id": threading.get_ident(),
+                "tasks": len(asyncio.all_tasks(loop)) if not loop.is_closed() else 0,
+            }
+        except RuntimeError as e:
+            loop_info = {"error": str(e)}
+        return loop_info
+
+    def check_server(self, hint: str = None):
+        """
+        make sure the server is ready
+        """
+        timestamp = datetime.now().isoformat()
+        if hint is None:
+            hint = self._testMethodName
+        loop_info = self.get_event_loop_info()
+        loop_info_str = json.dumps(loop_info, indent=2)
+        msg = f"{timestamp} - {hint} Event loop:{loop_info_str}"
+        print(msg)
+        pass
+
 
     def get_frontend(self, name: str) -> WikiFrontend:
         frontend = self.ws.wiki_frontends.get_frontend(name)
@@ -199,7 +200,9 @@ class TestFrontend(WebserverTest):
         """
         self.check_server()
         html = self.get_html("/www/SMWConTalk2015-05")
-        if self.debug:
+        debug=self.debug
+        debug=True
+        if debug:
             print(html)
         self.assertTrue("reveal.min.css" in html)
         self.assertTrue("Reveal.initialize({" in html)
