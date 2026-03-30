@@ -6,11 +6,31 @@ Fixes issue https://github.com/BITPlan/pyWikiCMS/issues/33
 
 Replace `MediaWiki:Form.rythm` (Java/Rythm template) with a
 `frontend/forms/` subpackage that renders Bootstrap 3 forms
-from YAML-declared `lod_storable` dataclasses, using `wtforms` for field validation.
+from YAML-declared `lod_storable` dataclasses, using `wtforms`
+https://github.com/pallets-eco/wtforms/ for field validation.
 
-Code from https://github.com/LaunchPlatform/wtforms-bootstrap5/tree/master/wtforms_bootstrap5 is reused specifically:
-- `renderers.py` - the per-field renderer logic (adapted from Bootstrap 5 to Bootstrap 3)
-- `layout.py` - the `Column`, `Row`, `Fieldset` layout primitives
+The renderer is adapted from
+https://github.com/LaunchPlatform/wtforms-bootstrap5/tree/master/wtforms_bootstrap5
+targeting Bootstrap 3 class names instead of Bootstrap 5.
+
+---
+
+## i18n (Internationalization)
+
+All user-visible strings (legends, labels, placeholders, error messages, submit
+labels) support multilingual values.  A translatable field may be either a
+plain string or a language-keyed dict:
+
+```yaml
+legend:
+  en: Contact us
+  de: Kontaktieren Sie uns
+  fr: Contactez-nous
+```
+
+`resolve_i18n(value, lang)` in `form_field.py` resolves the dict to a string at
+render/validate time.  Unknown languages fall back to `"en"`, then to the first
+available value.
 
 ---
 
@@ -24,11 +44,11 @@ The existing wiki page for Kontaktformular currently uses `{{UseFrame|...}}`:
 [[Category:frontend]]
 ```
 
-This is **replaced** by the new `{{UseForm|<formname>}}` template. Example:
+This is **replaced** by the new `{{UseForm|<formname>|title=}}` template. Example:
 
 ```mediawiki
 {{Language|master page=Contactform|language=de}}
-{{UseForm|contact}}
+{{UseForm|contact|title=Hier geht's zum Kontaktformular}}
 [[Category:frontend]]
 ```
 
@@ -36,25 +56,23 @@ The `{{UseForm|<formname>}}` template expands to a detectable HTML marker:
 
 ```html
 <div class="wikicms-form" data-form-name="contact">
-  <a href="http://www.bitplan.com/{{FULLPAGENAME}}">Hier geht's zum Kontaktformular</a>
+...
 </div>
 ```
 
-- **In the wiki** (viewed directly): shows a clickable link to the frontend page, matching the `UseFrame` behaviour of `[http://www.bitplan.com/{{FULLPAGENAME}} {{{title|}}}]`
-- **In the frontend**: `MediaWikiHtmlFilter.filter_html()` detects `<div class="wikicms-form" data-form-name="...">`, looks up `data-form-name` in `FormRegistry`, renders the form via `FormRenderer`, replaces the entire `<div>` with the rendered form HTML
+- **In the wiki** (viewed directly): shows a clickable link to the frontend page
+- **In the frontend**: `MediaWikiHtmlFilter.filter_html()` detects
+  `<div class="wikicms-form" data-form-name="...">`, looks up `data-form-name`
+  in `FormRegistry`, renders the form via `FormRenderer`, replaces the entire
+  `<div>` with the rendered form HTML
 
 ---
 
 ## Startup registration
 
-Forms are **not shipped** with the library except for a simple demo form.
-The forms to be used in an application are registered at
-application startup via a CLI parameter specifying YAML files with form declarations.
-
-```python
-from frontend.forms import FormRegistry
-FormRegistry.register_from_yaml(form_yaml_path)
-```
+Built-in example forms are shipped in `frontend/resources/forms/*.yaml` and
+loaded automatically by `FormRegistry`.  User-defined forms are loaded from
+`~/.wikicms/forms/*.yaml` and may override built-ins by name.
 
 ---
 
@@ -62,14 +80,24 @@ FormRegistry.register_from_yaml(form_yaml_path)
 
 ```
 frontend/forms/
-    __init__.py        # exports FormDefinition, FormField, FormRegistry, FormRenderer, FormHandler
+    __init__.py        # exports: FormDefinition, FormField, FormHandler,
+                       #          FormRegistry, FormRenderer,
+                       #          build_wtforms_validators, resolve_i18n,
+                       #          validate_with_wtforms
     form_field.py      # lod_storable dataclasses: FormField, FormDefinition
+                       # + resolve_i18n() helper
     registry.py        # FormRegistry singleton: register / register_from_yaml / get
-    renderer.py        # Bootstrap 3 HTML renderer adapted from wtforms-bootstrap5 renderers.py
-    handler.py         # POST validation + captcha + postToken
+                       # auto-loads frontend/resources/forms/ then ~/.wikicms/forms/
+    renderer.py        # Bootstrap 3 HTML renderer, lang= param, resolve_i18n()
+    handler.py         # POST validation + captcha + postToken (i18n error messages)
+    validators.py      # build_wtforms_validators(), validate_with_wtforms()
+
+frontend/resources/forms/
+    contact.yaml       # Built-in multilingual contact form example
 
 tests/
-    test_forms.py      # demo FormDefinition (contactform) built in Python, tests load/render/validate
+    test_forms.py      # 19 tests: i18n, wtforms validators, yaml load,
+                       #           render EN/DE, validate, htmlfilter
 ```
 
 ---
@@ -77,77 +105,113 @@ tests/
 ## `form_field.py` - lod_storable dataclasses
 
 ```python
+I18nStr = Optional[Union[str, Dict[str, str]]]
+
+def resolve_i18n(value: I18nStr, lang: str = "en") -> str:
+    """Resolve a plain string or {lang: str} dict to a string."""
+    ...
+
 @lod_storable
 class FormField:
     name: str
     field_type: str          # text | textarea | select | hidden
-    label: Optional[str] = None
-    placeholder: Optional[str] = None
+    label: Any = None        # I18nStr
+    placeholder: Any = None  # I18nStr
     glyphicon: Optional[str] = None
     required: bool = False
-    error_msg: Optional[str] = None
+    error_msg: Any = None    # I18nStr
     value: Optional[str] = None       # for hidden fields
     choices: Optional[List[str]] = None  # for select fields
+    validators: Optional[List[Dict[str, Any]]] = None  # WTForms descriptors
 
 @lod_storable
 class FormDefinition:
     name: str
-    legend: str
+    legend: Any              # I18nStr - required
     fields: List[FormField]
     action: str = ""
-    submit_label: str = "Absenden"
+    submit_label: Any = None  # I18nStr; resolved via resolved_submit_label(lang)
     submit_glyphicon: Optional[str] = None
-    success_message: Optional[str] = None
+    success_message: Any = None  # I18nStr
 ```
-
-Load with: `FormDefinition.load_from_yaml_file("/path/to/form.yaml")`
 
 ---
 
-## `renderer.py` - Bootstrap 3 renderer adapted from wtforms-bootstrap5
+## `validators.py` - WTForms integration
 
-Adapted from `wtforms_bootstrap5/renderers.py`. Key difference: targets Bootstrap 3 class names instead of Bootstrap 5.
+```python
+def build_wtforms_validators(field: FormField, lang: str = "en") -> List[Any]:
+    """Build live WTForms validator instances from field.validators descriptors."""
+    ...
 
-`FormRenderer.render(form_def, values=None, errors=None) -> str`
+def validate_with_wtforms(
+    form_def: FormDefinition, post_data: Dict[str, str], lang: str = "en"
+) -> Dict[str, List[str]]:
+    """Run WTForms validators for all non-hidden fields. Returns error dict."""
+    ...
+```
+
+Supported validator `type` values: `DataRequired`, `InputRequired`, `Optional`,
+`Email`, `Length` (min/max), `NumberRange` (min/max), `Regexp`, `URL`,
+`IPAddress`, `MacAddress`, `UUID`, `AnyOf`, `NoneOf`.
+
+`StopValidation` (raised by `DataRequired`) halts the validator chain for the
+field and is collected as an error.  `ValidationError` continues the chain.
+
+---
+
+## `renderer.py` - Bootstrap 3 renderer
+
+`FormRenderer.render(form_def, values=None, errors=None, lang="en") -> str`
 
 Each visible field renders the Bootstrap 3 pattern:
 ```
-div.form-group.has-feedback
+div.form-group.has-feedback[.has-error]
   label.col-md-3.control-label.bitplanorange
   div.col-md-6.inputGroupContainer
     div.input-group
       span.input-group-addon > i.glyphicon.<glyphicon>
       input|textarea|select.form-control[data-bv-field]
-    small[data-bv-validator] per validator
+    small.help-block per error
 ```
 
-Hidden fields emit bare `<input type="hidden">`. No Jinja2 - pure Python string/Markup building via `markupsafe`.
+Hidden fields emit bare `<input type="hidden">`.  All user content is escaped
+via `markupsafe.escape()`.  No Jinja2.
 
 ---
 
 ## `handler.py` - POST validation
 
-`FormHandler.validate(form_def, post_data) -> dict[str, list[str]]`
-- Checks `required` fields
-- Validates captcha via `expected` hidden field
-- Generates/validates `postToken`
+`FormHandler.validate(form_def, post_data, lang="en") -> dict[str, list[str]]`
+
+- Delegates field validation to `validate_with_wtforms()`
+- Validates captcha via `captcha_answer` / `captcha_expected` hidden fields
+- Validates `postToken` / `postToken_expected` hidden fields
+- All error messages are fully i18n: EN, DE, FR, ES, IT, NL built in
 
 ---
 
 ## `htmlfilter.py` changes
 
-`MediaWikiHtmlFilter` gains an optional `form_registry: Optional[FormRegistry] = None` constructor parameter. `filter_html()` detects `<div class="wikicms-form" data-form-name="...">` and replaces it with rendered form HTML when `form_registry` is set.
+`MediaWikiHtmlFilter` gains an optional `form_registry: Optional[FormRegistry]`
+constructor parameter.  `filter_html()` detects
+`<div class="wikicms-form" data-form-name="...">` and replaces it with rendered
+form HTML when `form_registry` is set.
 
-`FormRegistry` is a singleton: `FormRegistry.register()`, `FormRegistry.register_from_yaml()` and `FormRegistry.get()` are class methods. The `form_registry` parameter passed to `MediaWikiHtmlFilter` is the `FormRegistry` class itself (not an instance).
+`FormRegistry` is a singleton; the `form_registry` parameter passed to
+`MediaWikiHtmlFilter` is the `FormRegistry` class itself (not an instance).
 
 ---
 
 ## `webserver.py` changes
 
-`CmsWebServer` accepts an optional `form_registry: Optional[FormRegistry] = None` that the deployer passes in at startup and forwards it to `MediaWikiHtmlFilter`.
+`CmsWebServer` accepts an optional `form_registry: Optional[FormRegistry]` that
+the deployer passes in at startup and forwards to `MediaWikiHtmlFilter`.
 
 ---
 
 ## POST route
 
-The deployer wires their own FastAPI POST route and calls `FormHandler.validate()`. The library does not auto-register routes.
+The deployer wires their own FastAPI POST route and calls
+`FormHandler.validate(form_def, post_data, lang=lang)`.  The library does not
+auto-register routes.

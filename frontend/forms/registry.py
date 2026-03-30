@@ -4,17 +4,27 @@ Created on 2026-03-30
 @author: wf
 """
 
-from typing import Dict, Optional
 import os
+from pathlib import Path
+from typing import Dict, Optional
+
 from frontend.forms.form_field import FormDefinition
 
 DEFAULT_FORMS_DIR = os.path.expanduser("~/.wikicms/forms")
+
+# Built-in example forms shipped with the package
+_BUILTIN_FORMS_DIR = Path(__file__).parent.parent / "resources" / "forms"
 
 
 class FormRegistry:
     """
     Singleton registry for FormDefinition instances.
     Class methods operate on the single shared instance.
+
+    On first use the registry is populated with:
+    1. Built-in example forms from frontend/resources/forms/*.yaml
+    2. User-defined forms from ~/.wikicms/forms/*.yaml (override built-ins
+       if names collide)
     """
 
     _instance: Optional["FormRegistry"] = None
@@ -23,12 +33,30 @@ class FormRegistry:
         self._forms: Dict[str, FormDefinition] = {}
 
     @classmethod
-    def of_forms_dir(cls, forms_dir: str = None) -> "FormRegistry":
+    def _load_dir(cls, forms_dir: str) -> None:
         """
-        Load all *.yaml files from forms_dir into the FormRegistry.
+        Load all *.yaml files from *forms_dir* into the current singleton.
 
         Args:
             forms_dir(str): path to directory containing form YAML files
+        """
+        if os.path.isdir(forms_dir):
+            for fname in sorted(os.listdir(forms_dir)):
+                if fname.endswith(".yaml"):
+                    yaml_path = os.path.join(forms_dir, fname)
+                    FormRegistry.register_from_yaml(yaml_path)
+
+    @classmethod
+    def of_forms_dir(cls, forms_dir: str = None) -> "FormRegistry":
+        """
+        Create a new FormRegistry loaded from *forms_dir* (and built-ins).
+
+        Built-in forms are loaded first; user forms loaded second so they can
+        override built-ins by name.
+
+        Args:
+            forms_dir(str): path to user form YAML directory
+                            (default: ~/.wikicms/forms)
 
         Returns:
             FormRegistry: the populated singleton registry
@@ -37,11 +65,10 @@ class FormRegistry:
             forms_dir = DEFAULT_FORMS_DIR
         registry = FormRegistry()
         cls._instance = registry
-        if os.path.isdir(forms_dir):
-            for fname in sorted(os.listdir(forms_dir)):
-                if fname.endswith(".yaml"):
-                    yaml_path = os.path.join(forms_dir, fname)
-                    FormRegistry.register_from_yaml(yaml_path)
+        # 1. Load built-in example forms
+        cls._load_dir(str(_BUILTIN_FORMS_DIR))
+        # 2. Load user-defined forms (may override built-ins)
+        cls._load_dir(forms_dir)
         return registry
 
     @classmethod

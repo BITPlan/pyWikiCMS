@@ -1,0 +1,146 @@
+# Contact form definition for pyWikiCMS
+#
+# Translatable string fields (legend, submit_label, success_message on the form;
+# label, placeholder, error_msg on each field) accept either a plain string or a
+# language-keyed dict, e.g.:
+#
+#   label:
+#     en: "Name"
+#     de: "Name"
+#     fr: "Nom"
+#
+# The renderer resolves the correct language at render time via resolve_i18n().
+#
+# The `validators` list maps to WTForms validators.  Supported types:
+#   DataRequired, InputRequired, Optional, Email, Length (min/max),
+#   NumberRange (min/max), Regexp (regex), URL, IPAddress, UUID, AnyOf, NoneOf
+#
+# Trigger in MediaWiki: {{UseForm|contact|title=...}}
+# which expands to: <div class="wikicms-form" data-form-name="contact">
+
+name: contact
+
+legend:
+  en: Contact us
+  de: Kontaktieren Sie uns
+  fr: Contactez-nous
+  es: Contáctenos
+  it: Contattaci
+  nl: Neem contact op
+
+action: ""
+
+submit_label:
+  en: Send
+  de: Absenden
+  fr: Envoyer
+  es: Enviar
+  it: Invia
+  nl: Verzenden
+
+submit_glyphicon: send
+
+success_message:
+  en: Thank you for your message!
+  de: Vielen Dank für Ihre Nachricht!
+  fr: Merci pour votre message !
+  es: "¡Gracias por su mensaje!"
+  it: Grazie per il tuo messaggio!
+  nl: Bedankt voor uw bericht!
+
+fields:
+
+  - name: name
+    field_type: text
+    label:
+      en: Name
+      de: Name
+      fr: Nom
+      es: Nombre
+      it: Nome
+      nl: Naam
+    placeholder:
+      en: Your name
+      de: Ihr Name
+      fr: Votre nom
+      es: Su nombre
+      it: Il tuo nome
+      nl: Uw naam
+    glyphicon: user
+    required: true
+    error_msg:
+      en: Please enter your name.
+      de: Bitte geben Sie Ihren Namen ein.
+      fr: Veuillez saisir votre nom.
+      es: Por favor, introduzca su nombre.
+      it: Inserisci il tuo nome.
+      nl: Voer uw naam in.
+    validators:
+      - type: DataRequired
+      - type: Length
+        min: 2
+        max: 100
+
+  - name: email
+    field_type: text
+    label:
+      en: E-Mail
+      de: E-Mail
+      fr: E-Mail
+      es: "Correo electrónico"
+      it: E-mail
+      nl: E-mail
+    placeholder:
+      en: Your e-mail address
+      de: Ihre E-Mail-Adresse
+      fr: Votre adresse e-mail
+      es: Su dirección de correo electrónico
+      it: Il tuo indirizzo e-mail
+      nl: Uw e-mailadres
+    glyphicon: envelope
+    required: true
+    error_msg:
+      en: Please enter a valid e-mail address.
+      de: Bitte geben Sie eine gültige E-Mail-Adresse ein.
+      fr: Veuillez saisir une adresse e-mail valide.
+      es: Por favor, introduzca una dirección de correo electrónico válida.
+      it: Inserisci un indirizzo e-mail valido.
+      nl: Voer een geldig e-mailadres in.
+    validators:
+      - type: DataRequired
+      - type: Email
+
+  - name: message
+    field_type: textarea
+    label:
+      en: Message
+      de: Nachricht
+      fr: Message
+      es: Mensaje
+      it: Messaggio
+      nl: Bericht
+    placeholder:
+      en: Your message
+      de: Ihre Nachricht
+      fr: Votre message
+      es: Su mensaje
+      it: Il tuo messaggio
+      nl: Uw bericht
+    glyphicon: pencil
+    required: true
+    error_msg:
+      en: Please enter a message (10–2000 characters).
+      de: Bitte geben Sie eine Nachricht ein (10–2000 Zeichen).
+      fr: Veuillez saisir un message (10–2000 caractères).
+      es: Por favor, introduzca un mensaje (10–2000 caracteres).
+      it: Inserisci un messaggio (10–2000 caratteri).
+      nl: Voer een bericht in (10–2000 tekens).
+    validators:
+      - type: DataRequired
+      - type: Length
+        min: 10
+        max: 2000
+
+  - name: postToken
+    field_type: hidden
+    value: ""
