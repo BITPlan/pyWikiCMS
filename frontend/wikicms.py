@@ -284,7 +284,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
                     html = content
 
             if not framed_html:
-                framed_html = html_frame.frame(html)
+                framed_html = html_frame.frame(content)
             response = HTMLResponse(framed_html)
         return response
 
