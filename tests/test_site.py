@@ -14,6 +14,7 @@ from mwstools_backend.site import Site, WikiSite
 class TestSite(Basetest):
     """
     test wiki
+    4 tests in 3.4 secs
     """
 
     def setUp(self, debug=True, profile=True):

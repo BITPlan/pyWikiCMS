@@ -4,9 +4,11 @@ Created on 2026-03-30
 @author: wf
 """
 
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
 from basemkit.yamlable import lod_storable
+
 
 # Type alias: a translatable string is either a plain str or a
 # language-keyed dict, e.g. {"en": "Name", "de": "Name", "fr": "Nom"}.
@@ -34,51 +36,36 @@ class I18n:
         Returns:
             str: the resolved string for the requested language
         """
-        if value is None:
-            return ""
-        if isinstance(value, dict):
-            resolved = value.get(lang) or value.get("en")
-            if resolved is None and value:
-                resolved = next(iter(value.values()))
-            return resolved or ""
-        return value
+        i18n=""
+        if value is not None:
+            if isinstance(value, dict):
+                i18n = value.get(lang) or value.get("en")
+                if i18n is None and value:
+                    i18n= next(iter(value.values()))
+                i18n=i18n or ""
+        return i18n
 
 
 def resolve_i18n(value: I18nStr, lang: str = "en") -> str:
     """Backward compatible alias for I18n.resolve()"""
-    return I18n.resolve(value, lang)
+    i18n=I18n.resolve(value, lang)
+    return i18n
 
-
+@dataclass
 class HtmlElement:
     """
     Base class for HTML elements with common attributes.
     """
-
     css_class: str = ""  # e.g. "form-control selectpicker"
     size: str = ""  # xs, sm, md, lg
 
 
 @lod_storable
-class FormLabel:
+class FormLabel(HtmlElement):
     """
     Label element with i18n support for form fields.
-
-    Can be defined as a simple string/dict (backward compatible) or as an object:
-
-    # Simple (backward compatible):
-    label: "Name"  or  label: {en: "Name", de: "Name"}
-
-    # Object with CSS class:
-    label:
-      text:
-        en: "Name"
-        de: "Name"
-      css_class: "bitplanorange"
     """
-
     text: I18nStr = ""  # the label text
-    css_class: str = ""  # additional CSS class (e.g., "bitplanorange")
-    size: str = ""  # xs, sm, md, lg
 
 
 @lod_storable
@@ -103,16 +90,15 @@ class FormField(HtmlElement):
             max: 100
           - type: Email
     """
-
     name: str = ""  # required but defaults to empty for compatibility
     field_type: str = "text"  # text | textarea | select | hidden | email
-    label: Any = None  # I18nStr or FormLabel object
-    placeholder: Any = None  # I18nStr
+    label: FormLabel = None
+    placeholder: I18nStr = None  # I18nStr
     glyphicon: Optional[str] = None
     required: bool = False
-    error_msg: Any = None  # I18nStr
+    error_msg: I18nStr= None  # I18nStr
     value: Optional[str] = None  # for hidden fields / pre-filled defaults
-    choices: Optional[List[str]] = None  # for select fields
+    choices: Optional[List[I18nStr]] = None  # for select fields
     placeholder_choice: I18nStr = None  # e.g. "Bitte wählen" for select fields
     validators: Optional[List[Dict[str, Any]]] = None  # WTForms validator descriptors
 
@@ -130,9 +116,9 @@ class FormDefinition:
     legend: Any  # I18nStr — required, no default
     fields: List[FormField]
     action: str = ""
-    submit_label: Any = None  # I18nStr; defaults to {"en": "Send", "de": "Absenden"}
+    submit_label: I18nStr = None  # I18nStr; defaults to {"en": "Send", "de": "Absenden"}
     submit_glyphicon: Optional[str] = None
-    success_message: Any = None  # I18nStr
+    success_message: I18nStr = None  # I18nStr
 
     def resolved_submit_label(self, lang: str = "en") -> str:
         """

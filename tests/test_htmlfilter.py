@@ -12,9 +12,10 @@ from frontend.htmlfilter import MediaWikiHtmlFilter
 class TestHtmlFilter(Basetest):
     """
     test MediaWiki HTML filter
+    2 tests in 0.07 secs
     """
 
-    def setUp(self, debug=True, profile=True):
+    def setUp(self, debug=False, profile=True):
         Basetest.setUp(self, debug=debug, profile=profile)
 
     def testToReveal(self):

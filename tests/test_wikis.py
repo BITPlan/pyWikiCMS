@@ -19,7 +19,9 @@ class TestWikis(Basetest):
 
     def testWikis(self):
         """
-        test wikis"""
+        test wiki
+        e.g. 91 wikis in 2.16 secs
+        """
         wikis = Wikis()
         graph = MogwaiGraph()
         wikis.add_to_graph(graph, with_progress=True)

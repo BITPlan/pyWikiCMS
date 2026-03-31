@@ -14,6 +14,7 @@ from tests.smw_access import SMWAccess
 class TestWikiCMS(Basetest):
     """
     test the Mediawiki based Content Management System
+    2 tests in 0.2 secs
     """
 
     def setUp(self):

@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup, Comment
 
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
+from duckdb.experimental.spark.errors.exceptions.base import IllegalArgumentException
 
 
 @lod_storable
@@ -107,32 +108,22 @@ class MediaWikiHtmlFilter(HtmlFilter):
         """
         filter the given page content
         """
-        soup = self.doFilter(pc.html, self.filterKeys)
-        html_to_filter = soup.decode_contents()
-        temp_pc = PageContent(html=html_to_filter, lang=pc.lang)
-        temp_pc = self.filter_html(temp_pc)
-        pc.content = temp_pc.html
+        self.doFilter(pc, self.filterKeys)
+        self.filter_html(pc)
         return pc
 
-    def filter_html(self, pc_or_html) -> PageContent:
+    def filter_html(self, pc:PageContent):
         """
-        Apply filters directly on the raw HTML string without re-parsing,
-        to avoid lxml re-serialization mangling content.
+        Apply filters
         Detects wikicms-form divs and replaces them with rendered form HTML
         when a form_registry is set.
 
         Args:
-            pc_or_html: either a PageContent object or a string (for backward compatibility)
+            pc: a PageContent object
 
-        Returns:
-            If given a string, returns the filtered string.
-            If given a PageContent, returns the PageContent with filtered html.
         """
-        return_string = isinstance(pc_or_html, str)
-        if return_string:
-            pc = PageContent(html=pc_or_html)
-        else:
-            pc = pc_or_html
+        if not isinstance(pc, PageContent):
+            raise IllegalArgumentException("Expecting PageContent but got",type(pc))
         if "editsection" in self.filterKeys:
             pc.html = re.sub(
                 r'<span class="mw-editsection">.*?</span>\s*</span>',
@@ -141,12 +132,9 @@ class MediaWikiHtmlFilter(HtmlFilter):
                 flags=re.DOTALL,
             )
         if self.form_registry is not None:
-            pc = self.replace_form_divs(pc)
-        if return_string:
-            return pc.html
-        return pc
+            self.replace_form_divs(pc)
 
-    def replace_form_divs(self, pc: PageContent) -> PageContent:
+    def replace_form_divs(self, pc: PageContent):
         """
         Find all <div class="wikicms-form" data-form-name="..."> elements and
         replace each with the rendered form HTML from the registry.
@@ -157,7 +145,6 @@ class MediaWikiHtmlFilter(HtmlFilter):
         Returns:
             PageContent: the page content with forms replaced
         """
-
         renderer = FormRenderer()
 
         def replace_match(m: re.Match) -> str:
@@ -173,11 +160,10 @@ class MediaWikiHtmlFilter(HtmlFilter):
             pc.html,
             flags=re.DOTALL,
         )
-        return pc
 
-    def doFilter(self, html, filterKeys):
+    def doFilter(self, pc:PageContent, filterKeys)->BeautifulSoup:
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup
-        soup = BeautifulSoup(html, self.parser)
+        soup = BeautifulSoup(pc.html, self.parser)
         if "parser-output" in filterKeys:
             parserdiv = soup.find("div", {"class": "mw-parser-output"})
             if parserdiv:
@@ -190,7 +176,7 @@ class MediaWikiHtmlFilter(HtmlFilter):
                 s.extract()
         for comments in soup.findAll(text=lambda text: isinstance(text, Comment)):
             comments.extract()
-        return soup
+        pc.soup=soup
 
     def fixNode(self, node, attribute, prefix, delim=None):
         """

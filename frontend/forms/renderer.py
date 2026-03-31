@@ -66,14 +66,13 @@ class FormRenderer:
         parts.append(Markup(f"<fieldset>\n<legend>{escape(legend)}</legend>\n"))
 
         for field in form_def.fields:
-            parts.append(
-                self._render_field(
+            field_html=self._render_field(
                     field,
                     values.get(field.name, ""),
                     errors.get(field.name, []),
                     lang,
                 )
-            )
+            parts.append(field_html)
 
         parts.append(self._render_submit(form_def, lang))
         parts.append(Markup("</fieldset>\n</form>"))

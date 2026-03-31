@@ -13,7 +13,7 @@ from frontend.forms.handler import FormHandler
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
 from frontend.forms.validators import build_wtforms_validators, validate_with_wtforms
-from frontend.htmlfilter import MediaWikiHtmlFilter
+from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent
 
 # Path to the built-in contact.yaml shipped with the package
 _CONTACT_YAML = (
@@ -389,15 +389,14 @@ class TestForms(Basetest):
         """
         form_def = make_contact_form()
         FormRegistry.register(form_def)
-
-        html = (
+        pc=PageContent()
+        pc.html = (
             '<div class="wikicms-form" data-form-name="contact">'
             '<a href="http://www.bitplan.com/Contact">Contact form</a>'
             "</div>"
         )
-
         mwf = MediaWikiHtmlFilter()
-        result = mwf.filter_html(html)
+        result = mwf.filter_html(pc)
         if self.debug:
             print(result)
         self.assertNotIn("wikicms-form", result)

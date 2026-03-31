@@ -28,6 +28,7 @@ from tests.smw_access import SMWAccess
 class TestFrontend(WebserverTest):
     """
     test the frontend
+    14 tests in 9.8 secs
     """
 
     instance = None
@@ -397,7 +398,9 @@ class TestFrontend(WebserverTest):
             self.fail(pc.error)
         self.assertEqual(pc.page_title, "Welcome")
         content = pc.content
-        if self.debug:
+        debug=self.debug
+        debug=True
+        if debug:
             print(content)
 
         self.assertFalse("""href="/index.php""" in content)
