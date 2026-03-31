@@ -36,26 +36,34 @@ class I18n:
         Returns:
             str: the resolved string for the requested language
         """
-        i18n=""
-        if value is not None:
-            if isinstance(value, dict):
-                i18n = value.get(lang) or value.get("en")
-                if i18n is None and value:
-                    i18n= next(iter(value.values()))
-                i18n=i18n or ""
-        return i18n
+        if value is None:
+            resolved = ""
+        elif isinstance(value, dict):
+            resolved = value.get(lang) or value.get("en")
+            if resolved is None and value:
+                resolved = next(iter(value.values()))
+            resolved = resolved or ""
+        else:
+            resolved = value
+        return resolved
 
 
 def resolve_i18n(value: I18nStr, lang: str = "en") -> str:
     """Backward compatible alias for I18n.resolve()"""
-    i18n=I18n.resolve(value, lang)
-    return i18n
+    resolved = I18n.resolve(value, lang)
+    return resolved
+
 
 @dataclass
 class HtmlElement:
     """
     Base class for HTML elements with common attributes.
+
+    Uses plain @dataclass (not @lod_storable) because it serves as a
+    base class — @lod_storable wraps with YamlAble which would cause
+    MRO conflicts in subclasses that also use @lod_storable.
     """
+
     css_class: str = ""  # e.g. "form-control selectpicker"
     size: str = ""  # xs, sm, md, lg
 
@@ -64,7 +72,17 @@ class HtmlElement:
 class FormLabel(HtmlElement):
     """
     Label element with i18n support for form fields.
+
+    Defined in YAML as an object with text and optional css_class/size::
+
+        label:
+          text:
+            en: "Name"
+            de: "Name"
+          css_class: "bitplanorange"
+          size: "md"
     """
+
     text: I18nStr = ""  # the label text
 
 
@@ -90,15 +108,16 @@ class FormField(HtmlElement):
             max: 100
           - type: Email
     """
+
     name: str = ""  # required but defaults to empty for compatibility
     field_type: str = "text"  # text | textarea | select | hidden | email
-    label: FormLabel = None
-    placeholder: I18nStr = None  # I18nStr
+    label: FormLabel = None  # FormLabel object with text, css_class, size
+    placeholder: I18nStr = None
     glyphicon: Optional[str] = None
     required: bool = False
-    error_msg: I18nStr= None  # I18nStr
+    error_msg: I18nStr = None
     value: Optional[str] = None  # for hidden fields / pre-filled defaults
-    choices: Optional[List[I18nStr]] = None  # for select fields
+    choices: Optional[List[str]] = None  # for select fields
     placeholder_choice: I18nStr = None  # e.g. "Bitte wählen" for select fields
     validators: Optional[List[Dict[str, Any]]] = None  # WTForms validator descriptors
 
@@ -116,9 +135,9 @@ class FormDefinition:
     legend: Any  # I18nStr — required, no default
     fields: List[FormField]
     action: str = ""
-    submit_label: I18nStr = None  # I18nStr; defaults to {"en": "Send", "de": "Absenden"}
+    submit_label: I18nStr = None  # defaults to {"en": "Send", "de": "Absenden"}
     submit_glyphicon: Optional[str] = None
-    success_message: I18nStr = None  # I18nStr
+    success_message: I18nStr = None
 
     def resolved_submit_label(self, lang: str = "en") -> str:
         """

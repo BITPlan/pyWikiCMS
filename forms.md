@@ -102,40 +102,19 @@ tests/
 
 ---
 
-## `form_field.py` - lod_storable dataclasses
+## `form_field.py` - lod_storable dataclasses for declarative definition of forms
+### I18nStr
+A Type alias: a translatable string is either a plain str or a
+language-keyed dict, e.g. {"en": "Name", "de": "Name", "fr": "Nom"}.
 
-```python
-I18nStr = Optional[Union[str, Dict[str, str]]]
+### I18n
+resolve I18nStr input to the given language
 
-def resolve_i18n(value: I18nStr, lang: str = "en") -> str:
-    """Resolve a plain string or {lang: str} dict to a string."""
-    ...
-
-@lod_storable
-class FormField:
-    name: str
-    field_type: str          # text | textarea | select | hidden
-    label: Any = None        # I18nStr
-    placeholder: Any = None  # I18nStr
-    glyphicon: Optional[str] = None
-    required: bool = False
-    error_msg: Any = None    # I18nStr
-    value: Optional[str] = None       # for hidden fields
-    choices: Optional[List[str]] = None  # for select fields
-    validators: Optional[List[Dict[str, Any]]] = None  # WTForms descriptors
-
-@lod_storable
-class FormDefinition:
-    name: str
-    legend: Any              # I18nStr - required
-    fields: List[FormField]
-    action: str = ""
-    submit_label: Any = None  # I18nStr; resolved via resolved_submit_label(lang)
-    submit_glyphicon: Optional[str] = None
-    success_message: Any = None  # I18nStr
-```
-
----
+### HtmlElement
+Base class to hold css_class e.g. "form-control selectpicker" and bootstrap5 size information e.g. sx,sm,md lg
+### FormLabel derived from HtmlElement holds I18nStr label text
+### FormField derived from HtmlElement 
+### FormDefinition derived from HtmlElement
 
 ## `validators.py` - WTForms integration
 

@@ -4,17 +4,13 @@
 # label, placeholder, error_msg, placeholder_choice on each field) accept either a 
 # plain string or a language-keyed dict, e.g.:
 #
-#   label: "Name"   # simple string
-#   label:          # or language-keyed dict
-#     en: "Name"
-#     de: "Name"
-#     fr: "Nom"
-#
-#   label:          # or object with custom CSS class
+#   label:          # FormLabel object with text and optional css_class/size
 #     text:
 #       en: "Name"
 #       de: "Name"
+#       fr: "Nom"
 #     css_class: "bitplanorange"
+#     size: "md"
 #
 # The renderer resolves the correct language at render time via I18n.resolve().
 #
@@ -100,12 +96,13 @@ fields:
   - name: email
     field_type: text
     label:
-      en: E-Mail
-      de: E-Mail
-      fr: E-Mail
-      es: "Correo electrónico"
-      it: E-mail
-      nl: E-mail
+      text:
+        en: E-Mail
+        de: E-Mail
+        fr: E-Mail
+        es: "Correo electrónico"
+        it: E-mail
+        nl: E-mail
     placeholder:
       en: Your e-mail address
       de: Ihre E-Mail-Adresse
@@ -129,12 +126,13 @@ fields:
   - name: message
     field_type: textarea
     label:
-      en: Message
-      de: Nachricht
-      fr: Message
-      es: Mensaje
-      it: Messaggio
-      nl: Bericht
+      text:
+        en: Message
+        de: Nachricht
+        fr: Message
+        es: Mensaje
+        it: Messaggio
+        nl: Bericht
     placeholder:
       en: Your message
       de: Ihre Nachricht

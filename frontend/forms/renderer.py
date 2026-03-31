@@ -66,12 +66,12 @@ class FormRenderer:
         parts.append(Markup(f"<fieldset>\n<legend>{escape(legend)}</legend>\n"))
 
         for field in form_def.fields:
-            field_html=self._render_field(
-                    field,
-                    values.get(field.name, ""),
-                    errors.get(field.name, []),
-                    lang,
-                )
+            field_html = self._render_field(
+                field,
+                values.get(field.name, ""),
+                errors.get(field.name, []),
+                lang,
+            )
             parts.append(field_html)
 
         parts.append(self._render_submit(form_def, lang))
@@ -103,18 +103,15 @@ class FormRenderer:
         has_error = bool(field_errors)
         group_class = "form-group has-feedback" + (" has-error" if has_error else "")
 
-        # Handle label - can be string/dict (backward compat) or FormLabel object
-        if hasattr(field.label, "text"):
-            # New FormLabel format
-            label_text = escape(I18n.resolve(field.label.text, lang) or field.name)
-            label_extra_css = field.label.css_class if field.label.css_class else ""
-        else:
-            # Old format: string or dict
-            label_text = escape(I18n.resolve(field.label, lang) or field.name)
-            label_extra_css = ""
+        # Resolve label — always a FormLabel object
+        label = field.label
+        label_text = escape(I18n.resolve(label.text, lang) if label else "") or escape(
+            field.name
+        )
+        label_extra_css = label.css_class if label and label.css_class else ""
 
-        # Build label css_class - use label_extra_css + size-based classes
-        label_size = field.size if field.size else "md"
+        # Build label css_class from label size or field size
+        label_size = (label.size if label and label.size else "") or field.size or "md"
         size_css = f"col-{label_size}-3 control-label"
         label_css = f"{label_extra_css} {size_css}".strip()
 

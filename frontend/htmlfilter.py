@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup, Comment
 
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
-from duckdb.experimental.spark.errors.exceptions.base import IllegalArgumentException
 
 
 @lod_storable
@@ -106,77 +105,88 @@ class MediaWikiHtmlFilter(HtmlFilter):
 
     def filter(self, pc: PageContent):
         """
-        filter the given page content
-        """
-        self.doFilter(pc, self.filterKeys)
-        self.filter_html(pc)
-        return pc
+        Filter the given page content.
 
-    def filter_html(self, pc:PageContent):
-        """
-        Apply filters
-        Detects wikicms-form divs and replaces them with rendered form HTML
-        when a form_registry is set.
+        Pipeline:
+        1. doFilter — parse with BeautifulSoup, strip parser-output wrapper,
+           editsection spans, and comments.  Returns cleaned soup.
+        2. fixHtml — rewrite image/video/link paths for the CMS frontend.
+        3. unwrap — convert soup to HTML string, strip lxml wrapper tags.
+        4. _replace_form_divs — replace wikicms-form divs with rendered forms.
+        5. Store result in pc.content; pc.html stays as the original.
 
         Args:
-            pc: a PageContent object
+            pc(PageContent): the page content to filter
 
+        Returns:
+            PageContent: the same object with pc.content set
         """
-        if not isinstance(pc, PageContent):
-            raise IllegalArgumentException("Expecting PageContent but got",type(pc))
-        if "editsection" in self.filterKeys:
-            pc.html = re.sub(
-                r'<span class="mw-editsection">.*?</span>\s*</span>',
-                "</span>",
-                pc.html,
-                flags=re.DOTALL,
-            )
-        if self.form_registry is not None:
-            self.replace_form_divs(pc)
+        soup = self.doFilter(pc.html, self.filterKeys)
+        soup = self.fixHtml(soup)
+        filtered_html = self.unwrap(soup)
+        filtered_html = self._replace_form_divs(filtered_html, pc.lang)
+        pc.content = filtered_html
+        return pc
 
-    def replace_form_divs(self, pc: PageContent):
+    def _replace_form_divs(self, html: str, lang: str = "en") -> str:
         """
         Find all <div class="wikicms-form" data-form-name="..."> elements and
         replace each with the rendered form HTML from the registry.
 
         Args:
-            pc(PageContent): the page content with html to process
+            html(str): the HTML string to process
+            lang(str): language code for i18n resolution
 
         Returns:
-            PageContent: the page content with forms replaced
+            str: the HTML with form divs replaced
         """
-        renderer = FormRenderer()
+        if self.form_registry is None:
+            result = html
+        else:
+            renderer = FormRenderer()
 
-        def replace_match(m: re.Match) -> str:
-            form_name = m.group(1)
-            form_def = self.form_registry.get(form_name)
-            if form_def is None:
-                return m.group(0)
-            return renderer.render(form_def, lang=pc.lang)
+            def replace_match(m: re.Match) -> str:
+                form_name = m.group(1)
+                form_def = self.form_registry.get(form_name)
+                if form_def is None:
+                    replacement = m.group(0)
+                else:
+                    replacement = renderer.render(form_def, lang=lang)
+                return replacement
 
-        pc.html = re.sub(
-            r'<div\s+class="wikicms-form"\s+data-form-name="([^"]+)"[^>]*>.*?</div>',
-            replace_match,
-            pc.html,
-            flags=re.DOTALL,
-        )
+            result = re.sub(
+                r'<div\s+class="wikicms-form"\s+data-form-name="([^"]+)"[^>]*>.*?</div>',
+                replace_match,
+                html,
+                flags=re.DOTALL,
+            )
+        return result
 
-    def doFilter(self, pc:PageContent, filterKeys)->BeautifulSoup:
+    def doFilter(self, html: str, filterKeys) -> BeautifulSoup:
+        """
+        Parse *html* with BeautifulSoup and apply structural filters.
+
+        Args:
+            html(str): the raw HTML string
+            filterKeys(list): which filters to apply
+
+        Returns:
+            BeautifulSoup: the cleaned soup
+        """
         # https://stackoverflow.com/questions/5598524/can-i-remove-script-tags-with-beautifulsoup
-        soup = BeautifulSoup(pc.html, self.parser)
+        soup = BeautifulSoup(html, self.parser)
         if "parser-output" in filterKeys:
             parserdiv = soup.find("div", {"class": "mw-parser-output"})
             if parserdiv:
                 inner_html = parserdiv.decode_contents()
-                # Parse the inner HTML string to create a new BeautifulSoup object
                 soup = BeautifulSoup(inner_html, self.parser)
         # https://stackoverflow.com/questions/5041008/how-to-find-elements-by-class
         if "editsection" in filterKeys:
             for s in soup.select("span.mw-editsection"):
                 s.extract()
-        for comments in soup.findAll(text=lambda text: isinstance(text, Comment)):
+        for comments in soup.find_all(string=lambda text: isinstance(text, Comment)):
             comments.extract()
-        pc.soup=soup
+        return soup
 
     def fixNode(self, node, attribute, prefix, delim=None):
         """
