@@ -8,7 +8,12 @@ from pathlib import Path
 
 from basemkit.basetest import Basetest
 
-from frontend.forms.form_field import FormDefinition, FormField, resolve_i18n
+from frontend.forms.form_field import (
+    FormDefinition,
+    FormField,
+    FormLabel,
+    resolve_i18n,
+)
 from frontend.forms.handler import FormHandler
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
@@ -37,7 +42,7 @@ def make_contact_form() -> FormDefinition:
             FormField(
                 name="name",
                 field_type="text",
-                label={"en": "Name", "de": "Name", "fr": "Nom"},
+                label=FormLabel(text={"en": "Name", "de": "Name", "fr": "Nom"}),
                 placeholder={"en": "Your name", "de": "Ihr Name", "fr": "Votre nom"},
                 glyphicon="user",
                 required=True,
@@ -54,7 +59,7 @@ def make_contact_form() -> FormDefinition:
             FormField(
                 name="email",
                 field_type="text",
-                label={"en": "E-Mail", "de": "E-Mail"},
+                label=FormLabel(text={"en": "E-Mail", "de": "E-Mail"}),
                 placeholder={
                     "en": "Your e-mail address",
                     "de": "Ihre E-Mail-Adresse",
@@ -73,7 +78,9 @@ def make_contact_form() -> FormDefinition:
             FormField(
                 name="message",
                 field_type="textarea",
-                label={"en": "Message", "de": "Nachricht", "fr": "Message"},
+                label=FormLabel(
+                    text={"en": "Message", "de": "Nachricht", "fr": "Message"}
+                ),
                 placeholder={"en": "Your message", "de": "Ihre Nachricht"},
                 glyphicon="pencil",
                 required=True,
@@ -183,7 +190,9 @@ class TestForms(Basetest):
         self.assertTrue(
             _CONTACT_YAML.exists(), f"contact.yaml not found: {_CONTACT_YAML}"
         )
-        form_def = FormDefinition.load_from_yaml_file(str(_CONTACT_YAML))  # @UndefinedVariable
+        form_def = FormDefinition.load_from_yaml_file(
+            str(_CONTACT_YAML)
+        )  # @UndefinedVariable
         self.assertEqual(form_def.name, "contact")
         self.assertEqual(resolve_i18n(form_def.legend, "en"), "Contact us")
         self.assertEqual(resolve_i18n(form_def.legend, "de"), "Kontaktieren Sie uns")
@@ -262,8 +271,8 @@ class TestForms(Basetest):
         if self.debug:
             print(html)
         self.assertIn("John Doe", html)
-        self.assertIn("has-error", html)
         self.assertIn("Please enter a valid e-mail address.", html)
+        self.assertIn("help-block", html)
 
     def test_handler_validate_missing_required(self):
         """
@@ -389,23 +398,25 @@ class TestForms(Basetest):
         """
         form_def = make_contact_form()
         FormRegistry.register(form_def)
-        pc=PageContent()
+        pc = PageContent()
         pc.html = (
             '<div class="wikicms-form" data-form-name="contact">'
             '<a href="http://www.bitplan.com/Contact">Contact form</a>'
             "</div>"
         )
-        mwf = MediaWikiHtmlFilter()
-        result = mwf.filter_html(pc)
+        mwf = MediaWikiHtmlFilter(filterKeys=[])
+        mwf.filter_page_content(pc)
         if self.debug:
-            print(result)
-        self.assertNotIn("wikicms-form", result)
-        self.assertIn("form-horizontal", result)
-        self.assertIn("Contact us", result)
+            print(pc.content)
+        self.assertNotIn("wikicms-form", pc.content)
+        self.assertIn("form-horizontal", pc.content)
+        self.assertIn("Contact us", pc.content)
+        # original html is preserved
+        self.assertIn("wikicms-form", pc.html)
 
     def test_htmlfilter_no_registry_leaves_div(self):
         """
-        Test that without a registry the wikicms-form div is left untouched.
+        Test that without a registered form the wikicms-form div is left untouched.
         """
         # Ensure no registry is active
         FormRegistry._instance = None
@@ -413,11 +424,12 @@ class TestForms(Basetest):
         blank = FormRegistry()
         FormRegistry._instance = blank
 
-        html = (
+        pc = PageContent()
+        pc.html = (
             '<div class="wikicms-form" data-form-name="contact">'
             '<a href="http://www.bitplan.com/Contact">Contact form</a>'
             "</div>"
         )
-        mwf = MediaWikiHtmlFilter()
-        result = mwf.filter_html(html)
-        self.assertIn("wikicms-form", result)
+        mwf = MediaWikiHtmlFilter(filterKeys=[])
+        mwf.filter_page_content(pc)
+        self.assertIn("wikicms-form", pc.content)
