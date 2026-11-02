@@ -60,7 +60,7 @@ class TestMenu(Basetest):
         self.assertIn('<li><a href="/www/index.php/Kontakt">Kontakt</a></li>', html)
         self.assertIn('<a href="https://example.org/">Beispiel</a>', html)
         self.assertNotIn("<script", html)
-        self.assertEqual(1, html.count("<details>"))
+        self.assertEqual(1, html.count("<details "))
         self.assertEqual(2, html.count("<ul "))
 
     def test_empty(self):
