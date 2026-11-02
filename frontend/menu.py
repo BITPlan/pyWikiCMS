@@ -104,7 +104,7 @@ class Menu:
                 '    <summary aria-label="menu" class="fs-2 text-end" style="list-style:none;cursor:pointer">☰</summary>'
             )
             lines.append(
-                '    <ul class="list-unstyled position-absolute end-0 bg-white shadow p-3 m-0">'
+                '    <ul class="list-unstyled text-nowrap text-start position-absolute end-0 bg-white shadow p-3 m-0">'
             )
             for section in self.sections:
                 if len(section.entries) == 1:
