@@ -7,7 +7,7 @@ Created on 2020-07-27
 import logging
 import re
 import traceback
-from typing import List
+from typing import List, Optional
 
 import requests
 from fastapi import Response
@@ -17,7 +17,7 @@ from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
 from frontend.frame import HtmlFrame
-from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent
+from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent, PageHead
 from frontend.menu import Menu
 
 
@@ -32,7 +32,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
         self,
         frontend: FrontendSite,
         parser: str = "lxml",
-        proxy_prefixes=["/images/", "/videos"],
+        proxy_prefixes=["/images/", "/videos", "/robots.txt", "/sitemap"],
         debug: bool = False,
         filterKeys=None,
     ):
@@ -218,6 +218,40 @@ class WikiFrontend(MediaWikiHtmlFilter):
 
         return response
 
+    def wiki_base_url(self) -> str:
+        """
+        get the base url of the backend wiki including its script path
+
+        Returns:
+            str: the base url
+        """
+        wikiUser = self.wiki.wikiUser
+        base_url = f"{wikiUser.url}{wikiUser.scriptPath}"
+        return base_url
+
+    def get_rendered(self, page_title: str) -> Optional[str]:
+        """
+        get the document MediaWiki renders for the given page, head included
+        see https://github.com/BITPlan/pyWikiCMS/issues/38
+
+        Args:
+            page_title(str): the title of the page
+
+        Returns:
+            str: the rendered document, None if the wiki does not answer 200
+        """
+        rendered = None
+        url = f"{self.wiki_base_url()}/index.php"
+        try:
+            response = requests.get(url, params={"title": page_title}, timeout=30)
+            if response.status_code == 200:
+                rendered = response.text
+            else:
+                self.logger.info(f"{url} {page_title}: {response.status_code}")
+        except requests.RequestException as ex:
+            self.logger.info(f"{url} {page_title}: {ex}")
+        return rendered
+
     def getContent(self, pagePath: str) -> PageContent:
         """get the content for the given pagePath
         Args:
@@ -238,9 +272,13 @@ class WikiFrontend(MediaWikiHtmlFilter):
                     raise Exception(
                         "getContent without wiki - you might want to call open first"
                     )
-                pc.html = self.wiki.getHtml(pc.page_title)
+                rendered = self.get_rendered(pc.page_title)
+                if rendered:
+                    pc.html = rendered
+                    pc.head = PageHead.from_html(rendered, self.wiki_base_url())
+                else:
+                    pc.html = self.wiki.getHtml(pc.page_title)
                 pc.markup = self.wiki.get_wiki_markup(pc.page_title)
-                pc.page_title = pc.page_title
                 pc.detect_lang()
                 self.filter_page_content(pc)
         except Exception as e:
@@ -287,7 +325,9 @@ class WikiFrontend(MediaWikiHtmlFilter):
             )
         else:
             pc = self.getContent(path)
-            html_frame = HtmlFrame(self, title=pc.page_title)
+            html_frame = HtmlFrame(
+                self, title=pc.page_title, lang=pc.lang, head=pc.head
+            )
             if pc.error:
                 response = Response(
                     content=f"Page not found: {path}",

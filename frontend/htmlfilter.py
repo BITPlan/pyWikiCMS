@@ -5,12 +5,87 @@ Created on 2026-03-30
 """
 
 import re
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 from basemkit.yamlable import lod_storable
 from bs4 import BeautifulSoup, Comment
 
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
+
+
+@dataclass
+class PageHead:
+    """
+    the head metadata MediaWiki rendered for a page, passed through by the frame
+    see https://github.com/BITPlan/pyWikiCMS/issues/38
+
+    the frame keeps charset and viewport of its own; stylesheets and scripts of
+    the wiki skin are not passed through
+    """
+
+    lang: str = "en"
+    dir: str = "ltr"
+    title: str = ""
+    tags: List[str] = field(default_factory=list)
+    heading: str = ""
+
+    # link rel values that describe the page rather than the skin
+    link_rels = {
+        "canonical",
+        "alternate",
+        "icon",
+        "shortcut",
+        "apple-touch-icon",
+        "search",
+        "license",
+    }
+    # meta names the frame sets itself
+    meta_skip = {"viewport", "ResourceLoaderDynamicStyles"}
+
+    @classmethod
+    def from_html(
+        cls, html: str, base_url: str = "", parser: str = "lxml"
+    ) -> "PageHead":
+        """
+        extract the head metadata from a rendered MediaWiki document
+
+        Args:
+            html(str): the rendered document
+            base_url(str): the base url of the wiki to make relative link hrefs absolute
+            parser(str): the beautiful soup parser to use
+
+        Returns:
+            PageHead: the extracted head
+        """
+        head = cls()
+        soup = BeautifulSoup(html, parser)
+        html_tag = soup.find("html")
+        if html_tag is not None:
+            head.lang = html_tag.get("lang", head.lang)
+            head.dir = html_tag.get("dir", head.dir)
+        title_tag = soup.find("title")
+        if title_tag is not None:
+            head.title = title_tag.get_text().strip()
+        if soup.head is not None:
+            for tag in soup.head.find_all(["meta", "link"]):
+                if tag.name == "meta":
+                    keep = "charset" not in tag.attrs and (
+                        tag.get("name", "") not in cls.meta_skip
+                    )
+                else:
+                    rels = set(tag.get("rel") or [])
+                    keep = bool(rels & cls.link_rels)
+                    href = tag.get("href", "")
+                    if keep and href.startswith("/") and base_url:
+                        tag["href"] = f"{base_url}{href}"
+                if keep:
+                    head.tags.append(str(tag))
+        heading = soup.find(id="firstHeading")
+        if heading is not None:
+            head.heading = heading.get_text().strip()
+        return head
 
 
 @lod_storable
@@ -28,15 +103,25 @@ class PageContent:
     lang: str = (
         "en"  # the language of the wiki page - potentially derived from it's markup
     )
+    head: Optional[PageHead] = None  # head metadata of the rendered document
 
     def __post_init__(self):
         self.detect_lang()
 
     def detect_lang(self):
+        """
+        detect the language: the Language or LanguageSet template of the markup wins,
+        then the html lang of the rendered document
+        """
         if self.markup:
-            lang_match = re.search(r"{{Language\|[^}]*language=([^}|]+)", self.markup)
+            lang_match = re.search(
+                r"{{Language(?:Set)?\|[^}]*language=([^}|]+)", self.markup
+            )
             if lang_match:
-                self.lang = lang_match.group(1)
+                self.lang = lang_match.group(1).strip()
+                return
+        if self.head is not None and self.head.lang:
+            self.lang = self.head.lang
 
 
 class HtmlFilter:

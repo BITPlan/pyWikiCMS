@@ -72,7 +72,7 @@ class TestFrame(Basetest):
             'src="https://wiki.example.org/w/index.php?title=MediaWiki:Common.js&action=raw&ctype=text/javascript"',
             html,
         )
-        self.assertIn('<html lang="de">', html)
+        self.assertIn('<html lang="de" dir="ltr">', html)
         self.assertNotIn("bootstrap", html)
         self.assertNotIn("jquery", html)
 

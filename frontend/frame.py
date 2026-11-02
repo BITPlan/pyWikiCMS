@@ -21,18 +21,45 @@ class HtmlFrame:
         title (str): Title of the HTML document.
     """
 
-    def __init__(self, frontend, title: str, lang: str = "en") -> None:
+    def __init__(self, frontend, title: str, lang: str = "en", head=None) -> None:
         """
         Initialize HtmlFrame with a specified language and title.
 
         Args:
             frontend: the WikiFrontend instance
-            title (str): Title for the HTML document.
+            title (str): Title for the HTML document, used when head has none.
             lang (str, optional): Language of the HTML document. Defaults to "en".
+            head (PageHead, optional): the head metadata MediaWiki rendered, see issue 38
         """
         self.frontend = frontend
         self.lang = lang
         self.title = title
+        self.head = head
+        if head is not None:
+            if head.title:
+                self.title = head.title
+
+    def head_tags(self) -> str:
+        """
+        Get the meta and link tags MediaWiki rendered for the page.
+
+        Returns:
+            str: the tags, one per line, empty without a head
+        """
+        html = ""
+        if self.head is not None and self.head.tags:
+            html = "\n".join(f"  {tag}" for tag in self.head.tags)
+        return html
+
+    def html_dir(self) -> str:
+        """
+        Get the text direction of the document.
+
+        Returns:
+            str: ltr or rtl
+        """
+        html_dir = self.head.dir if self.head is not None else "ltr"
+        return html_dir
 
     def wiki_base_url(self) -> str:
         """
@@ -75,12 +102,14 @@ class HtmlFrame:
         style_key = "CMS/style"
         style_html = self.frontend.cms_pages.get(style_key, "")
         common_includes = self.common_includes()
+        head_tags = self.head_tags()
         html = f"""<!doctype html>
-<html lang="{self.lang}">
+<html lang="{self.lang}" dir="{self.html_dir()}">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{self.title}</title>
+{head_tags}
 {common_includes}
   {style_html}
 </head>
