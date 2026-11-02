@@ -3,9 +3,7 @@ Created on 2026-03-30
 
 @author: wf
 
-Bootstrap 3 form renderer.
-Produces HTML matching the original Rythm template output from
-MediaWiki:Form.rythm (preField/postField/showFormContent).
+Form renderer with Bootstrap 5 class names, see issue 37.
 """
 
 from typing import Dict, List, Optional
@@ -17,16 +15,20 @@ from frontend.forms.form_field import FormDefinition, FormField, I18n
 
 class FormRenderer:
     """
-    Renders a FormDefinition as Bootstrap 3 HTML using markupsafe.
+    Renders a FormDefinition as semantic HTML with Bootstrap 5 class names
+    using markupsafe.
+
+    The markup carries no script and no client side validator; validation
+    is done server side by FormHandler. A site without Bootstrap gets a
+    plain usable form, a site with Bootstrap 5 on MediaWiki:Common.css or a
+    Chameleon 6 wiki gets the styled one.
 
     All user-visible strings are resolved through I18n.resolve() so that
     multilingual form definitions (label/placeholder/error_msg as dicts)
     are rendered in the requested language.
-
-    Indentation matches the original Rythm template output.
     """
 
-    # Indentation constants matching the original Rythm template
+    # Indentation constants
     I2 = "  "
     I4 = "    "
     I8 = "        "
@@ -42,7 +44,7 @@ class FormRenderer:
         lang: str = "en",
     ) -> str:
         """
-        Render the form definition as Bootstrap 3 HTML.
+        Render the form definition as HTML.
 
         Args:
             form_def(FormDefinition): the form definition to render
@@ -62,7 +64,7 @@ class FormRenderer:
         form_css_class = (
             form_def.css_class
             if hasattr(form_def, "css_class") and form_def.css_class
-            else "form-horizontal"
+            else "wikicms-form"
         )
 
         parts = []
@@ -72,11 +74,7 @@ class FormRenderer:
             )
         )
         parts.append(
-            Markup(
-                f"{self.I4}<fieldset>\n"
-                f"{self.I4}<!-- Form Name -->\n"
-                f"{self.I4}<legend>{escape(legend)}</legend>\n"
-            )
+            Markup(f"{self.I4}<fieldset>\n{self.I4}<legend>{escape(legend)}</legend>\n")
         )
 
         for field in form_def.fields:
@@ -98,7 +96,7 @@ class FormRenderer:
         self, field: FormField, value: str, field_errors: List[str], lang: str = "en"
     ) -> Markup:
         """
-        Render a single form field.
+        Render a single form field as a Bootstrap 5 row.
 
         Args:
             field(FormField): the field definition
@@ -117,60 +115,38 @@ class FormRenderer:
             )
             return rendered
 
-        # Resolve label — always a FormLabel object
         label = field.label
         label_text = escape(I18n.resolve(label.text, lang) if label else "") or escape(
             field.name
         )
         label_extra_css = label.css_class if label and label.css_class else ""
-
-        # Build label css class
-        size_css = "col-md-3 control-label"
+        size_css = "col-md-3 col-form-label"
         label_css = (
             f"{label_extra_css} {size_css}".strip() if label_extra_css else size_css
         )
+        field_name = escape(field.name)
 
         parts = []
-        # form-group open
-        parts.append(Markup(f'{self.I8}<div class="form-group">\n'))
-        # label
-        parts.append(
-            Markup(f'{self.I10}<label class="{label_css}">{label_text}</label>  \n')
-        )
-        # input container open
+        parts.append(Markup(f'{self.I8}<div class="mb-3 row">\n'))
         parts.append(
             Markup(
-                f'{self.I10}<div class="col-md-6 inputGroupContainer">\n'
-                f'{self.I12}<div class="input-group">\n'
+                f'{self.I10}<label class="{label_css}" for="{field_name}">{label_text}</label>\n'
             )
         )
-        # glyphicon addon
-        if field.glyphicon:
-            parts.append(
-                Markup(
-                    f'{self.I14}<span class="input-group-addon">'
-                    f'<i class="glyphicon glyphicon-{escape(field.glyphicon)}"></i>'
-                    f"</span>\n"
-                )
-            )
-        # input element
+        parts.append(Markup(f'{self.I10}<div class="col-md-6">\n'))
         parts.append(
-            Markup(f"{self.I14}")
+            Markup(f"{self.I12}")
             + self._render_input(field, value, lang)
             + Markup("\n")
         )
-        # input container close
-        parts.append(Markup(f"{self.I12}</div>\n{self.I10}</div>\n"))
-        # error messages
         for error in field_errors:
             parts.append(
                 Markup(
-                    f'{self.I10}<small class="help-block" data-bv-validator="notEmpty">'
-                    f"{escape(error)}</small>\n"
+                    f'{self.I12}<div class="invalid-feedback d-block">'
+                    f"{escape(error)}</div>\n"
                 )
             )
-        # form-group close
-        parts.append(Markup(f"{self.I8}</div>\n"))
+        parts.append(Markup(f"{self.I10}</div>\n{self.I8}</div>\n"))
 
         result = Markup("").join(parts)
         return result
@@ -189,15 +165,16 @@ class FormRenderer:
         """
         placeholder = escape(I18n.resolve(field.placeholder, lang) or "")
         field_name = escape(field.name)
-        base_class = field.css_class if field.css_class else "form-control"
 
         if field.field_type == "textarea":
+            base_class = field.css_class if field.css_class else "form-control"
             rendered = Markup(
                 f'<textarea name="{field_name}" id="{field_name}"'
                 f' placeholder="{placeholder}" class="{base_class}">'
                 f"{escape(value)}</textarea>"
             )
         elif field.field_type == "select":
+            base_class = field.css_class if field.css_class else "form-select"
             choices = field.choices or []
             placeholder_choice = I18n.resolve(field.placeholder_choice, lang)
             options_parts = []
@@ -215,17 +192,17 @@ class FormRenderer:
                     Markup(f"{self.I14}<option{selected_attr}>{escape(c)}</option>")
                 )
             options = Markup("\n").join(options_parts)
-            if "selectpicker" not in base_class:
-                base_class = f"{base_class} selectpicker"
             rendered = Markup(
                 f'<select name="{field_name}" id="{field_name}"'
                 f' class="{base_class}">\n'
                 f"{options}\n"
-                f"{self.I14}</select>"
+                f"{self.I12}</select>"
             )
         else:
+            base_class = field.css_class if field.css_class else "form-control"
+            input_type = "email" if field.field_type == "email" else "text"
             rendered = Markup(
-                f'<input type="text" name="{field_name}" id="{field_name}"'
+                f'<input type="{input_type}" name="{field_name}" id="{field_name}"'
                 f' placeholder="{placeholder}" class="{base_class}"'
                 f' value="{escape(value)}">'
             )
@@ -243,17 +220,10 @@ class FormRenderer:
             Markup: rendered submit button HTML
         """
         submit_label = escape(form_def.resolved_submit_label(lang))
-        icon = Markup("")
-        if form_def.submit_glyphicon:
-            icon = Markup(
-                f'<span class="glyphicon glyphicon-{escape(form_def.submit_glyphicon)}"></span>'
-            )
         result = Markup(
-            f"{self.I8}<!-- Button -->\n"
-            f'{self.I8}<div class="form-group">\n'
-            f'{self.I10}<label class="col-md-4 control-label"></label>\n'
-            f'{self.I10}<div class="col-md-4">\n'
-            f'{self.I12}<button type="submit">{submit_label}{icon}</button>\n'
+            f'{self.I8}<div class="mb-3 row">\n'
+            f'{self.I10}<div class="col-md-6 offset-md-3">\n'
+            f'{self.I12}<button type="submit" class="btn btn-primary">{submit_label}</button>\n'
             f"{self.I10}</div>\n"
             f"{self.I8}</div>\n"
         )

@@ -8,16 +8,13 @@ from pathlib import Path
 
 from basemkit.basetest import Basetest
 
-from frontend.forms.form_field import (
-    FormDefinition,
-    FormField,
-    FormLabel,
-    resolve_i18n,
-)
+from frontend.forms.form_field import (FormDefinition, FormField, FormLabel,
+                                       resolve_i18n)
 from frontend.forms.handler import FormHandler
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
-from frontend.forms.validators import build_wtforms_validators, validate_with_wtforms
+from frontend.forms.validators import (build_wtforms_validators,
+                                       validate_with_wtforms)
 from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent
 
 # Path to the built-in contact.yaml shipped with the package
@@ -225,22 +222,26 @@ class TestForms(Basetest):
 
     def test_renderer_renders_html_english(self):
         """
-        Test that FormRenderer produces expected Bootstrap 3 HTML in English.
+        Test that FormRenderer produces Bootstrap 5 HTML in English.
         """
         form_def = make_contact_form()
         renderer = FormRenderer()
         html = renderer.render(form_def, lang="en")
         if self.debug:
             print(html)
-        self.assertIn("form-horizontal", html)
+        self.assertIn('<form class="wikicms-form"', html)
         self.assertIn("Contact us", html)
         self.assertIn('name="name"', html)
         self.assertIn('name="email"', html)
         self.assertIn("<textarea", html)
         self.assertIn('type="hidden"', html)
-        self.assertIn("glyphicon-user", html)
-        self.assertIn("Send", html)
-        self.assertIn("glyphicon-send", html)
+        self.assertIn('class="col-md-3 col-form-label" for="name"', html)
+        self.assertIn('class="form-control"', html)
+        self.assertIn(
+            '<button type="submit" class="btn btn-primary">Send</button>', html
+        )
+        for legacy in ["glyphicon", "form-horizontal", "selectpicker", "<script"]:
+            self.assertNotIn(legacy, html)
 
     def test_renderer_renders_html_german(self):
         """
@@ -272,7 +273,7 @@ class TestForms(Basetest):
             print(html)
         self.assertIn("John Doe", html)
         self.assertIn("Please enter a valid e-mail address.", html)
-        self.assertIn("help-block", html)
+        self.assertIn("invalid-feedback", html)
 
     def test_handler_validate_missing_required(self):
         """
@@ -408,8 +409,8 @@ class TestForms(Basetest):
         mwf.filter_page_content(pc)
         if self.debug:
             print(pc.content)
-        self.assertNotIn("wikicms-form", pc.content)
-        self.assertIn("form-horizontal", pc.content)
+        self.assertNotIn('data-form-name="contact"', pc.content)
+        self.assertIn('<form class="wikicms-form"', pc.content)
         self.assertIn("Contact us", pc.content)
         # original html is preserved
         self.assertIn("wikicms-form", pc.html)
