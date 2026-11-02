@@ -84,5 +84,5 @@ class TestFrame(Basetest):
         frame = HtmlFrame(frontend, title="t")
         html = frame.frame("<p>c</p>")
         self.assertNotIn("Common.css", html)
-        self.assertIn('<a href="/www/index.php/Kontakt">Kontakt</a>', html)
+        self.assertIn('href="/www/index.php/Kontakt"', html)
         self.assertIn("<p>c</p>", html)

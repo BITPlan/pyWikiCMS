@@ -139,11 +139,33 @@ class HtmlFrame:
         Returns:
             str: the nav html, empty if the frontend has no menu
         """
+        html = self.hamburger_html() + "\n" + self.bar_html()
+        return html
+
+    def hamburger_html(self) -> str:
+        """
+        Render the hamburger form of the navigation, left of the logo.
+
+        Returns:
+            str: the html, empty if the frontend has no menu
+        """
         menu = getattr(self.frontend, "menu", None)
         html = ""
         if menu is not None:
-            prefix = f"/{self.frontend.name}"
-            html = menu.as_html(prefix)
+            html = menu.hamburger_html(f"/{self.frontend.name}")
+        return html
+
+    def bar_html(self) -> str:
+        """
+        Render the bar form of the navigation, right of the logo.
+
+        Returns:
+            str: the html, empty if the frontend has no menu
+        """
+        menu = getattr(self.frontend, "menu", None)
+        html = ""
+        if menu is not None:
+            html = menu.bar_html(f"/{self.frontend.name}")
         return html
 
     def frame(self, content: str) -> str:
@@ -158,12 +180,12 @@ class HtmlFrame:
         """
         header_key = f"CMS/header/{self.lang}"
         header_html = self.frontend.cms_pages.get(header_key, "")
-        menu_html = self.menu_html()
         html = f"""{self.header()}
       <div class="container">
-      <div class="site-top d-flex justify-content-between align-items-center">
+      <div class="site-top d-flex align-items-center">
+{self.hamburger_html()}
 {header_html}
-{menu_html}
+{self.bar_html()}
       </div>
 {content}
       </div><!-- /.container -->

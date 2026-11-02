@@ -92,37 +92,121 @@ class Menu:
             prefix(str): the site prefix e.g. /www
 
         Returns:
-            str: the html; one details element with ☰ as summary, the hamburger,
-            holding the sections as a list; a section with a single entry is
-            that entry's link, a section with more entries is its label with
-            the entries as a nested list
+            str: the html with two forms of the same sections and no script:
+            a bar from the medium breakpoint up with the section terms inline,
+            the last section at the right edge, and below the breakpoint one
+            details element with ☰ as summary, the hamburger, holding all
+            sections as a list; a section with a single entry is that entry's
+            link, a section with more entries is its label with the entries
+            as a dropdown
         """
-        lines = ['<nav class="menu">']
-        if self.sections:
-            lines.append('  <details class="position-relative">')
-            lines.append(
-                '    <summary aria-label="menu" class="fs-2 text-end" style="list-style:none;cursor:pointer">☰</summary>'
-            )
-            lines.append(
-                '    <ul class="list-unstyled text-nowrap text-start position-absolute end-0 bg-white shadow p-3 m-0">'
-            )
-            for section in self.sections:
-                if len(section.entries) == 1:
-                    entry = section.entries[0]
-                    lines.append(
-                        f'      <li><a href="{entry.href(prefix)}">{entry.label}</a></li>'
-                    )
-                elif section.entries:
-                    lines.append(f"      <li>{section.label}")
-                    lines.append('        <ul class="list-unstyled ps-3">')
-                    for entry in section.entries:
-                        lines.append(
-                            f'          <li><a href="{entry.href(prefix)}">{entry.label}</a></li>'
-                        )
-                    lines.append("        </ul>")
-                    lines.append("      </li>")
-            lines.append("    </ul>")
-            lines.append("  </details>")
-        lines.append("</nav>")
-        html = "\n".join(lines)
+        html = self.hamburger_html(prefix) + "\n" + self.bar_html(prefix)
         return html
+
+    def hamburger_html(self, prefix: str = "") -> str:
+        """
+        the hamburger form, placed left of the logo as in the former Menu.rythm
+
+        Args:
+            prefix(str): the site prefix
+
+        Returns:
+            str: the html, empty without sections
+        """
+        html = ""
+        if self.sections:
+            html = "\n".join(self.hamburger_lines(prefix))
+        return html
+
+    def bar_html(self, prefix: str = "") -> str:
+        """
+        the bar form, placed right of the logo
+
+        Args:
+            prefix(str): the site prefix
+
+        Returns:
+            str: the html, empty without sections
+        """
+        html = ""
+        if self.sections:
+            html = "\n".join(self.bar_lines(prefix))
+        return html
+
+    SUMMARY_STYLE = 'style="list-style:none;cursor:pointer"'
+    DROPDOWN = (
+        "list-unstyled text-nowrap text-start position-absolute bg-white shadow p-3 m-0"
+    )
+
+    def bar_lines(self, prefix: str) -> List[str]:
+        """
+        the bar form for the medium breakpoint and up
+
+        Args:
+            prefix(str): the site prefix
+
+        Returns:
+            list[str]: html lines
+        """
+        lines = [
+            '<nav class="menu-bar d-none d-md-flex align-items-center gap-4 ms-4 flex-grow-1">'
+        ]
+        filled = [section for section in self.sections if section.entries]
+        last = len(filled) - 1
+        for index, section in enumerate(filled):
+            edge = " ms-auto" if index == last and index > 0 else ""
+            if len(section.entries) == 1:
+                entry = section.entries[0]
+                lines.append(
+                    f'    <a class="text-nowrap{edge}" href="{entry.href(prefix)}">{entry.label}</a>'
+                )
+            elif section.entries:
+                lines.append(f'    <details class="position-relative{edge}">')
+                lines.append(
+                    f"      <summary {self.SUMMARY_STYLE}>{section.label}</summary>"
+                )
+                lines.append(f'      <ul class="{self.DROPDOWN} start-0">')
+                for entry in section.entries:
+                    lines.append(
+                        f'        <li><a href="{entry.href(prefix)}">{entry.label}</a></li>'
+                    )
+                lines.append("      </ul>")
+                lines.append("    </details>")
+        lines.append("</nav>")
+        return lines
+
+    def hamburger_lines(self, prefix: str) -> List[str]:
+        """
+        the hamburger form below the medium breakpoint
+
+        Args:
+            prefix(str): the site prefix
+
+        Returns:
+            list[str]: html lines
+        """
+        lines = ['<nav class="menu-hamburger d-md-none me-3">']
+        lines.append('    <details class="position-relative">')
+        lines.append(
+            f'      <summary aria-label="menu" class="fs-2" {self.SUMMARY_STYLE}>☰</summary>'
+        )
+        lines.append(f'      <ul class="{self.DROPDOWN} start-0">')
+        for section in self.sections:
+            if len(section.entries) == 1:
+                entry = section.entries[0]
+                lines.append(
+                    f'        <li><a href="{entry.href(prefix)}">{entry.label}</a></li>'
+                )
+            elif section.entries:
+                lines.append(f"        <li>{section.label}")
+                lines.append('          <ul class="list-unstyled ps-3">')
+                for entry in section.entries:
+                    lines.append(
+                        f'            <li><a href="{entry.href(prefix)}">{entry.label}</a></li>'
+                    )
+                lines.append("          </ul>")
+                lines.append("        </li>")
+        lines.append("      </ul>")
+        lines.append("    </details>")
+        lines.append("</nav>")
+        return lines

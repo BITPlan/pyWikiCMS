@@ -48,25 +48,33 @@ class TestMenu(Basetest):
         html = menu.as_html("/www")
         if self.debug:
             print(html)
-        self.assertIn('<nav class="menu">', html)
+        # hamburger first, left of the logo, then the bar right of it
+        self.assertTrue(html.startswith('<nav class="menu-hamburger d-md-none'))
+        # bar from the medium breakpoint up: terms inline, last section at the right edge
+        self.assertIn('<nav class="menu-bar d-none d-md-flex', html)
+        self.assertIn("<summary style=", html)
+        self.assertIn(">Seminar</summary>", html)
         self.assertIn(
-            '<summary aria-label="menu" class="fs-2 text-end" style="list-style:none;cursor:pointer">☰</summary>',
+            '<a class="text-nowrap ms-auto" href="https://example.org/">Beispiel</a>',
             html,
         )
+        # hamburger below the breakpoint
+        self.assertIn('<summary aria-label="menu" class="fs-2"', html)
         self.assertIn("<li>Seminar\n", html)
-        self.assertIn(
-            '<a href="/www/index.php/Software_Architektur_(CPSA-F)">Software Architektur (CPSA-F)</a>',
-            html,
+        self.assertEqual(
+            2,
+            html.count(
+                '<a href="/www/index.php/Software_Architektur_(CPSA-F)">Software Architektur (CPSA-F)</a>'
+            ),
         )
-        self.assertIn('<li><a href="/www/index.php/Kontakt">Kontakt</a></li>', html)
-        self.assertIn('<a href="https://example.org/">Beispiel</a>', html)
+        self.assertEqual(2, html.count('href="/www/index.php/Kontakt"'))
         self.assertNotIn("<script", html)
-        self.assertEqual(1, html.count("<details "))
-        self.assertEqual(2, html.count("<ul "))
+        self.assertEqual(2, html.count("<details "))
 
     def test_empty(self):
         """
         test that an absent page yields an empty nav
         """
         menu = Menu.from_markup(None)
-        self.assertEqual('<nav class="menu">\n</nav>', menu.as_html())
+        html = menu.as_html()
+        self.assertEqual("\n", html)
