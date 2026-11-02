@@ -136,11 +136,11 @@ class WikiFrontend(MediaWikiHtmlFilter):
         ask_query = "[[Category:CMS]]"
         page_records = self.smwclient.query(ask_query, "cms pages")
         for page_title in list(page_records):
-            pageContent = self.getContent(page_title)
-            if not pageContent.error:
-                cms_pages[page_title] = pageContent.html
-            else:
-                self.logger.warn(pageContent.error)
+            # the fragment MediaWiki renders for the page, not the whole document
+            try:
+                cms_pages[page_title] = self.wiki.getHtml(page_title)
+            except Exception as ex:
+                self.logger.warning(f"{page_title}: {self.errMsg(ex)}")
         return cms_pages
 
     def errMsg(self, ex):
