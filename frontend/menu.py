@@ -92,24 +92,33 @@ class Menu:
             prefix(str): the site prefix e.g. /www
 
         Returns:
-            str: the html; a section with a single entry is a plain link,
-            a section with more entries is a details element with the section label as summary
+            str: the html; one details element with ☰ as summary, the hamburger,
+            holding the sections as a list; a section with a single entry is
+            that entry's link, a section with more entries is its label with
+            the entries as a nested list
         """
         lines = ['<nav class="menu">']
-        for section in self.sections:
-            if len(section.entries) == 1:
-                entry = section.entries[0]
-                lines.append(f'  <a href="{entry.href(prefix)}">{entry.label}</a>')
-            elif section.entries:
-                lines.append("  <details>")
-                lines.append(f"    <summary>{section.label}</summary>")
-                lines.append("    <ul>")
-                for entry in section.entries:
+        if self.sections:
+            lines.append("  <details>")
+            lines.append('    <summary aria-label="menu">☰</summary>')
+            lines.append("    <ul>")
+            for section in self.sections:
+                if len(section.entries) == 1:
+                    entry = section.entries[0]
                     lines.append(
                         f'      <li><a href="{entry.href(prefix)}">{entry.label}</a></li>'
                     )
-                lines.append("    </ul>")
-                lines.append("  </details>")
+                elif section.entries:
+                    lines.append(f"      <li>{section.label}")
+                    lines.append("        <ul>")
+                    for entry in section.entries:
+                        lines.append(
+                            f'          <li><a href="{entry.href(prefix)}">{entry.label}</a></li>'
+                        )
+                    lines.append("        </ul>")
+                    lines.append("      </li>")
+            lines.append("    </ul>")
+            lines.append("  </details>")
         lines.append("</nav>")
         html = "\n".join(lines)
         return html
