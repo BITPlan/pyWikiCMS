@@ -50,7 +50,8 @@ class TestMenu(Basetest):
             print(html)
         self.assertIn('<nav class="menu">', html)
         self.assertIn(
-            '<summary aria-label="menu" class="fs-2 text-end">☰</summary>', html
+            '<summary aria-label="menu" class="fs-2 text-end" style="list-style:none;cursor:pointer">☰</summary>',
+            html,
         )
         self.assertIn("<li>Seminar\n", html)
         self.assertIn(

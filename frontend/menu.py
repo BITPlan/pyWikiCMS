@@ -101,7 +101,7 @@ class Menu:
         if self.sections:
             lines.append('  <details class="position-relative">')
             lines.append(
-                '    <summary aria-label="menu" class="fs-2 text-end">☰</summary>'
+                '    <summary aria-label="menu" class="fs-2 text-end" style="list-style:none;cursor:pointer">☰</summary>'
             )
             lines.append(
                 '    <ul class="list-unstyled position-absolute end-0 bg-white shadow p-3 m-0">'
