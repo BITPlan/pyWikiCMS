@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup, Comment
 
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
+from frontend.language import LanguageSet
 
 
 @dataclass
@@ -103,6 +104,7 @@ class PageContent:
     lang: str = (
         "en"  # the language of the wiki page - potentially derived from it's markup
     )
+    master_page: str = ""  # the master page of the LanguageSet of the page, see issue 39
     head: Optional[PageHead] = None  # head metadata of the rendered document
 
     def __post_init__(self):
@@ -113,12 +115,11 @@ class PageContent:
         detect the language: the Language or LanguageSet template of the markup wins,
         then the html lang of the rendered document
         """
-        if self.markup:
-            lang_match = re.search(
-                r"{{Language(?:Set)?\|[^}]*language=([^}|]+)", self.markup
-            )
-            if lang_match:
-                self.lang = lang_match.group(1).strip()
+        language_set = LanguageSet.from_markup(self.markup)
+        if language_set is not None:
+            self.master_page = language_set.master_page
+            if language_set.language:
+                self.lang = language_set.language
                 return
         if self.head is not None and self.head.lang:
             self.lang = self.head.lang

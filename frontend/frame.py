@@ -4,6 +4,10 @@ Created on 2020-07-27
 @author: wf
 """
 
+from typing import Dict, Optional
+
+from frontend.language import VisitLanguage
+
 
 class HtmlFrame:
     """
@@ -21,7 +25,15 @@ class HtmlFrame:
         title (str): Title of the HTML document.
     """
 
-    def __init__(self, frontend, title: str, lang: str = "en", head=None) -> None:
+    def __init__(
+        self,
+        frontend,
+        title: str,
+        lang: str = "en",
+        head=None,
+        visit_lang: Optional[str] = None,
+        counterparts: Optional[Dict[str, str]] = None,
+    ) -> None:
         """
         Initialize HtmlFrame with a specified language and title.
 
@@ -30,9 +42,15 @@ class HtmlFrame:
             title (str): Title for the HTML document, used when head has none.
             lang (str, optional): Language of the HTML document. Defaults to "en".
             head (PageHead, optional): the head metadata MediaWiki rendered, see issue 38
+            visit_lang (str, optional): the language of the visit which header, footer
+                and menu follow; defaults to the page language, see issue 39
+            counterparts (dict, optional): language code to page title of the
+                page in the other languages, rendered as the language switch
         """
         self.frontend = frontend
         self.lang = lang
+        self.visit_lang = visit_lang if visit_lang else lang
+        self.counterparts = counterparts if counterparts else {}
         self.title = title
         self.head = head
         if head is not None:
@@ -124,7 +142,7 @@ class HtmlFrame:
         Returns:
             str: Footer part of an HTML document as a string.
         """
-        footer_key = f"CMS/footer/{self.lang}"
+        footer_key = f"CMS/footer/{self.visit_lang}"
         footer_html = self.frontend.cms_pages.get(footer_key, "")
         html = f"""{footer_html}
   </body>
@@ -142,6 +160,18 @@ class HtmlFrame:
         html = self.hamburger_html() + "\n" + self.bar_html()
         return html
 
+    def menu(self):
+        """
+        the menu of the visit language, falling back to the frontend's default menu
+        see issue 39
+
+        Returns:
+            Menu: the menu, None if the frontend has none
+        """
+        menus = getattr(self.frontend, "menus", None) or {}
+        menu = menus.get(self.visit_lang, getattr(self.frontend, "menu", None))
+        return menu
+
     def hamburger_html(self) -> str:
         """
         Render the hamburger form of the navigation, left of the logo.
@@ -149,7 +179,7 @@ class HtmlFrame:
         Returns:
             str: the html, empty if the frontend has no menu
         """
-        menu = getattr(self.frontend, "menu", None)
+        menu = self.menu()
         html = ""
         if menu is not None:
             html = menu.hamburger_html(f"/{self.frontend.name}")
@@ -162,10 +192,21 @@ class HtmlFrame:
         Returns:
             str: the html, empty if the frontend has no menu
         """
-        menu = getattr(self.frontend, "menu", None)
+        menu = self.menu()
         html = ""
         if menu is not None:
             html = menu.bar_html(f"/{self.frontend.name}")
+        return html
+
+    def switch_html(self) -> str:
+        """
+        Render the language switch, right of the bar: one link per other
+        language in which the page exists, see issue 39
+
+        Returns:
+            str: the html, empty without counterparts
+        """
+        html = VisitLanguage.switch_html(self.counterparts, f"/{self.frontend.name}")
         return html
 
     def frame(self, content: str) -> str:
@@ -178,7 +219,7 @@ class HtmlFrame:
         Returns:
             str: Complete HTML document as a string with the provided content framed.
         """
-        header_key = f"CMS/header/{self.lang}"
+        header_key = f"CMS/header/{self.visit_lang}"
         header_html = self.frontend.cms_pages.get(header_key, "")
         html = f"""{self.header()}
       <div class="container">
@@ -186,6 +227,7 @@ class HtmlFrame:
 {self.hamburger_html()}
 {header_html}
 {self.bar_html()}
+{self.switch_html()}
       </div>
 {content}
       </div><!-- /.container -->

@@ -18,6 +18,7 @@ from wikibot3rd.wikiclient import WikiClient
 
 from frontend.frame import HtmlFrame
 from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent, PageHead
+from frontend.language import VisitLanguage
 from frontend.menu import Menu
 
 
@@ -104,20 +105,64 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 self.wiki.login()
             self.smwclient = SMWClient(self.wiki.getSite())
             self.cms_pages = self.get_cms_pages()
-            self.menu = self.get_menu()
+            self.visit_language = self.get_visit_language()
+            self.menus = {}
+            for language in self.visit_language.languages:
+                self.menus[language] = self.get_menu(language)
+            self.menu = self.menus[self.visit_language.default]
             self.frontend.enabled = True
 
-    def get_menu(self) -> Menu:
+    def get_visit_language(self) -> VisitLanguage:
         """
-        get the site navigation from MediaWiki:Menu, falling back to MediaWiki:Sidebar
-
-        see https://github.com/BITPlan/pyWikiCMS/issues/36
+        get the languages the site offers from the LanguageSet data of the wiki
+        see https://github.com/BITPlan/pyWikiCMS/issues/39
 
         Returns:
-            Menu: the parsed menu, empty if neither page exists
+            VisitLanguage: the languages in order of first appearance and the
+            default, which is the language of the default page, else the first
+        """
+        languages = []
+        default = None
+        ask_query = "[[Master page::+]]|?Language code=language|limit=1000"
+        try:
+            records = self.smwclient.query(ask_query, "languages")
+        except Exception as ex:
+            self.logger.warning(f"languages: {self.errMsg(ex)}")
+            records = {}
+        for page_title, record in records.items():
+            language = record.get("language")
+            if isinstance(language, list):
+                language = language[0] if language else None
+            if language:
+                if language not in languages:
+                    languages.append(language)
+                if page_title == self.frontend.defaultPage:
+                    default = language
+        if not languages:
+            languages = ["en"]
+        if default is None:
+            default = languages[0]
+        visit_language = VisitLanguage(languages=languages, default=default)
+        return visit_language
+
+    def get_menu(self, language: Optional[str] = None) -> Menu:
+        """
+        get the site navigation from MediaWiki:Menu/<language>, falling back to
+        MediaWiki:Menu and MediaWiki:Sidebar, the convention of MediaWiki:Sidebar/<language>
+
+        see https://github.com/BITPlan/pyWikiCMS/issues/36 and issue 39
+
+        Args:
+            language(str): the language code, None for the plain pages only
+
+        Returns:
+            Menu: the parsed menu, empty if no page exists
         """
         markup = None
-        for page_title in ["MediaWiki:Menu", "MediaWiki:Sidebar"]:
+        page_titles = ["MediaWiki:Menu", "MediaWiki:Sidebar"]
+        if language:
+            page_titles.insert(0, f"MediaWiki:Menu/{language}")
+        for page_title in page_titles:
             try:
                 markup = self.wiki.get_wiki_markup(page_title)
             except Exception as ex:
@@ -127,6 +172,37 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 break
         menu = Menu.from_markup(markup)
         return menu
+
+    def get_counterparts(self, pc: PageContent) -> dict:
+        """
+        get the pages of the LanguageSet of the given page in the languages
+        other than the page's own; the master page wins over other members
+        of the same language
+        see https://github.com/BITPlan/pyWikiCMS/issues/39
+
+        Args:
+            pc(PageContent): the page
+
+        Returns:
+            dict: language code to page title, only for languages with a page
+        """
+        counterparts = {}
+        if pc.master_page:
+            ask_query = f"[[Master page::{pc.master_page}]]|?Language code=language|limit=50"
+            try:
+                records = self.smwclient.query(ask_query, "counterparts")
+            except Exception as ex:
+                self.logger.warning(f"counterparts {pc.master_page}: {self.errMsg(ex)}")
+                records = {}
+            for other in self.visit_language.others(pc.lang):
+                for page_title, record in records.items():
+                    page_language = record.get("language")
+                    if isinstance(page_language, list):
+                        page_language = page_language[0] if page_language else None
+                    if page_language == other and page_title != pc.page_title:
+                        if other not in counterparts or page_title == pc.master_page:
+                            counterparts[other] = page_title
+        return counterparts
 
     def get_cms_pages(self) -> dict:
         """
@@ -305,16 +381,24 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 frame = match.group(1)
         return frame
 
-    def get_path_response(self, path: str) -> Response:
+    def get_path_response(self, path: str, request=None) -> Response:
         """
         get the repsonse for the the given path
 
         Args:
             path(str): the path to render the content for
+            request(Request): the FastAPI request carrying the language of the visit
+                as lang parameter, lang cookie or Accept-Language header, see issue 39
 
         Returns:
             Response: a FastAPI response
         """
+        param = cookie = accept_language = None
+        if request is not None:
+            param = request.query_params.get(VisitLanguage.PARAM)
+            cookie = request.cookies.get(VisitLanguage.COOKIE)
+            accept_language = request.headers.get("accept-language")
+        language = self.visit_language.resolve(param, cookie, accept_language)
         if self.needsProxy(path):
             html_response = self.proxy(path)
             # Create a FastAPI response object
@@ -325,8 +409,16 @@ class WikiFrontend(MediaWikiHtmlFilter):
             )
         else:
             pc = self.getContent(path)
+            counterparts = {}
+            if pc.error is None:
+                counterparts = self.get_counterparts(pc)
             html_frame = HtmlFrame(
-                self, title=pc.page_title, lang=pc.lang, head=pc.head
+                self,
+                title=pc.page_title,
+                lang=pc.lang,
+                head=pc.head,
+                visit_lang=language,
+                counterparts=counterparts,
             )
             if pc.error:
                 response = Response(
@@ -345,6 +437,11 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 else:
                     framed_html = html_frame.frame(pc.content)
                 response = HTMLResponse(framed_html)
+                if language != cookie:
+                    # the choice holds for the visit: a session cookie
+                    response.set_cookie(
+                        VisitLanguage.COOKIE, language, httponly=True, samesite="lax"
+                    )
         return response
 
 

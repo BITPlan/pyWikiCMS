@@ -8,7 +8,7 @@ import os
 import socket
 from typing import Optional
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse
 from mwstools_backend.server import Servers
 from mwstools_backend.site import Wikis
@@ -93,27 +93,31 @@ class CmsWebServer(GraphNavigatorWebserver):
             return await self.page(client, CmsSolution.show_login)
 
         @app.get("/{frontend_name}/{page_path:path}")
-        def render_path(frontend_name: str, page_path: str) -> HTMLResponse:
+        def render_path(
+            frontend_name: str, page_path: str, request: Request
+        ) -> HTMLResponse:
             """
             Handles a GET request to render the path of the given frontend.
 
             Args:
                 frontend_name: The name of the frontend to be rendered.
                 page_path: The specific path within the frontend to be rendered.
+                request: the request, carrying the language of the visit, see issue 39
 
             Returns:
                 An HTMLResponse containing the rendered page content.
 
             """
-            return self.render_path(frontend_name, page_path)
+            return self.render_path(frontend_name, page_path, request)
 
-    def render_path(self, frontend_name: str, page_path: str):
+    def render_path(self, frontend_name: str, page_path: str, request=None):
         """
         Renders the content for a specific path of the given frontend.
 
         Args:
             frontend_name: The name of the frontend to be rendered.
             page_path: The specific path within the frontend to be rendered.
+            request: the FastAPI request, None for the default language
 
         Returns:
             An HTMLResponse containing the rendered page content or an error page if something goes wrong.
@@ -127,7 +131,7 @@ class CmsWebServer(GraphNavigatorWebserver):
             raise HTTPException(
                 status_code=404, detail=f"frontend {frontend_name} is not available"
             )
-        response = wiki_frontend.get_path_response(f"/{page_path}")
+        response = wiki_frontend.get_path_response(f"/{page_path}", request)
         return response
 
     def configure_run(self):

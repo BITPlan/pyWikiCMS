@@ -42,6 +42,7 @@ class FrontendStub:
     cms_pages: Dict[str, str] = field(default_factory=dict)
     wiki: Optional[WikiStub] = None
     menu: Optional[Menu] = None
+    menus: Dict[str, Menu] = field(default_factory=dict)
 
 
 class TestFrame(Basetest):
