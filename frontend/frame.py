@@ -96,6 +96,20 @@ class HtmlFrame:
 """
         return html
 
+    def menu_html(self) -> str:
+        """
+        Render the site navigation of the frontend, see issue 36.
+
+        Returns:
+            str: the nav html, empty if the frontend has no menu
+        """
+        menu = getattr(self.frontend, "menu", None)
+        html = ""
+        if menu is not None:
+            prefix = f"/{self.frontend.name}"
+            html = menu.as_html(prefix)
+        return html
+
     def frame(self, content: str) -> str:
         """
         Frame the given HTML content with the header and footer of the document.
@@ -108,7 +122,9 @@ class HtmlFrame:
         """
         header_key = f"CMS/header/{self.lang}"
         header_html = self.frontend.cms_pages.get(header_key, "")
+        menu_html = self.menu_html()
         html = f"""{self.header()}
+{menu_html}
 {header_html}
       <div class="container">
 {content}

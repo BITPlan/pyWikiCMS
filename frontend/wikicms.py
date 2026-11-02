@@ -18,6 +18,7 @@ from wikibot3rd.wikiclient import WikiClient
 
 from frontend.frame import HtmlFrame
 from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent
+from frontend.menu import Menu
 
 
 class WikiFrontend(MediaWikiHtmlFilter):
@@ -103,7 +104,29 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 self.wiki.login()
             self.smwclient = SMWClient(self.wiki.getSite())
             self.cms_pages = self.get_cms_pages()
+            self.menu = self.get_menu()
             self.frontend.enabled = True
+
+    def get_menu(self) -> Menu:
+        """
+        get the site navigation from MediaWiki:Menu, falling back to MediaWiki:Sidebar
+
+        see https://github.com/BITPlan/pyWikiCMS/issues/36
+
+        Returns:
+            Menu: the parsed menu, empty if neither page exists
+        """
+        markup = None
+        for page_title in ["MediaWiki:Menu", "MediaWiki:Sidebar"]:
+            try:
+                markup = self.wiki.get_wiki_markup(page_title)
+            except Exception as ex:
+                self.logger.info(f"{page_title}: {ex}")
+                markup = None
+            if markup:
+                break
+        menu = Menu.from_markup(markup)
+        return menu
 
     def get_cms_pages(self) -> dict:
         """
@@ -215,9 +238,9 @@ class WikiFrontend(MediaWikiHtmlFilter):
                     raise Exception(
                         "getContent without wiki - you might want to call open first"
                     )
-                pc.html=self.wiki.getHtml(pc.page_title)
-                pc.markup=self.wiki.get_wiki_markup(pc.page_title)
-                pc.page_title=pc.page_title
+                pc.html = self.wiki.getHtml(pc.page_title)
+                pc.markup = self.wiki.get_wiki_markup(pc.page_title)
+                pc.page_title = pc.page_title
                 pc.detect_lang()
                 self.filter_page_content(pc)
         except Exception as e:
