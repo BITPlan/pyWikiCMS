@@ -49,7 +49,9 @@ class TestMenu(Basetest):
         if self.debug:
             print(html)
         self.assertIn('<nav class="menu">', html)
-        self.assertIn('<summary aria-label="menu">☰</summary>', html)
+        self.assertIn(
+            '<summary aria-label="menu" class="fs-2 text-end">☰</summary>', html
+        )
         self.assertIn("<li>Seminar\n", html)
         self.assertIn(
             '<a href="/www/index.php/Software_Architektur_(CPSA-F)">Software Architektur (CPSA-F)</a>',
@@ -59,7 +61,7 @@ class TestMenu(Basetest):
         self.assertIn('<a href="https://example.org/">Beispiel</a>', html)
         self.assertNotIn("<script", html)
         self.assertEqual(1, html.count("<details>"))
-        self.assertEqual(2, html.count("<ul>"))
+        self.assertEqual(2, html.count("<ul "))
 
     def test_empty(self):
         """

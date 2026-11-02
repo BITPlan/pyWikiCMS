@@ -99,9 +99,13 @@ class Menu:
         """
         lines = ['<nav class="menu">']
         if self.sections:
-            lines.append("  <details>")
-            lines.append('    <summary aria-label="menu">☰</summary>')
-            lines.append("    <ul>")
+            lines.append('  <details class="position-relative">')
+            lines.append(
+                '    <summary aria-label="menu" class="fs-2 text-end">☰</summary>'
+            )
+            lines.append(
+                '    <ul class="list-unstyled position-absolute end-0 bg-white shadow p-3 m-0">'
+            )
             for section in self.sections:
                 if len(section.entries) == 1:
                     entry = section.entries[0]
@@ -110,7 +114,7 @@ class Menu:
                     )
                 elif section.entries:
                     lines.append(f"      <li>{section.label}")
-                    lines.append("        <ul>")
+                    lines.append('        <ul class="list-unstyled ps-3">')
                     for entry in section.entries:
                         lines.append(
                             f'          <li><a href="{entry.href(prefix)}">{entry.label}</a></li>'

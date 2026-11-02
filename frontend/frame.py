@@ -160,9 +160,11 @@ class HtmlFrame:
         header_html = self.frontend.cms_pages.get(header_key, "")
         menu_html = self.menu_html()
         html = f"""{self.header()}
-{menu_html}
-{header_html}
       <div class="container">
+      <div class="site-top d-flex justify-content-between align-items-center">
+{header_html}
+{menu_html}
+      </div>
 {content}
       </div><!-- /.container -->
 {self.footer()}"""
