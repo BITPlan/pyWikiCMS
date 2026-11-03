@@ -112,3 +112,20 @@ class FormMail:
             token=token,
         )
         return result
+
+    def send_as(self, wiki_client: Any) -> Dict[str, Any]:
+        """
+        send the mail as the given wiki client, logging in again first
+        when the wiki has invalidated its session,
+        see https://github.com/WolfgangFahl/py-3rdparty-mediawiki/issues/141
+
+        Args:
+            wiki_client: the frontend's WikiClient
+
+        Returns:
+            dict: the emailuser API result
+        """
+        if wiki_client.needs_relogin():
+            wiki_client.login()
+        result = self.send(wiki_client.get_site())
+        return result

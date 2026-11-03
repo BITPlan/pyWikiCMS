@@ -8,8 +8,8 @@ from pathlib import Path
 
 from basemkit.basetest import Basetest
 
-from frontend.forms.form_field import FormDefinition, FormField, FormLabel, resolve_i18n
 from frontend.forms.challenge import FormChallenge
+from frontend.forms.form_field import FormDefinition, FormField, FormLabel, resolve_i18n
 from frontend.forms.handler import FormHandler
 from frontend.forms.mail import FormMail, FormPost
 from frontend.forms.registry import FormRegistry
@@ -519,6 +519,50 @@ class TestForms(Basetest):
         self.assertEqual("wf", kwargs["target"])
         self.assertEqual("t0ken+\\", kwargs["token"])
         self.assertIn("Name: Erika", kwargs["text"])
+
+    def test_form_mail_send_as_relogin(self):
+        """
+        the mail action logs in again when the wiki session of the frontend is gone
+        """
+
+        class SiteStub:
+            """
+            answers the token query and emailuser
+            """
+
+            def api(self, action, **kwargs):
+                result = {"query": {"tokens": {"csrftoken": "t0ken"}}}
+                if action == "emailuser":
+                    result = {"emailuser": {"result": "Success"}}
+                return result
+
+        class WikiClientStub:
+            """
+            a wiki client whose session is gone or not
+            """
+
+            def __init__(self, session_gone: bool):
+                self.session_gone = session_gone
+                self.logins = 0
+
+            def needs_relogin(self) -> bool:
+                return self.session_gone
+
+            def login(self) -> bool:
+                self.logins += 1
+                self.session_gone = False
+                return True
+
+            def get_site(self):
+                return SiteStub()
+
+        form_def = make_contact_form()
+        form_def.recipient = "Info"
+        for session_gone, expected_logins in [(False, 0), (True, 1)]:
+            wiki_client = WikiClientStub(session_gone)
+            result = FormMail(form_def, {"name": "Erika"}, "en").send_as(wiki_client)
+            self.assertEqual("Success", result["emailuser"]["result"])
+            self.assertEqual(expected_logins, wiki_client.logins)
 
     def test_htmlfilter_renders_form_post(self):
         """

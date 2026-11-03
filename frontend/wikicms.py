@@ -453,7 +453,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 try:
                     if form_def.action == "mail":
                         form_mail = FormMail(form_def, form_data, lang)
-                        form_mail.send(self.wiki.site)
+                        form_mail.send_as(self.wiki)
                     form_post.message = I18n.resolve(form_def.success_message, lang)
                 except Exception as ex:
                     # the action failed: the form stays with the values and says so
