@@ -7,6 +7,7 @@ Created on 2020-07-27
 # from wikibot.smw import SMWClient
 from basemkit.basetest import Basetest
 
+from frontend.forms.mail import FormPost
 from frontend.wikicms import WikiFrontend
 from tests.smw_access import SMWAccess
 from tests.test_frame import FrontendStub
@@ -47,6 +48,26 @@ class TestWikiCMS(Basetest):
         wiki_frontend = WikiFrontend(FrontendStub(name="www"))
         params = wiki_frontend.rendered_params("Willkommen2026")
         self.assertEqual({"title": "Willkommen2026", "frontend": "www"}, params)
+
+    def test_resolve_params(self):
+        """
+        a title parameter names the page, the other parameters prefill a form
+        https://github.com/BITPlan/pyWikiCMS/issues/44
+        """
+        wiki_frontend = WikiFrontend(FrontendStub(name="www"))
+        params = {"title": "Trainingsanmeldung", "training": "UML-Tag", "lang": "de"}
+        path, form_post = wiki_frontend.resolve_params("/index.php", params)
+        self.assertEqual("/index.php/Trainingsanmeldung", path)
+        self.assertEqual("", form_post.name)
+        self.assertEqual({"training": "UML-Tag"}, form_post.values)
+        path, form_post = wiki_frontend.resolve_params("/Kontaktformular", {})
+        self.assertEqual("/Kontaktformular", path)
+        self.assertIsNone(form_post)
+        submitted = FormPost(name="contact", values={"name": "E"})
+        _path, form_post = wiki_frontend.resolve_params(
+            "/Kontaktformular", {"name": "X"}, submitted
+        )
+        self.assertIs(submitted, form_post)
 
     def test_wiki_page_trailing_slash(self):
         """

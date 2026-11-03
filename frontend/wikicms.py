@@ -7,7 +7,7 @@ Created on 2020-07-27
 import logging
 import re
 import traceback
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import requests
 from fastapi import Response
@@ -107,6 +107,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
             self.wiki = WikiClient.ofWikiId(self.frontend.wikiId)
             if WikiFrontend.with_login:
                 self.wiki.login()
+            self.wiki_url = self.wiki_base_url()
             self.smwclient = SMWClient(self.wiki.getSite())
             self.cms_pages = self.get_cms_pages()
             self.visit_language = self.get_visit_language()
@@ -481,6 +482,35 @@ class WikiFrontend(MediaWikiHtmlFilter):
         response = self.get_path_response(path, request, form_post)
         return response
 
+    def resolve_params(
+        self, path: str, params, form_post: Optional[FormPost] = None
+    ) -> Tuple[str, Optional[FormPost]]:
+        """
+        apply the URL parameters of a request: a title parameter names the page
+        as MediaWiki's index.php does, the other parameters may prefill a form
+        on the page, see https://github.com/BITPlan/pyWikiCMS/issues/44
+
+        Args:
+            path(str): the requested path
+            params: the query parameters of the request
+            form_post(FormPost): a submitted form state, which takes precedence
+
+        Returns:
+            Tuple[str, Optional[FormPost]]: the path to serve and the form state
+        """
+        title = params.get("title")
+        if title and path.rstrip("/") in ("", "/index.php"):
+            path = f"/index.php/{title}"
+        if form_post is None:
+            values = {
+                key: value
+                for key, value in params.items()
+                if key not in ("title", VisitLanguage.PARAM)
+            }
+            if values:
+                form_post = FormPost(name="", values=values)
+        return path, form_post
+
     def get_path_response(
         self, path: str, request=None, form_post: Optional[FormPost] = None
     ) -> Response:
@@ -499,6 +529,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
         cookie = None
         if request is not None:
             cookie = request.cookies.get(VisitLanguage.COOKIE)
+            path, form_post = self.resolve_params(path, request.query_params, form_post)
         language = self.request_language(request)
         if self.needsProxy(path):
             html_response = self.proxy(path)

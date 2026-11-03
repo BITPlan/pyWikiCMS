@@ -549,6 +549,51 @@ class TestForms(Basetest):
         self.assertIn("Thank you", pc.content)
         self.assertNotIn("<form", pc.content)
 
+    def test_prefill_and_wiki_link(self):
+        """
+        URL parameters prefill a form, a select only with one of its choices;
+        a link to the backend wiki by absolute url becomes a site link, issue 44
+        """
+        form_def = self.protected_contact_form()
+        form_def.fields.append(
+            FormField(
+                name="training", field_type="select", choices=["UML-Tag", "CPSA-F"]
+            )
+        )
+        values = form_def.prefill(
+            {
+                "name": "Erika",
+                "training": "Cooking",
+                "captcha": "7",
+                "website": "x",
+                "other": "y",
+            }
+        )
+        self.assertEqual({"name": "Erika"}, values)
+        self.assertEqual(
+            {"training": "UML-Tag"}, form_def.prefill({"training": "UML-Tag"})
+        )
+        FormRegistry.register(form_def)
+        mwf = MediaWikiHtmlFilter(filterKeys=[], site_name="www")
+        mwf.wiki_url = "https://wiki.example.org"
+        pc = PageContent()
+        pc.html = (
+            '<a href="https://wiki.example.org/index.php?title=Trainingsanmeldung&amp;training=UML-Tag">go</a>'
+            '<a href="https://wiki.example.org.evil/x">no</a>'
+            '<div class="wikicms-form" data-form-name="contact"></div>'
+        )
+        pc.form_post = FormPost(
+            name="", values={"name": "Erika", "training": "UML-Tag"}
+        )
+        mwf.filter_page_content(pc)
+        self.assertIn(
+            'href="/www/index.php?title=Trainingsanmeldung&amp;training=UML-Tag"',
+            pc.content,
+        )
+        self.assertIn('href="https://wiki.example.org.evil/x"', pc.content)
+        self.assertIn('value="Erika"', pc.content)
+        self.assertIn("<option selected>UML-Tag</option>", pc.content)
+
     def test_htmlfilter_no_registry_leaves_div(self):
         """
         Test that without a registered form the wikicms-form div is left untouched.

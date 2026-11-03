@@ -181,6 +181,7 @@ class MediaWikiHtmlFilter(HtmlFilter):
         """
         super().__init__(parser=parser, debug=debug)
         self.site_name = site_name
+        self.wiki_url = ""  # absolute base url of the backend wiki, see issue 44
         self.form_registry = FormRegistry.instance()
         if filterKeys is None:
             self.filterKeys = ["editsection", "parser-output", "parser-output"]
@@ -252,6 +253,10 @@ class MediaWikiHtmlFilter(HtmlFilter):
                         lang=lang,
                         message=form_post.message,
                     )
+                elif form_post is not None and form_post.name == "":
+                    # prefill from URL parameters, see issue 44
+                    values = form_def.prefill(form_post.values)
+                    replacement = renderer.render(form_def, values=values, lang=lang)
                 else:
                     replacement = renderer.render(form_def, lang=lang)
                 return replacement
@@ -337,8 +342,21 @@ class MediaWikiHtmlFilter(HtmlFilter):
         self.fix_images_and_videos(soup)
         # fix absolute hrefs
         for a in soup.findAll("a"):
+            self.fix_wiki_link(a)
             self.fixNode(a, "href", "/")
         return soup
+
+    def fix_wiki_link(self, node) -> None:
+        """
+        a link to the backend wiki by absolute url, as fullurl produces it,
+        becomes a root relative link of the site, see issue 44
+
+        Args:
+            node: the anchor node
+        """
+        href = node.attrs.get("href", "")
+        if self.wiki_url and href.startswith(self.wiki_url + "/"):
+            node.attrs["href"] = href[len(self.wiki_url) :]
 
     def wrapWithReveal(self, html: str):
         """

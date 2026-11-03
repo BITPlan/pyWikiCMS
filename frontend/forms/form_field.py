@@ -144,6 +144,34 @@ class FormDefinition:
     subject: I18nStr = None  # the subject of the mail action, defaults to the legend
     token_lifetime: int = 600  # seconds a form token and its challenge stay valid
 
+    def prefill(self, params: Dict[str, str]) -> Dict[str, str]:
+        """
+        the values of the given parameters that may prefill this form:
+        those named like a field, for a select only a value among its choices,
+        never a hidden, honeypot or challenge field, see issue 44
+
+        Args:
+            params(dict): parameters keyed by name, e.g. the URL parameters
+
+        Returns:
+            Dict[str, str]: the values to prefill keyed by field name
+        """
+        values = {}
+        for form_field in self.fields:
+            value = params.get(form_field.name)
+            if value is None or form_field.field_type in (
+                "hidden",
+                "honeypot",
+                "challenge",
+            ):
+                continue
+            if form_field.field_type == "select" and value not in (
+                form_field.choices or []
+            ):
+                continue
+            values[form_field.name] = value
+        return values
+
     def fields_of_type(self, field_type: str) -> List[FormField]:
         """
         the fields of the given type
