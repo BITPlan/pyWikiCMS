@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 
 from markupsafe import Markup, escape
 
+from frontend.forms.challenge import FormChallenge
 from frontend.forms.form_field import FormDefinition, FormField, I18n
 
 
@@ -103,6 +104,8 @@ class FormRenderer:
             )
         )
 
+        self.token_lifetime = form_def.token_lifetime
+        self.token_input = Markup("")
         for field in form_def.fields:
             field_html = self._render_field(
                 field,
@@ -111,6 +114,7 @@ class FormRenderer:
                 lang,
             )
             parts.append(field_html)
+        parts.append(self.token_input)
 
         parts.append(self._render_submit(form_def, lang))
         parts.append(Markup(f"{self.I4}</fieldset>\n{self.I2}</form>\n"))
@@ -140,11 +144,30 @@ class FormRenderer:
                 f' id="{escape(field.name)}" value="{hidden_value}">\n'
             )
             return rendered
+        if field.field_type == "honeypot":
+            # hidden from people, filled by bots, see issue 42
+            rendered = Markup(
+                f'{self.I8}<div class="wikicms-honeypot" style="display:none" aria-hidden="true">'
+                f'<input type="text" name="{escape(field.name)}" id="{escape(field.name)}"'
+                f' tabindex="-1" autocomplete="off" value=""></div>\n'
+            )
+            return rendered
 
         label = field.label
         label_text = escape(I18n.resolve(label.text, lang) if label else "") or escape(
             field.name
         )
+        if field.field_type == "challenge":
+            # the question of a freshly issued challenge, its token travels hidden
+            challenge = FormChallenge.issue(
+                field.challenge or "arithmetic", self.token_lifetime
+            )
+            label_text = Markup(f"{label_text} {escape(challenge.question)}")
+            value = ""
+            field_errors = list(field_errors)
+            self.token_input = Markup(
+                f'{self.I8}<input type="hidden" name="postToken" value="{escape(challenge.token)}">\n'
+            )
         label_extra_css = label.css_class if label and label.css_class else ""
         size_css = "col-md-3 col-form-label"
         label_css = (

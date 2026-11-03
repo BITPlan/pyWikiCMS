@@ -9,6 +9,7 @@ from pathlib import Path
 from basemkit.basetest import Basetest
 
 from frontend.forms.form_field import FormDefinition, FormField, FormLabel, resolve_i18n
+from frontend.forms.challenge import FormChallenge
 from frontend.forms.handler import FormHandler
 from frontend.forms.mail import FormMail, FormPost
 from frontend.forms.registry import FormRegistry
@@ -353,44 +354,93 @@ class TestForms(Basetest):
             f"Expected German error, got: {name_errors}",
         )
 
-    def test_handler_captcha_error_i18n(self):
+    def protected_contact_form(self) -> FormDefinition:
         """
-        Test that captcha error messages are localised.
+        the contact form with a honeypot and an arithmetic challenge, issue 42
         """
         form_def = make_contact_form()
-        post_data = {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "message": "Hello, this is a valid message.",
-            "captcha_answer": "wrong",
-            "captcha_expected": "correct",
-        }
-        errors_en = FormHandler.validate(form_def, post_data, lang="en")
-        errors_de = FormHandler.validate(form_def, post_data, lang="de")
-        self.assertIn("captcha_answer", errors_en)
-        self.assertIn("captcha_answer", errors_de)
-        self.assertNotEqual(errors_en["captcha_answer"], errors_de["captcha_answer"])
-        self.assertIn("incorrect", errors_en["captcha_answer"][0])
-        self.assertIn("korrekt", errors_de["captcha_answer"][0])
+        form_def.fields.append(FormField(name="website", field_type="honeypot"))
+        form_def.fields.append(
+            FormField(
+                name="captcha",
+                field_type="challenge",
+                challenge="arithmetic",
+                label=FormLabel(
+                    text={"de": "Bitte rechnen Sie", "en": "Please calculate"}
+                ),
+                error_msg={
+                    "de": "Die Antwort ist nicht richtig.",
+                    "en": "The answer is not correct.",
+                },
+            )
+        )
+        return form_def
 
-    def test_handler_token_error_i18n(self):
+    def test_challenge_issue_and_check(self):
         """
-        Test that postToken error messages are localised.
+        a challenge is answered once within its lifetime
         """
-        form_def = make_contact_form()
-        post_data = {
+        challenge = FormChallenge.issue("arithmetic", lifetime=60)
+        a, _plus, b, _eq, _q = challenge.question.split(" ")
+        self.assertEqual(str(int(a) + int(b)), challenge.answer)
+        self.assertFalse(FormChallenge.check(challenge.token, "no"))
+        challenge = FormChallenge.issue("arithmetic", lifetime=60)
+        self.assertTrue(FormChallenge.check(challenge.token, f" {challenge.answer} "))
+        # consumed
+        self.assertFalse(FormChallenge.check(challenge.token, challenge.answer))
+        expired = FormChallenge.issue("arithmetic", lifetime=-1)
+        self.assertFalse(FormChallenge.check(expired.token, expired.answer))
+        self.assertFalse(FormChallenge.check(None, "7"))
+        with self.assertRaises(ValueError):
+            FormChallenge.issue("riddle")
+
+    def test_handler_spam_protection(self):
+        """
+        a filled honeypot, a wrong or missing answer and a used token are rejected
+        """
+        form_def = self.protected_contact_form()
+        valid = {
             "name": "John Doe",
             "email": "john@example.com",
             "message": "Hello, this is a valid message.",
-            "postToken": "bad-token",
-            "postToken_expected": "good-token",
         }
-        errors_en = FormHandler.validate(form_def, post_data, lang="en")
-        errors_de = FormHandler.validate(form_def, post_data, lang="de")
-        self.assertIn("postToken", errors_en)
-        self.assertIn("postToken", errors_de)
-        self.assertIn("Invalid", errors_en["postToken"][0])
-        self.assertIn("Ungültig", errors_de["postToken"][0])
+        challenge = FormChallenge.issue("arithmetic")
+        post_data = dict(valid, postToken=challenge.token, captcha=challenge.answer)
+        self.assertEqual({}, FormHandler.validate(form_def, post_data, lang="de"))
+        # the token is consumed by the valid submission
+        errors = FormHandler.validate(form_def, post_data, lang="de")
+        self.assertEqual(["Die Antwort ist nicht richtig."], errors["captcha"])
+        challenge = FormChallenge.issue("arithmetic")
+        post_data = dict(valid, postToken=challenge.token, captcha="0", website="")
+        errors = FormHandler.validate(form_def, post_data, lang="en")
+        self.assertEqual(["The answer is not correct."], errors["captcha"])
+        challenge = FormChallenge.issue("arithmetic")
+        post_data = dict(
+            valid,
+            postToken=challenge.token,
+            captcha=challenge.answer,
+            website="http://spam",
+        )
+        errors = FormHandler.validate(form_def, post_data, lang="en")
+        self.assertIn("website", errors)
+
+    def test_renderer_spam_protection(self):
+        """
+        the honeypot is hidden, the challenge shows its question and carries the token
+        """
+        form_def = self.protected_contact_form()
+        html = FormRenderer().render(form_def, lang="de")
+        self.assertIn('class="wikicms-honeypot" style="display:none"', html)
+        self.assertIn('name="website"', html)
+        self.assertRegex(html, r"Bitte rechnen Sie \d \+ \d = \?")
+        self.assertRegex(html, r'name="postToken" value="[0-9a-f]{32}"')
+        self.assertIn('name="captcha"', html)
+        # the mail skips both
+        text = FormMail(
+            form_def, {"name": "E", "website": "", "captcha": "5"}, "de"
+        ).text
+        self.assertNotIn("captcha", text)
+        self.assertNotIn("website", text)
 
     def test_htmlfilter_replaces_form_div(self):
         """

@@ -79,9 +79,10 @@ class FormMail:
         """
         lines = []
         for form_field in self.form_def.fields:
-            if (
-                form_field.name in self.control_fields
-                or form_field.field_type == "hidden"
+            if form_field.name in self.control_fields or form_field.field_type in (
+                "hidden",
+                "honeypot",
+                "challenge",
             ):
                 continue
             value = self.values.get(form_field.name, "")

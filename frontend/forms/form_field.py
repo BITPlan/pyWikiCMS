@@ -109,7 +109,10 @@ class FormField(HtmlElement):
     """
 
     name: str = ""  # required but defaults to empty for compatibility
-    field_type: str = "text"  # text | textarea | select | hidden | email
+    field_type: str = (
+        "text"  # text | textarea | select | hidden | email | honeypot | challenge
+    )
+    challenge: Optional[str] = None  # kind of challenge, e.g. arithmetic, see issue 42
     label: FormLabel = None  # FormLabel object with text, css_class, size
     placeholder: I18nStr = None
     glyphicon: Optional[str] = None
@@ -139,6 +142,20 @@ class FormDefinition:
     success_message: I18nStr = None
     recipient: str = ""  # the wiki user the mail action sends to
     subject: I18nStr = None  # the subject of the mail action, defaults to the legend
+    token_lifetime: int = 600  # seconds a form token and its challenge stay valid
+
+    def fields_of_type(self, field_type: str) -> List[FormField]:
+        """
+        the fields of the given type
+
+        Args:
+            field_type(str): the field type, e.g. challenge
+
+        Returns:
+            List[FormField]: the fields of that type in definition order
+        """
+        fields = [f for f in self.fields if f.field_type == field_type]
+        return fields
 
     def resolved_submit_label(self, lang: str = "en") -> str:
         """

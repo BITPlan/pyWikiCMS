@@ -7,6 +7,7 @@ Created on 2026-03-30
 import secrets
 from typing import Dict, List
 
+from frontend.forms.challenge import FormChallenge
 from frontend.forms.form_field import FormDefinition, resolve_i18n
 from frontend.forms.validators import validate_with_wtforms
 
@@ -78,18 +79,17 @@ class FormHandler:
         """
         errors: Dict[str, List[str]] = validate_with_wtforms(form_def, post_data, lang)
 
-        # captcha validation: captcha_expected hidden field holds expected answer
-        captcha_answer = post_data.get("captcha_answer", "").strip()
-        captcha_expected = post_data.get("captcha_expected", "").strip()
-        if captcha_expected:
-            if captcha_answer.lower() != captcha_expected.lower():
-                errors.setdefault("captcha_answer", []).append(_t(_CAPTCHA_ERROR, lang))
-
-        # postToken validation
+        # spam protection, see issue 42
+        for honeypot in form_def.fields_of_type("honeypot"):
+            if post_data.get(honeypot.name, "").strip():
+                errors.setdefault(honeypot.name, []).append(_t(_TOKEN_ERROR, lang))
         post_token = post_data.get("postToken", "").strip()
-        token_expected = post_data.get("postToken_expected", "").strip()
-        if token_expected:
-            if post_token != token_expected:
-                errors.setdefault("postToken", []).append(_t(_TOKEN_ERROR, lang))
+        for challenge in form_def.fields_of_type("challenge"):
+            answer = post_data.get(challenge.name, "")
+            if not FormChallenge.check(post_token, answer):
+                error_msg = resolve_i18n(challenge.error_msg, lang) or _t(
+                    _CAPTCHA_ERROR, lang
+                )
+                errors.setdefault(challenge.name, []).append(error_msg)
 
         return errors
