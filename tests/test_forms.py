@@ -487,6 +487,11 @@ class TestForms(Basetest):
         self.assertIn("too short", pc.content)
         self.assertIn('value="E"', pc.content)
         self.assertIn('name="wikicms_form" value="contact"', pc.content)
+        # the form posts to its own page whatever the action of the definition is
+        form_def.action = "mail"
+        pc.form_post = None
+        mwf.filter_page_content(pc)
+        self.assertIn('<form class="wikicms-form" action="" method="post">', pc.content)
         pc = PageContent()
         pc.html = html
         pc.form_post = FormPost(name="contact", message="Thank you")

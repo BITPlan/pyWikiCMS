@@ -79,9 +79,11 @@ class FormRenderer:
             )
             result = Markup("").join(parts)
             return result
+        # the form posts to the page that shows it; the action of the
+        # definition is what the frontend does with a valid submission
         parts.append(
             Markup(
-                f'{self.I2}<form class="{form_css_class}" action="{escape(form_def.action)}" method="post">\n'
+                f'{self.I2}<form class="{form_css_class}" action="" method="post">\n'
             )
         )
         parts.append(
