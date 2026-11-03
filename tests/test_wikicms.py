@@ -48,6 +48,15 @@ class TestWikiCMS(Basetest):
         params = wiki_frontend.rendered_params("Willkommen2026")
         self.assertEqual({"title": "Willkommen2026", "frontend": "www"}, params)
 
+    def test_wiki_page_trailing_slash(self):
+        """
+        a short URL with a trailing slash names the same page
+        https://github.com/BITPlan/pyWikiCMS/issues/43
+        """
+        wiki_frontend = WikiFrontend(FrontendStub(name="www"))
+        for path in ("/Registration/", "/Registration", "/index.php/Registration/"):
+            self.assertEqual("Registration", wiki_frontend.wikiPage(path), path)
+
     def test_extract_site_and_path(self):
         """
         Test splitting the path into site and path.

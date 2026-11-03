@@ -248,6 +248,8 @@ class WikiFrontend(MediaWikiHtmlFilter):
             wikipage = pagePath[1:]
         else:
             wikipage = pagePath
+        # a short URL with a trailing slash names the same page, see issue 43
+        wikipage = wikipage.rstrip("/")
         return wikipage
 
     def checkPath(self, pagePath: str) -> str:
