@@ -7,7 +7,7 @@ Created on 2020-07-27
 import logging
 import re
 import traceback
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import requests
 from fastapi import Response
@@ -188,7 +188,9 @@ class WikiFrontend(MediaWikiHtmlFilter):
         """
         counterparts = {}
         if pc.master_page:
-            ask_query = f"[[Master page::{pc.master_page}]]|?Language code=language|limit=50"
+            ask_query = (
+                f"[[Master page::{pc.master_page}]]|?Language code=language|limit=50"
+            )
             try:
                 records = self.smwclient.query(ask_query, "counterparts")
             except Exception as ex:
@@ -305,6 +307,23 @@ class WikiFrontend(MediaWikiHtmlFilter):
         base_url = f"{wikiUser.url}{wikiUser.scriptPath}"
         return base_url
 
+    def rendered_params(self, page_title: str) -> Dict[str, str]:
+        """
+        the index.php parameters to fetch the rendered document of a page:
+        the title and the frontend parameter carrying the site name, so the
+        wiki knows it is called from this frontend and may render accordingly,
+        e.g. via Extension:UrlGetParameters
+        see https://github.com/BITPlan/pyWikiCMS/issues/40
+
+        Args:
+            page_title(str): the title of the page
+
+        Returns:
+            Dict[str, str]: the request parameters
+        """
+        params = {"title": page_title, "frontend": self.name}
+        return params
+
     def get_rendered(self, page_title: str) -> Optional[str]:
         """
         get the document MediaWiki renders for the given page, head included
@@ -319,7 +338,8 @@ class WikiFrontend(MediaWikiHtmlFilter):
         rendered = None
         url = f"{self.wiki_base_url()}/index.php"
         try:
-            response = requests.get(url, params={"title": page_title}, timeout=30)
+            params = self.rendered_params(page_title)
+            response = requests.get(url, params=params, timeout=30)
             if response.status_code == 200:
                 rendered = response.text
             else:

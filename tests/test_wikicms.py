@@ -9,6 +9,7 @@ from basemkit.basetest import Basetest
 
 from frontend.wikicms import WikiFrontend
 from tests.smw_access import SMWAccess
+from tests.test_frame import FrontendStub
 
 
 class TestWikiCMS(Basetest):
@@ -36,6 +37,16 @@ class TestWikiCMS(Basetest):
             print(text)
         self.assertTrue("Joker" in text)
         pass
+
+    def test_rendered_params(self):
+        """
+        the rendered document is fetched with the title and the frontend parameter
+        carrying the site name, so the wiki knows it is called from a frontend
+        https://github.com/BITPlan/pyWikiCMS/issues/40
+        """
+        wiki_frontend = WikiFrontend(FrontendStub(name="www"))
+        params = wiki_frontend.rendered_params("Willkommen2026")
+        self.assertEqual({"title": "Willkommen2026", "frontend": "www"}, params)
 
     def test_extract_site_and_path(self):
         """
