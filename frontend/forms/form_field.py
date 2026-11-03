@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, Union
 
 from basemkit.yamlable import lod_storable
 
-
 # Type alias: a translatable string is either a plain str or a
 # language-keyed dict, e.g. {"en": "Name", "de": "Name", "fr": "Nom"}.
 I18nStr = Optional[Union[str, Dict[str, str]]]
@@ -134,10 +133,12 @@ class FormDefinition:
     name: str
     legend: Any  # I18nStr — required, no default
     fields: List[FormField]
-    action: str = ""
+    action: str = ""  # what a valid submission triggers, e.g. mail, see issue 41
     submit_label: I18nStr = None  # defaults to {"en": "Send", "de": "Absenden"}
     submit_glyphicon: Optional[str] = None
     success_message: I18nStr = None
+    recipient: str = ""  # the wiki user the mail action sends to
+    subject: I18nStr = None  # the subject of the mail action, defaults to the legend
 
     def resolved_submit_label(self, lang: str = "en") -> str:
         """

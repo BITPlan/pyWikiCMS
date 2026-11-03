@@ -8,13 +8,12 @@ from pathlib import Path
 
 from basemkit.basetest import Basetest
 
-from frontend.forms.form_field import (FormDefinition, FormField, FormLabel,
-                                       resolve_i18n)
+from frontend.forms.form_field import FormDefinition, FormField, FormLabel, resolve_i18n
 from frontend.forms.handler import FormHandler
+from frontend.forms.mail import FormMail, FormPost
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
-from frontend.forms.validators import (build_wtforms_validators,
-                                       validate_with_wtforms)
+from frontend.forms.validators import build_wtforms_validators, validate_with_wtforms
 from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent
 
 # Path to the built-in contact.yaml shipped with the package
@@ -414,6 +413,86 @@ class TestForms(Basetest):
         self.assertIn("Contact us", pc.content)
         # original html is preserved
         self.assertIn("wikicms-form", pc.html)
+
+    def test_form_mail_text_and_subject(self):
+        """
+        the mail action renders the submission as label: value lines
+        with the subject of the definition, else the legend, issue 41
+        """
+        form_def = make_contact_form()
+        values = {
+            "wikicms_form": "contact",
+            "name": "Erika Mustermann",
+            "email": "erika@example.org",
+            "message": "Bitte um Rückruf",
+            "postToken": "x",
+        }
+        form_mail = FormMail(form_def, values, lang="de")
+        self.assertEqual("Kontaktieren Sie uns", form_mail.subject)
+        lines = form_mail.text.split("\n")
+        self.assertEqual("Name: Erika Mustermann", lines[0])
+        self.assertIn("Bitte um Rückruf", form_mail.text)
+        self.assertNotIn("wikicms_form", form_mail.text)
+        self.assertNotIn("postToken", form_mail.text)
+        form_def.subject = {"de": "Kontaktformular www", "en": "Contact form www"}
+        self.assertEqual(
+            "Kontaktformular www", FormMail(form_def, values, "de").subject
+        )
+
+    def test_form_mail_send(self):
+        """
+        the mail action asks the wiki to send to the recipient user via emailuser
+        """
+
+        class SiteStub:
+            """
+            records the api calls of a mwclient Site
+            """
+
+            def __init__(self):
+                self.calls = []
+
+            def api(self, action, **kwargs):
+                self.calls.append((action, kwargs))
+                result = {"query": {"tokens": {"csrftoken": "t0ken+\\"}}}
+                if action == "emailuser":
+                    result = {"emailuser": {"result": "Success"}}
+                return result
+
+        form_def = make_contact_form()
+        form_def.recipient = "wf"
+        site = SiteStub()
+        result = FormMail(form_def, {"name": "Erika"}, "en").send(site)
+        self.assertEqual("Success", result["emailuser"]["result"])
+        action, kwargs = site.calls[-1]
+        self.assertEqual("emailuser", action)
+        self.assertEqual("wf", kwargs["target"])
+        self.assertEqual("t0ken+\\", kwargs["token"])
+        self.assertIn("Name: Erika", kwargs["text"])
+
+    def test_htmlfilter_renders_form_post(self):
+        """
+        a submitted form is rendered again with its errors, a valid one with its message
+        """
+        form_def = make_contact_form()
+        FormRegistry.register(form_def)
+        html = '<div class="wikicms-form" data-form-name="contact"></div>'
+        mwf = MediaWikiHtmlFilter(filterKeys=[])
+        pc = PageContent()
+        pc.html = html
+        pc.form_post = FormPost(
+            name="contact", values={"name": "E"}, errors={"name": ["too short"]}
+        )
+        mwf.filter_page_content(pc)
+        self.assertIn("too short", pc.content)
+        self.assertIn('value="E"', pc.content)
+        self.assertIn('name="wikicms_form" value="contact"', pc.content)
+        pc = PageContent()
+        pc.html = html
+        pc.form_post = FormPost(name="contact", message="Thank you")
+        mwf.filter_page_content(pc)
+        self.assertIn("Thank you", pc.content)
+        self.assertNotIn("<form", pc.content)
 
     def test_htmlfilter_no_registry_leaves_div(self):
         """

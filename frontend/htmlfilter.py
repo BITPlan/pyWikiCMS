@@ -11,6 +11,7 @@ from typing import List, Optional
 from basemkit.yamlable import lod_storable
 from bs4 import BeautifulSoup, Comment
 
+from frontend.forms.mail import FormPost
 from frontend.forms.registry import FormRegistry
 from frontend.forms.renderer import FormRenderer
 from frontend.language import LanguageSet
@@ -104,8 +105,11 @@ class PageContent:
     lang: str = (
         "en"  # the language of the wiki page - potentially derived from it's markup
     )
-    master_page: str = ""  # the master page of the LanguageSet of the page, see issue 39
+    master_page: str = (
+        ""  # the master page of the LanguageSet of the page, see issue 39
+    )
     head: Optional[PageHead] = None  # head metadata of the rendered document
+    form_post: Optional[FormPost] = None  # the submitted form state, see issue 41
 
     def __post_init__(self):
         self.detect_lang()
@@ -210,11 +214,13 @@ class MediaWikiHtmlFilter(HtmlFilter):
         soup = self.doFilter(pc.html, self.filterKeys)
         soup = self.fixHtml(soup)
         filtered_html = self.unwrap(soup)
-        filtered_html = self._replace_form_divs(filtered_html, pc.lang)
+        filtered_html = self._replace_form_divs(filtered_html, pc.lang, pc.form_post)
         pc.content = filtered_html
         return pc
 
-    def _replace_form_divs(self, html: str, lang: str = "en") -> str:
+    def _replace_form_divs(
+        self, html: str, lang: str = "en", form_post: Optional[FormPost] = None
+    ) -> str:
         """
         Find all <div class="wikicms-form" data-form-name="..."> elements and
         replace each with the rendered form HTML from the registry.
@@ -222,6 +228,8 @@ class MediaWikiHtmlFilter(HtmlFilter):
         Args:
             html(str): the HTML string to process
             lang(str): language code for i18n resolution
+            form_post(FormPost): the submitted state of the form of that name,
+                values and errors or the message of a valid submission
 
         Returns:
             str: the HTML with form divs replaced
@@ -236,6 +244,14 @@ class MediaWikiHtmlFilter(HtmlFilter):
                 form_def = self.form_registry.get(form_name)
                 if form_def is None:
                     replacement = m.group(0)
+                elif form_post is not None and form_post.name == form_name:
+                    replacement = renderer.render(
+                        form_def,
+                        values=form_post.values,
+                        errors=form_post.errors,
+                        lang=lang,
+                        message=form_post.message,
+                    )
                 else:
                     replacement = renderer.render(form_def, lang=lang)
                 return replacement

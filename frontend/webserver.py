@@ -110,6 +110,47 @@ class CmsWebServer(GraphNavigatorWebserver):
             """
             return self.render_path(frontend_name, page_path, request)
 
+        @app.post("/{frontend_name}/{page_path:path}")
+        async def post_path(
+            frontend_name: str, page_path: str, request: Request
+        ) -> HTMLResponse:
+            """
+            Handles a form submitted on the path of the given frontend, see issue 41
+
+            Args:
+                frontend_name: The name of the frontend.
+                page_path: The path of the page carrying the form.
+                request: the request with the form data and the language of the visit
+
+            Returns:
+                An HTMLResponse with the page rendered again, carrying the
+                validation errors or the success message
+            """
+            form = await request.form()
+            form_data = {key: str(value) for key, value in form.items()}
+            wiki_frontend = self.get_wiki_frontend(frontend_name)
+            return wiki_frontend.post_path_response(f"/{page_path}", form_data, request)
+
+    def get_wiki_frontend(self, frontend_name: str):
+        """
+        get the wiki frontend of the given name
+
+        Args:
+            frontend_name(str): the name of the frontend
+
+        Returns:
+            WikiFrontend: the frontend
+
+        Raises:
+            HTTPException: 404 if there is no such frontend
+        """
+        wiki_frontend = self.wiki_frontends.wiki_frontends.get(frontend_name, None)
+        if wiki_frontend is None:
+            raise HTTPException(
+                status_code=404, detail=f"frontend {frontend_name} is not available"
+            )
+        return wiki_frontend
+
     def render_path(self, frontend_name: str, page_path: str, request=None):
         """
         Renders the content for a specific path of the given frontend.

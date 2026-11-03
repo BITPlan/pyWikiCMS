@@ -42,6 +42,7 @@ class FormRenderer:
         values: Optional[Dict[str, str]] = None,
         errors: Optional[Dict[str, List[str]]] = None,
         lang: str = "en",
+        message: Optional[str] = None,
     ) -> str:
         """
         Render the form definition as HTML.
@@ -51,6 +52,7 @@ class FormRenderer:
             values(dict): optional pre-filled field values keyed by field name
             errors(dict): optional validation errors keyed by field name
             lang(str): language code for i18n resolution (default "en")
+            message(str): the message of a valid submission, rendered instead of the form
 
         Returns:
             str: rendered HTML string
@@ -68,6 +70,15 @@ class FormRenderer:
         )
 
         parts = []
+        if message:
+            # a valid submission: the message takes the place of the form
+            parts.append(
+                Markup(
+                    f'{self.I2}<div class="wikicms-form-message alert alert-success" role="alert">{escape(message)}</div>\n'
+                )
+            )
+            result = Markup("").join(parts)
+            return result
         parts.append(
             Markup(
                 f'{self.I2}<form class="{form_css_class}" action="{escape(form_def.action)}" method="post">\n'
@@ -75,6 +86,19 @@ class FormRenderer:
         )
         parts.append(
             Markup(f"{self.I4}<fieldset>\n{self.I4}<legend>{escape(legend)}</legend>\n")
+        )
+        for action_error in errors.get("action", []):
+            # the action of a valid submission failed, see issue 41
+            parts.append(
+                Markup(
+                    f'{self.I8}<div class="wikicms-form-error alert alert-danger" role="alert">{escape(action_error)}</div>\n'
+                )
+            )
+        # the submission names its form, see issue 41
+        parts.append(
+            Markup(
+                f'{self.I8}<input type="hidden" name="wikicms_form" value="{escape(form_def.name)}">\n'
+            )
         )
 
         for field in form_def.fields:

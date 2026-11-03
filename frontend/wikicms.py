@@ -16,6 +16,10 @@ from mwstools_backend.site import FrontendSite
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 
+from frontend.forms.form_field import I18n
+from frontend.forms.handler import FormHandler
+from frontend.forms.mail import FormMail, FormPost
+from frontend.forms.registry import FormRegistry
 from frontend.frame import HtmlFrame
 from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent, PageHead
 from frontend.language import VisitLanguage
@@ -348,15 +352,18 @@ class WikiFrontend(MediaWikiHtmlFilter):
             self.logger.info(f"{url} {page_title}: {ex}")
         return rendered
 
-    def getContent(self, pagePath: str) -> PageContent:
+    def getContent(
+        self, pagePath: str, form_post: Optional[FormPost] = None
+    ) -> PageContent:
         """get the content for the given pagePath
         Args:
             pagePath(str): the pagePath
-            whatToFilter(list): list of filter keys
+            form_post(FormPost): the submitted form state to render, see issue 41
         Returns:
             pageContent(PageContent): the HTML content for the given path wrapped in a PageContent
         """
         pc = PageContent()
+        pc.form_post = form_post
         try:
             if pagePath == "/":
                 pc.page_title = self.frontend.defaultPage
@@ -401,17 +408,15 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 frame = match.group(1)
         return frame
 
-    def get_path_response(self, path: str, request=None) -> Response:
+    def request_language(self, request=None) -> str:
         """
-        get the repsonse for the the given path
+        the language of the visit per request, see issue 39
 
         Args:
-            path(str): the path to render the content for
-            request(Request): the FastAPI request carrying the language of the visit
-                as lang parameter, lang cookie or Accept-Language header, see issue 39
+            request(Request): the FastAPI request, None for the site default
 
         Returns:
-            Response: a FastAPI response
+            str: the language code
         """
         param = cookie = accept_language = None
         if request is not None:
@@ -419,6 +424,80 @@ class WikiFrontend(MediaWikiHtmlFilter):
             cookie = request.cookies.get(VisitLanguage.COOKIE)
             accept_language = request.headers.get("accept-language")
         language = self.visit_language.resolve(param, cookie, accept_language)
+        return language
+
+    def handle_form_post(
+        self, form_data: Dict[str, str], lang: str = "en"
+    ) -> Optional[FormPost]:
+        """
+        validate a form submission and run the action of its form definition,
+        see https://github.com/BITPlan/pyWikiCMS/issues/41
+
+        Args:
+            form_data(dict): the submitted fields keyed by name, wikicms_form names the form
+            lang(str): the language of the visit
+
+        Returns:
+            FormPost: the state to render, None if the submission names no known form
+        """
+        form_post = None
+        form_name = form_data.get("wikicms_form", "")
+        form_def = FormRegistry.get(form_name) if form_name else None
+        if form_def is not None:
+            errors = FormHandler.validate(form_def, form_data, lang)
+            form_post = FormPost(name=form_name, values=dict(form_data), errors=errors)
+            if form_post.valid:
+                try:
+                    if form_def.action == "mail":
+                        form_mail = FormMail(form_def, form_data, lang)
+                        form_mail.send(self.wiki.site)
+                    form_post.message = I18n.resolve(form_def.success_message, lang)
+                except Exception as ex:
+                    # the action failed: the form stays with the values and says so
+                    self.logger.warning(
+                        f"form {form_name} action {form_def.action}: {ex}"
+                    )
+                    form_post.errors["action"] = [str(ex)]
+        return form_post
+
+    def post_path_response(
+        self, path: str, form_data: Dict[str, str], request=None
+    ) -> Response:
+        """
+        get the response for a form submitted on the given path
+
+        Args:
+            path(str): the path of the page carrying the form
+            form_data(dict): the submitted fields keyed by name
+            request(Request): the FastAPI request carrying the language of the visit
+
+        Returns:
+            Response: the page rendered again with the submission state
+        """
+        language = self.request_language(request)
+        form_post = self.handle_form_post(form_data, language)
+        response = self.get_path_response(path, request, form_post)
+        return response
+
+    def get_path_response(
+        self, path: str, request=None, form_post: Optional[FormPost] = None
+    ) -> Response:
+        """
+        get the repsonse for the the given path
+
+        Args:
+            path(str): the path to render the content for
+            request(Request): the FastAPI request carrying the language of the visit
+                as lang parameter, lang cookie or Accept-Language header, see issue 39
+            form_post(FormPost): the submitted form state to render, see issue 41
+
+        Returns:
+            Response: a FastAPI response
+        """
+        cookie = None
+        if request is not None:
+            cookie = request.cookies.get(VisitLanguage.COOKIE)
+        language = self.request_language(request)
         if self.needsProxy(path):
             html_response = self.proxy(path)
             # Create a FastAPI response object
@@ -428,7 +507,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 headers=dict(html_response.headers),
             )
         else:
-            pc = self.getContent(path)
+            pc = self.getContent(path, form_post)
             counterparts = {}
             if pc.error is None:
                 counterparts = self.get_counterparts(pc)
