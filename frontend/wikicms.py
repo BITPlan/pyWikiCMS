@@ -304,6 +304,38 @@ class WikiFrontend(MediaWikiHtmlFilter):
 
         return response
 
+    @staticmethod
+    def proxy_response(upstream: requests.Response) -> Response:
+        """
+        convert the response of the backend wiki to a response of the site
+
+        requests has already decoded the body, so the headers describing the
+        encoded body on the wire must not be passed on, the length is computed anew
+
+        Args:
+            upstream(requests.Response): the response of the backend wiki
+
+        Returns:
+            Response: the FastAPI response
+        """
+        wire_headers = {
+            "connection",
+            "content-encoding",
+            "content-length",
+            "transfer-encoding",
+        }
+        headers = {
+            name: value
+            for name, value in upstream.headers.items()
+            if name.lower() not in wire_headers
+        }
+        response = Response(
+            content=upstream.content,
+            status_code=upstream.status_code,
+            headers=headers,
+        )
+        return response
+
     def wiki_base_url(self) -> str:
         """
         get the base url of the backend wiki including its script path
@@ -539,13 +571,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 content=sitemap.as_xml(pages), media_type="application/xml"
             )
         elif self.needsProxy(path):
-            html_response = self.proxy(path)
-            # Create a FastAPI response object
-            response = Response(
-                content=html_response.content,
-                status_code=html_response.status_code,
-                headers=dict(html_response.headers),
-            )
+            response = self.proxy_response(self.proxy(path))
         else:
             pc = self.getContent(path, form_post)
             counterparts = {}
