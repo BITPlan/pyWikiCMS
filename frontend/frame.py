@@ -5,6 +5,9 @@ Created on 2020-07-27
 """
 
 from typing import Dict, Optional
+from xml.sax.saxutils import quoteattr
+
+from bs4 import BeautifulSoup
 
 from frontend.language import VisitLanguage
 
@@ -33,6 +36,7 @@ class HtmlFrame:
         head=None,
         visit_lang: Optional[str] = None,
         counterparts: Optional[Dict[str, str]] = None,
+        canonical: Optional[str] = None,
     ) -> None:
         """
         Initialize HtmlFrame with a specified language and title.
@@ -46,6 +50,8 @@ class HtmlFrame:
                 and menu follow; defaults to the page language, see issue 39
             counterparts (dict, optional): language code to page title of the
                 page in the other languages, rendered as the language switch
+            canonical (str, optional): the public url of the page on the site, it
+                replaces a canonical link the wiki rendered with its own host
         """
         self.frontend = frontend
         self.lang = lang
@@ -53,6 +59,7 @@ class HtmlFrame:
         self.counterparts = counterparts if counterparts else {}
         self.title = title
         self.head = head
+        self.canonical = canonical
         if head is not None:
             if head.title:
                 self.title = head.title
@@ -64,9 +71,28 @@ class HtmlFrame:
         Returns:
             str: the tags, one per line, empty without a head
         """
-        html = ""
-        if self.head is not None and self.head.tags:
-            html = "\n".join(f"  {tag}" for tag in self.head.tags)
+        tags = list(self.head.tags) if self.head is not None else []
+        if self.canonical:
+            tags = [tag for tag in tags if 'rel="canonical"' not in tag]
+            tags.append(f'<link rel="canonical" href={quoteattr(self.canonical)}/>')
+        html = "\n".join(f"  {tag}" for tag in tags)
+        return html
+
+    @staticmethod
+    def head_elements(rendered: str) -> str:
+        """
+        Get the elements a rendered wiki page may contribute to the head,
+        without the wrapper, paragraphs and comments of the MediaWiki parser.
+
+        Args:
+            rendered (str): the rendered html of a wiki page
+
+        Returns:
+            str: the link, meta, script and style tags, one per line
+        """
+        soup = BeautifulSoup(rendered, "html.parser")
+        tags = soup.find_all(["link", "meta", "script", "style"])
+        html = "\n".join(f"  {tag}" for tag in tags)
         return html
 
     def html_dir(self) -> str:
@@ -118,7 +144,7 @@ class HtmlFrame:
             str: Header part of an HTML document as a string.
         """
         style_key = "CMS/style"
-        style_html = self.frontend.cms_pages.get(style_key, "")
+        style_html = self.head_elements(self.frontend.cms_pages.get(style_key, ""))
         common_includes = self.common_includes()
         head_tags = self.head_tags()
         html = f"""<!doctype html>
@@ -129,7 +155,7 @@ class HtmlFrame:
   <title>{self.title}</title>
 {head_tags}
 {common_includes}
-  {style_html}
+{style_html}
 </head>
 <body>
 """

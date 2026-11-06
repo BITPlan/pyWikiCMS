@@ -37,6 +37,25 @@ class TestSitemap(Basetest):
         self.assertIn("/index.php/A%26B_D%C3%BCsseldorf</loc>", xml)
         self.assertLess(xml.index("A%26B"), xml.index("Willkommen2026"))
 
+    def test_page_url(self):
+        """
+        the page url the sitemap and the canonical link share
+        """
+        sitemap = Sitemap("https://www.bitplan.com")
+        cases = [
+            (
+                "Software Architektur (CPSA-F)",
+                "https://www.bitplan.com/index.php/Software_Architektur_(CPSA-F)",
+            ),
+            (
+                "Düsseldorf en",
+                "https://www.bitplan.com/index.php/D%C3%BCsseldorf_en",
+            ),
+            ("Trainings/en", "https://www.bitplan.com/index.php/Trainings/en"),
+        ]
+        for title, expected in cases:
+            self.assertEqual(expected, sitemap.page_url(title))
+
     def test_empty_category(self):
         """
         an empty or missing category gives a valid empty sitemap

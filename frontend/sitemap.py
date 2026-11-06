@@ -66,6 +66,20 @@ class Sitemap:
         pages = list(result.get("query", {}).get("pages", {}).values())
         return pages
 
+    def page_url(self, title: str) -> str:
+        """
+        get the public url of the given page
+
+        Args:
+            title(str): the page title
+
+        Returns:
+            str: the url of the page on this site
+        """
+        path = quote(title.replace(" ", "_"), safe="/:()")
+        url = f"{self.base_url}/index.php/{path}"
+        return url
+
     def as_xml(self, pages: List[Dict[str, Any]]) -> str:
         """
         render the given pages
@@ -81,8 +95,7 @@ class Sitemap:
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
         ]
         for page in sorted(pages, key=lambda p: p["title"]):
-            path = quote(page["title"].replace(" ", "_"), safe="/:()")
-            loc = escape(f"{self.base_url}/index.php/{path}")
+            loc = escape(self.page_url(page["title"]))
             lines.append(
                 f"<url><loc>{loc}</loc><lastmod>{page['touched']}</lastmod></url>"
             )

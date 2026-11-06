@@ -577,6 +577,10 @@ class WikiFrontend(MediaWikiHtmlFilter):
             counterparts = {}
             if pc.error is None:
                 counterparts = self.get_counterparts(pc)
+            canonical = None
+            if request is not None and pc.page_title:
+                site_map = Sitemap(Sitemap.base_url_of(request))
+                canonical = site_map.page_url(pc.page_title)
             html_frame = HtmlFrame(
                 self,
                 title=pc.page_title,
@@ -584,6 +588,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 head=pc.head,
                 visit_lang=language,
                 counterparts=counterparts,
+                canonical=canonical,
             )
             if pc.error:
                 response = Response(

@@ -91,3 +91,39 @@ class TestHead(Basetest):
         self.assertIn('rel="canonical"', html)
         self.assertEqual(1, html.count('name="viewport"'))
         self.assertEqual(1, html.count("charset"))
+
+    def test_style_page_in_head(self):
+        """
+        the rendered CMS/style page contributes its tags, not the parser wrapper
+        """
+        rendered = """<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"><p>
+  <!-- General Bootstrap 5 styles -->
+  <link href="https://example.org/b.css" rel="stylesheet"/>
+  <style>
+    a > b { color: #FFFFFF; }
+  </style>
+</p>
+<!-- NewPP limit report -->
+</div>"""
+        frontend = FrontendStub(wiki=WikiStub())
+        frontend.cms_pages = {"CMS/style": rendered}
+        header = HtmlFrame(frontend, title="t").header()
+        head = header[header.index("<head>") : header.index("</head>")]
+        self.assertIn('href="https://example.org/b.css"', head)
+        self.assertIn("a > b { color: #FFFFFF; }", head)
+        for dropped in ["<div", "</div", "<p>", "</p>", "<!--"]:
+            self.assertNotIn(dropped, head)
+
+    def test_canonical(self):
+        """
+        the canonical link names the site, not the backend wiki
+        """
+        head = PageHead.from_html(self.rendered, base_url="https://wiki.example.org")
+        frontend = FrontendStub(wiki=WikiStub())
+        url = "https://www.example.org/index.php/Willkommen2026"
+        html = HtmlFrame(frontend, title="t", head=head, canonical=url).header()
+        self.assertEqual(1, html.count('rel="canonical"'))
+        self.assertIn(f'<link rel="canonical" href="{url}"/>', html)
+        self.assertNotIn("wiki.example.org/index.php/Willkommen2026", html)
+        html = HtmlFrame(frontend, title="t", canonical=url).header()
+        self.assertEqual(1, html.count('rel="canonical"'))
