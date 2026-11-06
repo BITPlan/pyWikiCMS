@@ -24,6 +24,7 @@ from frontend.frame import HtmlFrame
 from frontend.htmlfilter import MediaWikiHtmlFilter, PageContent, PageHead
 from frontend.language import VisitLanguage
 from frontend.menu import Menu
+from frontend.sitemap import Sitemap
 
 
 class WikiFrontend(MediaWikiHtmlFilter):
@@ -37,7 +38,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
         self,
         frontend: FrontendSite,
         parser: str = "lxml",
-        proxy_prefixes=["/images/", "/videos", "/robots.txt", "/sitemap"],
+        proxy_prefixes=["/images/", "/videos", "/robots.txt"],
         debug: bool = False,
         filterKeys=None,
     ):
@@ -531,7 +532,13 @@ class WikiFrontend(MediaWikiHtmlFilter):
             cookie = request.cookies.get(VisitLanguage.COOKIE)
             path, form_post = self.resolve_params(path, request.query_params, form_post)
         language = self.request_language(request)
-        if self.needsProxy(path):
+        if path == "/sitemap.xml" and request is not None:
+            sitemap = Sitemap(Sitemap.base_url_of(request))
+            pages = Sitemap.get_pages(self.wiki.get_site())
+            response = Response(
+                content=sitemap.as_xml(pages), media_type="application/xml"
+            )
+        elif self.needsProxy(path):
             html_response = self.proxy(path)
             # Create a FastAPI response object
             response = Response(
