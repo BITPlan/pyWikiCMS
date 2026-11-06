@@ -272,6 +272,36 @@ class WikiFrontend(MediaWikiHtmlFilter):
                 error = "invalid char %s in given pagePath " % (illegalChar)
         return error
 
+    @staticmethod
+    def raw_page_path(path: str, params) -> Optional[str]:
+        """
+        get the path on the backend wiki for a raw page the frame includes,
+        limited to these pages so that the site is no way around the bot
+        challenge of the wiki host for other pages
+
+        Args:
+            path(str): the requested path
+            params: the query parameters of the request
+
+        Returns:
+            str: the path to proxy, None if this request is not for such a page
+        """
+        raw_path = None
+        content_types = {
+            "MediaWiki:Common.css": "text/css",
+            "MediaWiki:Common.js": "text/javascript",
+        }
+        title = params.get("title")
+        if (
+            path.rstrip("/") in ("", "/index.php")
+            and params.get("action") == "raw"
+            and title in content_types
+        ):
+            raw_path = (
+                f"/index.php?title={title}&action=raw&ctype={content_types[title]}"
+            )
+        return raw_path
+
     def needsProxy(self, path: str) -> bool:
         """
         Args:
@@ -561,6 +591,9 @@ class WikiFrontend(MediaWikiHtmlFilter):
         """
         cookie = None
         if request is not None:
+            raw_path = self.raw_page_path(path, request.query_params)
+            if raw_path:
+                return self.proxy_response(self.proxy(raw_path))
             cookie = request.cookies.get(VisitLanguage.COOKIE)
             path, form_post = self.resolve_params(path, request.query_params, form_post)
         language = self.request_language(request)

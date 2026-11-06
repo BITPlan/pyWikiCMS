@@ -66,11 +66,11 @@ class TestFrame(Basetest):
         if self.debug:
             print(html)
         self.assertIn(
-            'href="https://wiki.example.org/w/index.php?title=MediaWiki:Common.css&action=raw&ctype=text/css"',
+            'href="/index.php?title=MediaWiki:Common.css&action=raw&ctype=text/css"',
             html,
         )
         self.assertIn(
-            'src="https://wiki.example.org/w/index.php?title=MediaWiki:Common.js&action=raw&ctype=text/javascript"',
+            'src="/index.php?title=MediaWiki:Common.js&action=raw&ctype=text/javascript"',
             html,
         )
         self.assertIn('<html lang="de" dir="ltr">', html)

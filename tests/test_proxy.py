@@ -72,3 +72,31 @@ class TestProxy(Basetest):
         response = WikiFrontend.proxy_response(upstream)
         self.assertEqual(404, response.status_code)
         self.assertEqual(b"not found", response.body)
+
+    def test_raw_page_path(self):
+        """
+        only the raw pages the frame includes pass through
+        """
+        css = "/index.php?title=MediaWiki:Common.css&action=raw&ctype=text/css"
+        js = "/index.php?title=MediaWiki:Common.js&action=raw&ctype=text/javascript"
+        cases = [
+            ("/index.php", {"title": "MediaWiki:Common.css", "action": "raw"}, css),
+            ("/", {"title": "MediaWiki:Common.js", "action": "raw"}, js),
+            # the content type is ours, not the one of the request
+            (
+                "/index.php",
+                {
+                    "title": "MediaWiki:Common.js",
+                    "action": "raw",
+                    "ctype": "text/html",
+                },
+                js,
+            ),
+            ("/index.php", {"title": "Main Page", "action": "raw"}, None),
+            ("/index.php", {"title": "MediaWiki:Common.css"}, None),
+            ("/index.php", {"title": "MediaWiki:Common.css", "action": "edit"}, None),
+            ("/index.php/X", {"title": "MediaWiki:Common.css", "action": "raw"}, None),
+            ("/index.php/Welcome2026", {}, None),
+        ]
+        for path, params, expected in cases:
+            self.assertEqual(expected, WikiFrontend.raw_page_path(path, params))

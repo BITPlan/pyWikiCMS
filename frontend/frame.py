@@ -127,9 +127,9 @@ class HtmlFrame:
             str: the tags, empty if the frontend has no open wiki
         """
         html = ""
-        base_url = self.wiki_base_url()
-        if base_url:
-            raw = f"{base_url}/index.php?title=MediaWiki:"
+        if self.wiki_base_url():
+            # on the site: the wiki host may answer a browser with its bot challenge
+            raw = "/index.php?title=MediaWiki:"
             html = (
                 f'  <link rel="stylesheet" href="{raw}Common.css&action=raw&ctype=text/css">\n'
                 f'  <script src="{raw}Common.js&action=raw&ctype=text/javascript"></script>'
