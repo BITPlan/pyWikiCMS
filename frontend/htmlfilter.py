@@ -387,19 +387,101 @@ class MediaWikiHtmlFilter(HtmlFilter):
         see https://revealjs.com/
         """
         soup = BeautifulSoup(html, "lxml")
-        for h2 in soup.findChildren(recursive=True):
-            if h2.name == "h2":
-                span = h2.next_element
-                if span.name == "span":
-                    tagid = span.get("id")
-                    if tagid.startswith("⌘⌘"):
-                        section = soup.new_tag("section")
-                        h2.parent.append(section)
-                        section.insert(0, h2)
-                        tag = h2.next_element
-                        while tag is not None and tag.name != "h2":
-                            if tag.parent != h2:
-                                section.append(tag)
-                            tag = tag.next_element
+        # the table of contents lists the slides, reveal has its own overview
+        for toc in soup.select("div#toc"):
+            toc.extract()
+        title_section = self.title_slide(soup)
+        for heading in soup.find_all(self.SLIDE_HEADINGS):
+            if not self.is_slide_heading(heading):
+                continue
+            # a slide is the heading and all its siblings up to the next slide heading
+            section = soup.new_tag("section")
+            heading.insert_before(section)
+            sibling = heading.next_sibling
+            section.append(heading)
+            while sibling is not None and not self.is_slide_heading(sibling):
+                next_sibling = sibling.next_sibling
+                section.append(sibling)
+                sibling = next_sibling
+            self.strip_slide_mark(heading)
+        if title_section is not None:
+            first_section = soup.find("section")
+            if first_section is not None:
+                first_section.insert_before(title_section)
         html = self.unwrap(soup)
         return html
+
+    # heading mark of the slideshow tag: a heading with it starts a slide
+    SLIDE_MARK = "⌘⌘"
+    SLIDE_HEADINGS = ["h1", "h2", "h3", "h4", "h5", "h6"]
+    # what the rendered page shows of a slideshow tag: the box of the
+    # S5SlideShow extension or the tag itself if the wiki does not know it
+    SLIDESHOW_MARKERS = ['id="slideshow-bundle"', "<slideshow", "&lt;slideshow"]
+
+    def is_slideshow(self, html: str) -> bool:
+        """
+        check whether the given rendered wiki page is a slideshow
+
+        Args:
+            html(str): the html of the page as the wiki rendered it
+
+        Returns:
+            bool: True if the page holds a slideshow tag
+        """
+        slideshow = any(marker in html for marker in self.SLIDESHOW_MARKERS)
+        return slideshow
+
+    def is_slide_heading(self, node) -> bool:
+        """
+        check whether the given node is a heading that starts a slide
+
+        Args:
+            node: the node to check
+
+        Returns:
+            bool: True if the node is a heading with the slide mark
+        """
+        slide_heading = getattr(
+            node, "name", None
+        ) in self.SLIDE_HEADINGS and node.get_text().strip().startswith(self.SLIDE_MARK)
+        return slide_heading
+
+    def strip_slide_mark(self, heading):
+        """
+        remove the slide mark from the text of the given heading
+
+        Args:
+            heading: the heading node
+        """
+        for text_node in heading.find_all(string=True):
+            if self.SLIDE_MARK in text_node:
+                text_node.replace_with(text_node.replace(self.SLIDE_MARK, "").lstrip())
+                break
+
+    def title_slide(self, soup):
+        """
+        take the box of the S5SlideShow extension out of the given soup and
+        make the title slide from its title, author, footer and subfooter
+
+        Args:
+            soup(BeautifulSoup): the html parser
+
+        Returns:
+            the section node of the title slide or None if there is no box
+        """
+        section = None
+        bundle = soup.find("div", {"id": "slideshow-bundle"})
+        if bundle is not None:
+            bundle.extract()
+            section = soup.new_tag("section")
+            for dt in bundle.find_all("dt"):
+                dd = dt.find_next_sibling("dd")
+                if dd is None:
+                    continue
+                key = dt.get_text().strip().lower()
+                part = soup.new_tag("h1" if key == "title" else "p")
+                part["class"] = f"slideshow-{key}"
+                for child in list(dd.contents):
+                    part.append(child)
+                section.append(part)
+        return section

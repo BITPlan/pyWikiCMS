@@ -633,7 +633,7 @@ class WikiFrontend(MediaWikiHtmlFilter):
                     f"error getting {pc.page_title} for {self.name}:<br>{pc.error}"
                 )
             else:
-                if "<slideshow" in pc.html or "&lt;slideshow" in pc.html:
+                if self.is_slideshow(pc.html):
                     # reveal.js slideshow: convert content to slides, wrap with reveal
                     pc.content = self.toReveal(pc.content)
                     framed_html = self.wrapWithReveal(pc.content)

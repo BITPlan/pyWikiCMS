@@ -398,8 +398,8 @@ class TestFrontend(WebserverTest):
             self.fail(pc.error)
         self.assertEqual(pc.page_title, "Welcome")
         content = pc.content
-        debug=self.debug
-        debug=True
+        debug = self.debug
+        debug = True
         if debug:
             print(content)
 
